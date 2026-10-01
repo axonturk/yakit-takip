@@ -1,5 +1,6 @@
-const CACHE_NAME = 'yakit-takip-v5';
-const ASSETS_TO_CACHE = [
+const CACHE_NAME = 'yakit-takip-v7';
+
+const PRECACHE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
@@ -8,43 +9,75 @@ const ASSETS_TO_CACHE = [
   './apple-touch-icon.png'
 ];
 
-// Service Worker Kurulumu
+// Install: precache essential shell assets and skip waiting immediately
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Dosyalar onbellege aliniyor...');
-      return cache.addAll(ASSETS_TO_CACHE);
+      return cache.addAll(PRECACHE_ASSETS).catch((err) => {
+        console.warn('Precache partial fail:', err);
+      });
     }).then(() => self.skipWaiting())
   );
 });
 
-// Eski onbellekleri temizleme
+// Activate: delete all previous cache versions and claim clients
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keyList) => {
-      return Promise.all(keyList.map((key) => {
-        if (key !== CACHE_NAME) {
-          console.log('[Service Worker] Eski onbellek siliniyor:', key);
-          return caches.delete(key);
-        }
-      }));
+      return Promise.all(
+        keyList.map((key) => {
+          if (key !== CACHE_NAME) {
+            console.log('[SW] Deleting old cache:', key);
+            return caches.delete(key);
+          }
+        })
+      );
     }).then(() => self.clients.claim())
   );
 });
 
-// Cevrimdisi (Cache First) Istek Yakalama
+// Fetch: Network-First for HTML navigation to prevent stale index.html pointing to obsolete chunks!
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).catch(() => {
-        // Ag yoksa ve html isteniyorsa index.html'e don
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
-      });
-    })
-  );
+  if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+
+  // For HTML navigation: Network First, fallback to cache
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match(event.request).then((cached) => {
+            return cached || caches.match('./index.html') || caches.match('./');
+          });
+        })
+    );
+    return;
+  }
+
+  // For static assets: Stale While Revalidate
+  if (url.origin === self.location.origin) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        const fetchPromise = fetch(event.request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const clone = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+            }
+            return networkResponse;
+          })
+          .catch(() => cachedResponse);
+
+        return cachedResponse || fetchPromise;
+      })
+    );
+  }
 });
