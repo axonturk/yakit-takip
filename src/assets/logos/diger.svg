@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="digerGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="22" fill="url(#bgGrad)" />
+  <!-- Gas Pump Body -->
+  <path d="M28 32 C28 28 31 25 35 25 L55 25 C59 25 62 28 62 32 L62 76 C62 77.5 60.5 79 59 79 L31 79 C29.5 79 28 77.5 28 76 Z" fill="url(#digerGrad)" />
+  <!-- Base -->
+  <rect x="24" y="78" width="42" height="6" rx="3" fill="#fbbf24" />
+  <!-- Display Window -->
+  <rect x="34" y="32" width="22" height="15" rx="3" fill="#0f172a" />
+  <rect x="37" y="36" width="16" height="3" rx="1.5" fill="#38bdf8" />
+  <rect x="37" y="41" width="10" height="2" rx="1" fill="#4ade80" />
+  <!-- Fuel Hose -->
+  <path d="M62 40 C68 40 73 45 73 52 L73 68 C73 71 70.5 73 68 73 C65.5 73 64 71 64 68 L64 56 C64 53 66 51 68 51" fill="none" stroke="#fbbf24" stroke-width="3" stroke-linecap="round" />
+  <!-- Nozzle Handle -->
+  <path d="M68 48 L73 43 C74 42 75.5 42 76.5 43 L78 44.5 C79 45.5 79 47 78 48 L74 52 Z" fill="#f8fafc" />
+</svg>

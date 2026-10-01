@@ -1,5 +1,14 @@
 import React from 'react';
 
+import opetLogo from '../assets/logos/opet.svg';
+import shellLogo from '../assets/logos/shell.svg';
+import poLogo from '../assets/logos/petrol-ofisi.svg';
+import bpLogo from '../assets/logos/bp.svg';
+import totalLogo from '../assets/logos/total.svg';
+import aytemizLogo from '../assets/logos/aytemiz.svg';
+import tpLogo from '../assets/logos/tp.svg';
+import digerLogo from '../assets/logos/diger.svg';
+
 export const BRAND_KEYS = {
   OPET: 'opet',
   SHELL: 'shell',
@@ -14,49 +23,49 @@ export const BRAND_KEYS = {
 export const BRAND_CONFIG = {
   [BRAND_KEYS.OPET]: {
     name: 'Opet',
-    logoSrc: '/logos/opet.svg',
+    logoSrc: opetLogo,
     bgClass: 'bg-white',
     borderClass: 'border-blue-200'
   },
   [BRAND_KEYS.SHELL]: {
     name: 'Shell',
-    logoSrc: '/logos/shell.svg',
+    logoSrc: shellLogo,
     bgClass: 'bg-white',
     borderClass: 'border-amber-200'
   },
   [BRAND_KEYS.PETROL_OFISI]: {
     name: 'Petrol Ofisi',
-    logoSrc: '/logos/petrol-ofisi.svg',
+    logoSrc: poLogo,
     bgClass: 'bg-white',
     borderClass: 'border-red-200'
   },
   [BRAND_KEYS.BP]: {
     name: 'BP',
-    logoSrc: '/logos/bp.svg',
+    logoSrc: bpLogo,
     bgClass: 'bg-white',
     borderClass: 'border-emerald-200'
   },
   [BRAND_KEYS.TOTAL]: {
     name: 'TotalEnergies',
-    logoSrc: '/logos/total.svg',
+    logoSrc: totalLogo,
     bgClass: 'bg-white',
     borderClass: 'border-rose-200'
   },
   [BRAND_KEYS.AYTEMIZ]: {
     name: 'Aytemiz',
-    logoSrc: '/logos/aytemiz.svg',
+    logoSrc: aytemizLogo,
     bgClass: 'bg-white',
     borderClass: 'border-red-200'
   },
   [BRAND_KEYS.TURKIYE_PETROLLERI]: {
     name: 'Türkiye Petrolleri (TP)',
-    logoSrc: '/logos/tp.svg',
+    logoSrc: tpLogo,
     bgClass: 'bg-white',
     borderClass: 'border-sky-200'
   },
   [BRAND_KEYS.OTHER]: {
     name: 'Diğer / Bağımsız',
-    logoSrc: '/logos/diger.svg',
+    logoSrc: digerLogo,
     bgClass: 'bg-slate-900',
     borderClass: 'border-slate-700'
   }
