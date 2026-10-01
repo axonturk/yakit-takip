@@ -1,72 +1,50 @@
-const CACHE_NAME = 'yakit-takip-v3';
-
-// Assets to precache
-const PRECACHE_ASSETS = [
+const CACHE_NAME = 'yakit-takip-v5';
+const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/icon-maskable-512.png',
+  './icon-192.png',
+  './icon-512.png',
   './apple-touch-icon.png'
 ];
 
+// Service Worker Kurulumu
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_ASSETS).catch((err) => {
-        console.warn('Precache partial fail:', err);
-      });
+      console.log('[Service Worker] Dosyalar onbellege aliniyor...');
+      return cache.addAll(ASSETS_TO_CACHE);
     }).then(() => self.skipWaiting())
   );
 });
 
+// Eski onbellekleri temizleme
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      );
+    caches.keys().then((keyList) => {
+      return Promise.all(keyList.map((key) => {
+        if (key !== CACHE_NAME) {
+          console.log('[Service Worker] Eski onbellek siliniyor:', key);
+          return caches.delete(key);
+        }
+      }));
     }).then(() => self.clients.claim())
   );
 });
 
+// Cevrimdisi (Cache First) Istek Yakalama
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-
-  const url = new URL(event.request.url);
-  if (url.origin === self.location.origin) {
-    event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
-        if (cachedResponse) {
-          fetch(event.request)
-            .then((networkResponse) => {
-              if (networkResponse && networkResponse.status === 200) {
-                caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
-              }
-            })
-            .catch(() => {});
-          return cachedResponse;
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(event.request).catch(() => {
+        // Ag yoksa ve html isteniyorsa index.html'e don
+        if (event.request.mode === 'navigate') {
+          return caches.match('./index.html');
         }
-
-        return fetch(event.request)
-          .then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
-              const responseToCache = networkResponse.clone();
-              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
-            }
-            return networkResponse;
-          })
-          .catch(() => {
-            if (event.request.mode === 'navigate') {
-              return caches.match('./index.html') || caches.match('./');
-            }
-          });
-      })
-    );
-  }
+      });
+    })
+  );
 });
