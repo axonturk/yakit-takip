@@ -1,6 +1,6 @@
 import React from 'react';
 import { formatTL, formatTRDate } from '../services/storage';
-import { Plus, ChevronRight, Camera, CreditCard, Fuel } from 'lucide-react';
+import { Plus, ChevronRight, Camera, CreditCard, Fuel, Sliders, Trash2 } from 'lucide-react';
 import StationLogo from './StationLogo';
 
 export default function StationList({
@@ -10,7 +10,9 @@ export default function StationList({
   onOpenAddStation,
   onOpenScanForStation,
   onOpenTopupForStation,
-  onOpenExpenseForStation
+  onOpenExpenseForStation,
+  onOpenAdjustBalance,
+  onDeleteStation
 }) {
   const list = Object.values(stationBalances);
   const selectedStationObj = list.find(s => s.station.id === selectedStationFilter);
@@ -98,33 +100,54 @@ export default function StationList({
               {/* Quick actions if selected */}
               {isSelected && (
                 <div
-                  className="mt-2.5 pt-2 border-t border-amber-500/30 flex gap-1"
+                  className="mt-2.5 pt-2 border-t border-amber-500/30 space-y-1.5"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <button
-                    onClick={() => onOpenScanForStation && onOpenScanForStation(station.id)}
-                    className="flex-1 py-1.5 px-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[9px] font-bold flex items-center justify-center gap-0.5 shadow transition"
-                    title="Pompa Oku"
-                  >
-                    <Camera className="w-2.5 h-2.5" />
-                    <span>Pompa</span>
-                  </button>
-                  <button
-                    onClick={() => onOpenTopupForStation && onOpenTopupForStation(station.id)}
-                    className="flex-1 py-1.5 px-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-[9px] font-bold flex items-center justify-center gap-0.5 shadow transition"
-                    title="Bakiye Yükle"
-                  >
-                    <CreditCard className="w-2.5 h-2.5" />
-                    <span>+ Bakiye</span>
-                  </button>
-                  <button
-                    onClick={() => onOpenExpenseForStation && onOpenExpenseForStation(station.id)}
-                    className="flex-1 py-1.5 px-1 bg-red-600 hover:bg-red-500 text-white rounded-lg text-[9px] font-bold flex items-center justify-center gap-0.5 shadow transition"
-                    title="Harcama Düş"
-                  >
-                    <Fuel className="w-2.5 h-2.5" />
-                    <span>- Harca</span>
-                  </button>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => onOpenScanForStation && onOpenScanForStation(station.id)}
+                      className="flex-1 py-1.5 px-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[9px] font-bold flex items-center justify-center gap-0.5 shadow transition"
+                      title="Pompa Oku"
+                    >
+                      <Camera className="w-2.5 h-2.5" />
+                      <span>Pompa</span>
+                    </button>
+                    <button
+                      onClick={() => onOpenTopupForStation && onOpenTopupForStation(station.id)}
+                      className="flex-1 py-1.5 px-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-[9px] font-bold flex items-center justify-center gap-0.5 shadow transition"
+                      title="Bakiye Yükle"
+                    >
+                      <CreditCard className="w-2.5 h-2.5" />
+                      <span>+ Bakiye</span>
+                    </button>
+                    <button
+                      onClick={() => onOpenExpenseForStation && onOpenExpenseForStation(station.id)}
+                      className="flex-1 py-1.5 px-1 bg-red-600 hover:bg-red-500 text-white rounded-lg text-[9px] font-bold flex items-center justify-center gap-0.5 shadow transition"
+                      title="Harcama Düş"
+                    >
+                      <Fuel className="w-2.5 h-2.5" />
+                      <span>- Harca</span>
+                    </button>
+                  </div>
+
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => onOpenAdjustBalance && onOpenAdjustBalance(station.id)}
+                      className="flex-1 py-1 px-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 hover:border-amber-500/50 rounded-lg text-[9px] font-medium flex items-center justify-center gap-1 transition"
+                      title="Bakiyeyi Düzelt / Eşitle"
+                    >
+                      <Sliders className="w-2.5 h-2.5 text-amber-400" />
+                      <span>Bakiyeyi Düzelt</span>
+                    </button>
+                    <button
+                      onClick={() => onDeleteStation && onDeleteStation(station.id)}
+                      className="py-1 px-2 bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-800/60 rounded-lg text-[9px] font-medium flex items-center justify-center gap-1 transition"
+                      title="İstasyonu Sil"
+                    >
+                      <Trash2 className="w-2.5 h-2.5 text-red-400" />
+                      <span>Sil</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

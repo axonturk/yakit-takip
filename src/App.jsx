@@ -3,6 +3,7 @@ import {
   loadData,
   saveData,
   calculateBalances,
+  formatTL,
   INITIAL_DATA
 } from './services/storage';
 
@@ -14,6 +15,7 @@ import PumpScannerModal from './components/PumpScannerModal';
 import TopupModal from './components/TopupModal';
 import ManualExpenseModal from './components/ManualExpenseModal';
 import AddStationModal from './components/AddStationModal';
+import AdjustBalanceModal from './components/AdjustBalanceModal';
 
 import { Home, Camera, CreditCard, Clock, Plus, Fuel } from 'lucide-react';
 
@@ -26,6 +28,7 @@ export default function App() {
   const [isTopupOpen, setIsTopupOpen] = useState(false);
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [isAddStationOpen, setIsAddStationOpen] = useState(false);
+  const [isAdjustBalanceOpen, setIsAdjustBalanceOpen] = useState(false);
 
   // Active bottom nav tab ('home' or 'history')
   const [activeTab, setActiveTab] = useState('home');
@@ -157,6 +160,53 @@ export default function App() {
     setIsManualOpen(true);
   };
 
+  const handleOpenAdjustBalance = (stId) => {
+    if (stId) setSelectedStationFilter(stId);
+    setIsAdjustBalanceOpen(true);
+  };
+
+  const handleDeleteStation = (stationId) => {
+    const st = data.stations.find((s) => s.id === stationId);
+    const stationName = st ? st.name : 'bu istasyonu';
+    const txCount = data.transactions.filter((t) => t.stationId === stationId).length;
+    if (!window.confirm(`"${stationName}" istasyonunu silmek istediğinize emin misiniz?${txCount > 0 ? `\n(Bu istasyona ait ${txCount} adet işlem kaydı da silinecektir)` : ''}`)) {
+      return;
+    }
+
+    setData((prev) => ({
+      stations: prev.stations.filter((s) => s.id !== stationId),
+      transactions: prev.transactions.filter((t) => t.stationId !== stationId)
+    }));
+
+    if (selectedStationFilter === stationId) {
+      setSelectedStationFilter(null);
+    }
+  };
+
+  const handleAdjustBalance = ({ stationId, newBalance, diff, date, note }) => {
+    const st = data.stations.find((s) => s.id === stationId);
+    const stationName = st ? st.name : 'İstasyon';
+
+    const tx = {
+      id: 'tx-' + Date.now(),
+      type: diff > 0 ? 'topup' : 'expense',
+      stationId,
+      stationName,
+      amount: Math.abs(diff),
+      liters: null,
+      unitPrice: null,
+      date: date || new Date().toISOString().slice(0, 16),
+      note: note || `Bakiye Düzeltme (${diff > 0 ? '+' : '-'}${formatTL(Math.abs(diff))})`
+    };
+
+    setData((prev) => ({
+      ...prev,
+      transactions: [tx, ...prev.transactions]
+    }));
+  };
+
+  const activeStation = data.stations.find((s) => s.id === selectedStationFilter);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans pb-24 selection:bg-amber-500 selection:text-slate-950">
       
@@ -192,6 +242,8 @@ export default function App() {
               onOpenScanForStation={handleOpenScan}
               onOpenTopupForStation={handleOpenTopup}
               onOpenExpenseForStation={handleOpenExpense}
+              onOpenAdjustBalance={handleOpenAdjustBalance}
+              onDeleteStation={handleDeleteStation}
             />
 
             {/* Recent Activity Mini-Section */}
@@ -224,6 +276,26 @@ export default function App() {
         )}
 
       </main>
+
+      {/* Active Station Indicator Ribbon above bottom nav */}
+      {activeStation && (
+        <div className="fixed bottom-[61px] left-0 right-0 z-30">
+          <div className="max-w-md mx-auto px-3">
+            <div className="bg-amber-500 text-slate-950 text-[10px] font-bold py-1 px-3 rounded-t-xl shadow-lg shadow-amber-950/30 flex items-center justify-between">
+              <span className="truncate flex items-center gap-1">
+                <span>🎯 Düğmeler Seçili İstasyon İçin:</span>
+                <span className="underline font-black">{activeStation.name}</span>
+              </span>
+              <button
+                onClick={() => setSelectedStationFilter(null)}
+                className="text-[9px] bg-slate-950/20 hover:bg-slate-950/40 text-slate-950 px-1.5 py-0.5 rounded transition shrink-0 ml-2"
+              >
+                Filtreyi Temizle ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Fixed Bottom Navigation Bar */}
       <nav className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-t border-slate-800 py-2 px-3 z-40">
@@ -301,6 +373,15 @@ export default function App() {
         stations={data.stations}
         defaultStationId={selectedStationFilter}
         onSaveExpense={handleSaveExpense}
+      />
+
+      <AdjustBalanceModal
+        isOpen={isAdjustBalanceOpen}
+        onClose={() => setIsAdjustBalanceOpen(false)}
+        stations={data.stations}
+        stationBalances={stationBalances}
+        defaultStationId={selectedStationFilter}
+        onAdjustBalance={handleAdjustBalance}
       />
 
       <AddStationModal

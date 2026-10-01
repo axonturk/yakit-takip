@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Edit3, X, AlertCircle, MinusCircle } from 'lucide-react';
+import { Edit3, X, AlertCircle, MinusCircle, Clock } from 'lucide-react';
 import StationLogo from './StationLogo';
 
 
@@ -161,9 +161,23 @@ export default function ManualExpenseModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Tarih & Saat</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] text-slate-400 font-medium">Tarih & Saat</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const now = new Date();
+                    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                    setDatetime(now.toISOString().slice(0, 16));
+                  }}
+                  className="text-[10px] text-amber-400 hover:text-amber-300 font-medium flex items-center gap-0.5"
+                >
+                  <Clock className="w-3 h-3" />
+                  <span>Şu An</span>
+                </button>
+              </div>
               <input
                 type="datetime-local"
                 value={datetime}
