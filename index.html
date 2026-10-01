@@ -13,12 +13,23 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <title>Yakıt Avans & Pompa Takip</title>
-    <script type="module" crossorigin src="./assets/index-BOaSAhw6.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-1EwZdGTG.css">
+    <script type="module" crossorigin src="./assets/index-BmYmuPTx.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-C5WAP-k1.css">
   </head>
   <body class="bg-slate-950 text-slate-100 antialiased selection:bg-amber-500 selection:text-black">
     <div id="root"></div>
     <script>
+      window.deferredInstallPrompt = null;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.deferredInstallPrompt = e;
+        window.dispatchEvent(new CustomEvent('pwa-prompt-ready'));
+      });
+      window.addEventListener('appinstalled', () => {
+        window.deferredInstallPrompt = null;
+        window.dispatchEvent(new CustomEvent('pwa-installed'));
+      });
+
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js').then((reg) => {
