@@ -5,21 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#090d16" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="YakıtTakip" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="YakıtTakip" />
-    <link rel="manifest" href="./manifest.json" />
+    <link rel="manifest" href="./manifest.json?v=3" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
     <title>Yakıt Avans & Pompa Takip</title>
-    <script type="module" crossorigin src="./assets/index-Dpqa5HR9.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DyhKVuWZ.css">
+    <script type="module" crossorigin src="./assets/index-D5-qdJtf.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BUXcfgy1.css">
   </head>
   <body class="bg-slate-950 text-slate-100 antialiased selection:bg-amber-500 selection:text-black">
     <div id="root"></div>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').then((reg) => {
+          navigator.serviceWorker.register('./sw.js?v=3').then((reg) => {
             console.log('PWA ServiceWorker registered:', reg.scope);
+            reg.update();
           }).catch((err) => {
             console.warn('PWA ServiceWorker registration failed:', err);
           });
