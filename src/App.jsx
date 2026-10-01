@@ -33,8 +33,37 @@ export default function App() {
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
 
   // PWA Install State
-  const [installPrompt, setInstallPrompt] = useState(null);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState(() => window.deferredInstallPrompt || null);
+  const [isInstalled, setIsInstalled] = useState(() => {
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  });
+  const [showAutoInstallCard, setShowAutoInstallCard] = useState(() => {
+    const isStand = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const dismissed = sessionStorage.getItem('pwa_card_dismissed');
+    return !isStand && !dismissed;
+  });
+
+  const handleInstallClick = async () => {
+    const promptEvent = window.deferredInstallPrompt || installPrompt;
+    if (promptEvent) {
+      try {
+        await promptEvent.prompt();
+        const choice = await promptEvent.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          setIsInstalled(true);
+          setInstallPrompt(null);
+          window.deferredInstallPrompt = null;
+          setShowAutoInstallCard(false);
+          setIsInstallModalOpen(false);
+          return;
+        }
+      } catch (err) {
+        console.warn('Install prompt error:', err);
+      }
+    }
+    // Fallback: If prompt is not directly available or rejected, open the step-by-step guidance modal
+    setIsInstallModalOpen(true);
+  };
 
   // Active bottom nav tab ('home' or 'history')
   const [activeTab, setActiveTab] = useState('home');
@@ -46,23 +75,33 @@ export default function App() {
       window.navigator.standalone === true;
     if (isStandalone) {
       setIsInstalled(true);
+      setShowAutoInstallCard(false);
     }
+
+    const handlePromptReady = () => {
+      setInstallPrompt(window.deferredInstallPrompt);
+    };
 
     const handleBeforeInstall = (e) => {
       e.preventDefault();
+      window.deferredInstallPrompt = e;
       setInstallPrompt(e);
     };
 
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setInstallPrompt(null);
+      window.deferredInstallPrompt = null;
+      setShowAutoInstallCard(false);
       setIsInstallModalOpen(false);
     };
 
+    window.addEventListener('pwa-prompt-ready', handlePromptReady);
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
     window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
+      window.removeEventListener('pwa-prompt-ready', handlePromptReady);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
@@ -264,7 +303,7 @@ export default function App() {
         onOpenAddStation={() => setIsAddStationOpen(true)}
         onExport={handleExportBackup}
         onImport={handleImportBackup}
-        onOpenInstall={() => setIsInstallModalOpen(true)}
+        onOpenInstall={handleInstallClick}
         isInstalled={isInstalled}
       />
 
@@ -284,11 +323,59 @@ export default function App() {
               </div>
             </div>
             <button
-              onClick={() => setIsInstallModalOpen(true)}
+              onClick={handleInstallClick}
               className="py-1 px-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-[11px] shadow transition shrink-0"
             >
               YÜKLE
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Auto-Prompt Card on Initial Launch (when not installed) */}
+      {showAutoInstallCard && !isInstalled && (
+        <div className="fixed inset-x-3 bottom-20 z-50 max-w-md mx-auto animate-in slide-in-from-bottom duration-300">
+          <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 p-3.5 rounded-2xl shadow-2xl border-2 border-amber-300 flex flex-col gap-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl animate-bounce">📲</span>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider">
+                    Uygulamayı Telefona Yükle
+                  </h3>
+                  <p className="text-[11px] font-semibold text-slate-800">
+                    Masaüstünden tek tıkla doğrudan açın
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowAutoInstallCard(false);
+                  sessionStorage.setItem('pwa_card_dismissed', '1');
+                }}
+                className="p-1 text-slate-800 hover:text-slate-950 text-xs font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleInstallClick}
+                className="flex-1 py-2.5 bg-slate-950 hover:bg-slate-900 text-amber-400 font-black rounded-xl text-xs shadow-md transition flex items-center justify-center gap-1.5 active:scale-95"
+              >
+                <span>ŞİMDİ YÜKLE</span>
+              </button>
+              <button
+                onClick={() => {
+                  setShowAutoInstallCard(false);
+                  sessionStorage.setItem('pwa_card_dismissed', '1');
+                }}
+                className="py-2.5 px-3 bg-white/20 hover:bg-white/30 text-slate-900 font-bold rounded-xl text-xs transition"
+              >
+                Daha Sonra
+              </button>
+            </div>
           </div>
         </div>
       )}

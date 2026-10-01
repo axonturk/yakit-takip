@@ -4,11 +4,13 @@ import { Smartphone, Download, X, CheckCircle2, AlertCircle, Share2, MoreVertica
 export default function InstallAppModal({ isOpen, onClose, installPrompt, isInstalled }) {
   if (!isOpen) return null;
 
+  const promptObj = window.deferredInstallPrompt || installPrompt;
+
   const handleNativeInstall = async () => {
-    if (installPrompt) {
+    if (promptObj) {
       try {
-        await installPrompt.prompt();
-        const choice = await installPrompt.userChoice;
+        await promptObj.prompt();
+        const choice = await promptObj.userChoice;
         if (choice.outcome === 'accepted') {
           onClose();
         }
@@ -42,7 +44,7 @@ export default function InstallAppModal({ isOpen, onClose, installPrompt, isInst
         </div>
 
         {/* Native Install Button if available */}
-        {installPrompt && !isInstalled && (
+        {promptObj && !isInstalled && (
           <div className="p-3.5 bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-transparent border border-amber-500/30 rounded-2xl space-y-2">
             <div className="text-xs font-semibold text-amber-300 flex items-center gap-1.5">
               <Download className="w-4 h-4 text-amber-400" />
