@@ -2,13 +2,14 @@
   "name": "Yakıt Avans & Pompa Takip",
   "short_name": "YakıtTakip",
   "description": "Akaryakıt istasyon avans bakiyesi ve kamera ile pompa ekranı okuyucu",
-  "id": "/",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#020617",
-  "theme_color": "#0f172a",
+  "theme_color": "#090d16",
   "orientation": "portrait",
+  "prefer_related_applications": false,
   "categories": ["utilities", "finance"],
   "icons": [
     {

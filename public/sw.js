@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yakit-takip-v2';
+const CACHE_NAME = 'yakit-takip-v3';
 
 // Assets to precache
 const PRECACHE_ASSETS = [
@@ -7,6 +7,7 @@ const PRECACHE_ASSETS = [
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  './icons/icon-maskable-512.png',
   './apple-touch-icon.png'
 ];
 
@@ -35,27 +36,36 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Only cache GET requests
   if (event.request.method !== 'GET') return;
 
-  // Stale-while-revalidate for local origin requests
   const url = new URL(event.request.url);
   if (url.origin === self.location.origin) {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
-        const fetchPromise = fetch(event.request)
+        if (cachedResponse) {
+          fetch(event.request)
+            .then((networkResponse) => {
+              if (networkResponse && networkResponse.status === 200) {
+                caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
+              }
+            })
+            .catch(() => {});
+          return cachedResponse;
+        }
+
+        return fetch(event.request)
           .then((networkResponse) => {
             if (networkResponse && networkResponse.status === 200) {
               const responseToCache = networkResponse.clone();
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
+              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
             }
             return networkResponse;
           })
-          .catch(() => cachedResponse);
-
-        return cachedResponse || fetchPromise;
+          .catch(() => {
+            if (event.request.mode === 'navigate') {
+              return caches.match('./index.html') || caches.match('./');
+            }
+          });
       })
     );
   }

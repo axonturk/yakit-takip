@@ -1,7 +1,7 @@
 import React from 'react';
-import { Fuel, PlusCircle, Download, Upload } from 'lucide-react';
+import { Fuel, PlusCircle, Download, Upload, Smartphone } from 'lucide-react';
 
-export default function Header({ onOpenTopup, onOpenAddStation, onExport, onImport }) {
+export default function Header({ onOpenTopup, onOpenAddStation, onExport, onImport, onOpenInstall, isInstalled }) {
   const fileInputRef = React.useRef(null);
 
   const handleFileChange = (e) => {
@@ -30,6 +30,17 @@ export default function Header({ onOpenTopup, onOpenAddStation, onExport, onImpo
         </div>
 
         <div className="flex items-center gap-1.5">
+          {!isInstalled && (
+            <button
+              onClick={onOpenInstall}
+              title="Telefona Yükle"
+              className="p-1.5 px-2 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-semibold flex items-center gap-1 transition animate-pulse"
+            >
+              <Smartphone className="w-4 h-4 text-amber-400" />
+              <span className="text-[11px]">Yükle</span>
+            </button>
+          )}
+
           <button
             onClick={onOpenAddStation}
             title="Yeni İstasyon Ekle"

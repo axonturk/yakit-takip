@@ -16,6 +16,7 @@ import TopupModal from './components/TopupModal';
 import ManualExpenseModal from './components/ManualExpenseModal';
 import AddStationModal from './components/AddStationModal';
 import AdjustBalanceModal from './components/AdjustBalanceModal';
+import InstallAppModal from './components/InstallAppModal';
 
 import { Home, Camera, CreditCard, Clock, Plus, Fuel } from 'lucide-react';
 
@@ -29,9 +30,43 @@ export default function App() {
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [isAddStationOpen, setIsAddStationOpen] = useState(false);
   const [isAdjustBalanceOpen, setIsAdjustBalanceOpen] = useState(false);
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+
+  // PWA Install State
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   // Active bottom nav tab ('home' or 'history')
   const [activeTab, setActiveTab] = useState('home');
+
+  // Check PWA standalone mode and listen for install prompt
+  useEffect(() => {
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+    if (isStandalone) {
+      setIsInstalled(true);
+    }
+
+    const handleBeforeInstall = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setInstallPrompt(null);
+      setIsInstallModalOpen(false);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
 
   // Sync state to localStorage
   useEffect(() => {
@@ -216,7 +251,34 @@ export default function App() {
         onOpenAddStation={() => setIsAddStationOpen(true)}
         onExport={handleExportBackup}
         onImport={handleImportBackup}
+        onOpenInstall={() => setIsInstallModalOpen(true)}
+        isInstalled={isInstalled}
       />
+
+      {/* Install Banner (shows when app is not installed yet) */}
+      {!isInstalled && (
+        <div className="bg-gradient-to-r from-amber-500/20 via-amber-400/10 to-slate-900 border-b border-amber-500/30 px-3 py-2">
+          <div className="max-w-md mx-auto flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 truncate">
+              <span className="text-base animate-bounce shrink-0">📲</span>
+              <div className="truncate">
+                <span className="text-[11px] font-bold text-amber-300 block truncate">
+                  Uygulama Olarak Kullanın
+                </span>
+                <span className="text-[10px] text-slate-400 block truncate">
+                  Telefona yükleyin, reklamsız & internetsiz açın
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsInstallModalOpen(true)}
+              className="py-1 px-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-[11px] shadow transition shrink-0"
+            >
+              YÜKLE
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Container (Mobile Max Width) */}
       <main className="max-w-md mx-auto w-full p-4 space-y-5 flex-1">
@@ -388,6 +450,13 @@ export default function App() {
         isOpen={isAddStationOpen}
         onClose={() => setIsAddStationOpen(false)}
         onAddStation={handleAddStation}
+      />
+
+      <InstallAppModal
+        isOpen={isInstallModalOpen}
+        onClose={() => setIsInstallModalOpen(false)}
+        installPrompt={installPrompt}
+        isInstalled={isInstalled}
       />
 
     </div>
