@@ -53,7 +53,8 @@ export default function StationList({
       <div className="grid grid-cols-2 gap-2.5">
         {list.map(({ station, balance, lastActivity }) => {
           const isSelected = selectedStationFilter === station.id;
-          const isLow = balance < 300;
+          const isNegative = balance < 0;
+          const isLow = balance < 300 && !isNegative;
 
           return (
             <div
@@ -85,8 +86,19 @@ export default function StationList({
               </div>
 
               <div className="mt-2.5 pt-2 border-t border-slate-700/50">
-                <div className="text-[10px] text-slate-400">Kalan Bakiye:</div>
-                <div className={`text-base font-black tracking-tight ${isLow ? 'text-amber-400' : 'text-emerald-400'}`}>
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-slate-400">
+                    {isNegative ? 'Borç / Eksi:' : 'Kalan Bakiye:'}
+                  </span>
+                  {isNegative && (
+                    <span className="text-[9px] px-1.5 py-0.2 bg-rose-500/20 text-rose-300 rounded font-semibold border border-rose-500/30">
+                      EKSİDE
+                    </span>
+                  )}
+                </div>
+                <div className={`text-base font-black tracking-tight ${
+                  isNegative ? 'text-rose-400' : isLow ? 'text-amber-400' : 'text-emerald-400'
+                }`}>
                   {formatTL(balance)}
                 </div>
               </div>

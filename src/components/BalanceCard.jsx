@@ -19,21 +19,29 @@ export default function BalanceCard({
         <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
         
         <div className="flex justify-between items-center mb-1">
-          <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            Toplam Kalan Avans Bakiyesi
+          <span className={`text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 ${
+            totalBalance < 0 ? 'text-rose-400' : 'text-amber-400'
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${
+              totalBalance < 0 ? 'bg-rose-400' : 'bg-amber-400'
+            } animate-pulse`} />
+            {totalBalance < 0 ? 'Toplam Borç / Eksi Bakiye' : 'Toplam Kalan Avans Bakiyesi'}
           </span>
           <span className="text-[11px] bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded-full font-medium">
             {stationCount} İstasyon
           </span>
         </div>
 
-        <div className="text-3xl font-extrabold text-white tracking-tight my-1">
+        <div className={`text-3xl font-extrabold tracking-tight my-1 ${
+          totalBalance < 0 ? 'text-rose-400' : 'text-white'
+        }`}>
           {formatTL(totalBalance)}
         </div>
 
         <p className="text-[11px] text-slate-400">
-          İstasyonlara önceden ödenmiş ve depoya aktarılmayı bekleyen toplam bakiye
+          {totalBalance < 0
+            ? 'İstasyonlara olan toplam kapatılması gereken borç / eksi bakiye tutarı'
+            : 'İstasyonlara önceden ödenmiş ve depoya aktarılmayı bekleyen toplam bakiye'}
         </p>
 
         {/* Small stats row */}

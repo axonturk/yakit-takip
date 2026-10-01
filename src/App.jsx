@@ -136,6 +136,19 @@ export default function App() {
         note: 'Başlangıç Avans Bakiyesi'
       };
       updatedTx = [topupTx, ...updatedTx];
+    } else if (initialBal < 0) {
+      const debtTx = {
+        id: 'tx-' + Date.now(),
+        type: 'expense',
+        stationId: newStation.id,
+        stationName: newStation.name,
+        amount: Math.abs(initialBal),
+        liters: null,
+        unitPrice: null,
+        date: new Date().toISOString().slice(0, 16),
+        note: 'Başlangıç Borç / Eksi Bakiye'
+      };
+      updatedTx = [debtTx, ...updatedTx];
     }
 
     setData({

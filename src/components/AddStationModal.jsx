@@ -33,7 +33,7 @@ export default function AddStationModal({
     };
 
     const initBal = parseFloat(initialBalance);
-    onAddStation(newStation, initBal && !isNaN(initBal) && initBal > 0 ? initBal : 0);
+    onAddStation(newStation, !isNaN(initBal) && initBal !== 0 ? initBal : 0);
 
     setName('');
     setInitialBalance('');
@@ -107,17 +107,44 @@ export default function AddStationModal({
           </div>
 
           <div>
-            <label className="block text-[11px] text-slate-400 mb-1 font-medium">
-              Başlangıç Avans Bakiyesi (TL) <span className="text-slate-500">(Opsiyonel)</span>
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] text-slate-400 font-medium">
+                Başlangıç Avans Bakiyesi (TL) <span className="text-slate-500">(Opsiyonel)</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  if (initialBalance.startsWith('-')) {
+                    setInitialBalance(initialBalance.slice(1));
+                  } else if (initialBalance) {
+                    setInitialBalance('-' + initialBalance);
+                  }
+                }}
+                className="text-[10px] px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 rounded font-mono transition"
+                title="İşareti Değiştir (Eksi/Artı)"
+              >
+                ± Eksi / Artı
+              </button>
+            </div>
             <input
               type="number"
               step="0.01"
               value={initialBalance}
               onChange={(e) => setInitialBalance(e.target.value)}
-              placeholder="Şu an içeride kalan paranız varsa (örn: 2000)"
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-400"
+              placeholder="Varsa mevcut bakiye (örn: 2000 veya borç ise -500)"
+              className={`w-full bg-slate-900 border rounded-xl p-2.5 text-xs text-white focus:outline-none ${
+                parseFloat(initialBalance) < 0 ? 'border-rose-500 text-rose-300' : 'border-slate-700 focus:border-amber-400'
+              }`}
             />
+            {initialBalance && !isNaN(parseFloat(initialBalance)) && (
+              <p className={`text-[10px] mt-1 font-medium ${
+                parseFloat(initialBalance) < 0 ? 'text-rose-400' : 'text-emerald-400'
+              }`}>
+                {parseFloat(initialBalance) < 0
+                  ? `İstasyon hesabı ${Math.abs(parseFloat(initialBalance))} TL eksi / borç ile başlatılacak.`
+                  : `İstasyon hesabı ${parseFloat(initialBalance)} TL avans ile başlatılacak.`}
+              </p>
+            )}
           </div>
 
           <button

@@ -56,8 +56,8 @@ export default function AdjustBalanceModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!isValidNum || parsedNewBal < 0) {
-      setErrorMsg('Lütfen geçerli bir bakiye tutarı girin (0 veya üzeri)!');
+    if (!isValidNum) {
+      setErrorMsg('Lütfen geçerli bir bakiye tutarı girin!');
       return;
     }
 
@@ -146,19 +146,39 @@ export default function AdjustBalanceModal({
             </div>
 
             <div className="pt-2 border-t border-slate-700/60">
-              <label className="block text-xs font-bold text-amber-400 mb-1">
-                Gerçek / Yeni Bakiye Tutarı (TL) *
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-amber-400">
+                  Gerçek / Yeni Bakiye Tutarı (TL) *
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newBalance.startsWith('-')) {
+                      setNewBalance(newBalance.slice(1));
+                    } else if (newBalance) {
+                      setNewBalance('-' + newBalance);
+                    }
+                  }}
+                  className="text-[10px] px-2 py-0.5 bg-slate-700 hover:bg-slate-600 text-amber-300 rounded-md font-mono font-bold transition"
+                  title="İşareti Değiştir (Pozitif / Negatif)"
+                >
+                  ± Eksi / Artı Yap
+                </button>
+              </div>
               <input
                 type="number"
                 step="0.01"
-                min="0"
                 value={newBalance}
                 onChange={(e) => setNewBalance(e.target.value)}
-                placeholder="Örn: 1500"
-                className="w-full bg-slate-900 border-2 border-amber-500/80 rounded-xl p-3 text-lg font-extrabold text-white focus:outline-none focus:border-amber-400"
+                placeholder="Örn: 1500 veya borç ise -500"
+                className={`w-full bg-slate-900 border-2 rounded-xl p-3 text-lg font-extrabold text-white focus:outline-none ${
+                  isValidNum && parsedNewBal < 0
+                    ? 'border-rose-500 text-rose-300 focus:border-rose-400'
+                    : 'border-amber-500/80 focus:border-amber-400'
+                }`}
                 autoFocus
               />
+              <p className="text-[10px] text-slate-500 mt-1">İstasyon hesabınız ekside / borçtaysa eksi (-) tutar girebilirsiniz.</p>
             </div>
 
             {isValidNum && Math.abs(diff) > 0.001 && (
@@ -169,7 +189,9 @@ export default function AdjustBalanceModal({
               }`}>
                 <span>Fark Tutarı:</span>
                 <span>
-                  {diff > 0 ? `+${formatTL(diff)} (Avans eklenecek)` : `${formatTL(diff)} (Harcama düşülecek)`}
+                  {diff > 0
+                    ? `+${formatTL(diff)} (Avans eklenecek)`
+                    : `-${formatTL(Math.abs(diff))} (Harcama / borç yazılacak)`}
                 </span>
               </div>
             )}
