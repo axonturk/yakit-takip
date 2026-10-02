@@ -12,6 +12,7 @@ export default function PumpScannerModal({
   defaultStationId
 }) {
   const [cameraActive, setCameraActive] = useState(false);
+  const [hasImage, setHasImage] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [ocrProgress, setOcrProgress] = useState(0);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -33,6 +34,7 @@ export default function PumpScannerModal({
   // Default to current local datetime & pre-select defaultStationId
   useEffect(() => {
     if (isOpen) {
+      setHasImage(false);
       const now = new Date();
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
       setDatetime(now.toISOString().slice(0, 16));
@@ -47,21 +49,54 @@ export default function PumpScannerModal({
     }
   }, [isOpen, defaultStationId, stations]);
 
+  // Synchronize stream to video element whenever camera becomes active
+  useEffect(() => {
+    if (cameraActive && streamRef.current && videoRef.current) {
+      if (videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+      }
+      videoRef.current.muted = true;
+      videoRef.current.play().catch(err => console.warn('Video play error in effect:', err));
+    }
+  }, [cameraActive]);
+
   const startCamera = async () => {
     setErrorMsg(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
+      let stream;
+      try {
+        // First try ideal rear camera with standard resolution
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        });
+      } catch (e1) {
+        console.warn('Ideal rear camera constraint failed, falling back to default video:', e1);
+        // Fallback for devices with strict constraints or front-only devices
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+      }
+
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        videoRef.current.muted = true;
+        try {
+          await videoRef.current.play();
+        } catch (playErr) {
+          console.warn('Video play direct error:', playErr);
+        }
       }
       setCameraActive(true);
     } catch (err) {
       console.warn('Camera access issue:', err);
-      setErrorMsg('Kamera erişimi sağlanamadı. Fotoğraf yükleyebilir veya örnek test ekranlarını kullanabilirsiniz.');
+      setErrorMsg('Kamera erişimi sağlanamadı. Lütfen kamera izni verildiğinden emin olun veya "Görsel Yükle" seçeneğini kullanın.');
       setCameraActive(false);
     }
   };
@@ -70,6 +105,9 @@ export default function PumpScannerModal({
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
     setCameraActive(false);
   };
@@ -83,6 +121,7 @@ export default function PumpScannerModal({
     canvas.height = video.videoHeight || 480;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    setHasImage(true);
     stopCamera();
     await processImage(canvas);
   };
@@ -102,6 +141,7 @@ export default function PumpScannerModal({
           canvas.height = img.height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0);
+          setHasImage(true);
           processImage(canvas);
         }
       };
@@ -145,6 +185,7 @@ export default function PumpScannerModal({
   // Realistic sample simulation (for fast desktop & mobile testing)
   const loadPresetSample = (type) => {
     stopCamera();
+    setHasImage(true);
     const canvas = canvasRef.current;
     if (!canvas) return;
     canvas.width = 600;
@@ -248,18 +289,25 @@ export default function PumpScannerModal({
         {/* Viewport / Canvas / Video area */}
         <div className="my-3">
           <div className="relative aspect-[16/10] bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center">
-            {cameraActive ? (
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <canvas
-                ref={canvasRef}
-                className="w-full h-full object-contain"
-              />
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className={`w-full h-full object-cover ${cameraActive ? 'block' : 'hidden'}`}
+            />
+            <canvas
+              ref={canvasRef}
+              className={`w-full h-full object-contain ${cameraActive || !hasImage ? 'hidden' : 'block'}`}
+            />
+
+            {/* Placeholder state when not active and no image drawn */}
+            {!cameraActive && !hasImage && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 pointer-events-none p-4 text-center">
+                <Camera className="w-10 h-10 mb-2 stroke-[1.5] text-slate-600" />
+                <p className="text-xs font-medium text-slate-400">Kamerayı başlatın veya görsel yükleyin</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Pompadaki Litre, Tutar ve Fiyat otomatik okunacaktır</p>
+              </div>
             )}
 
             {/* Scanning viewfinder overlay when camera is on */}
