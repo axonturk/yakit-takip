@@ -171,6 +171,9 @@ export default function TransactionHistory({
                           {tx.unitPrice ? ` @ ₺${tx.unitPrice}/L` : ''}
                         </span>
                       )}
+                      {tx.fuelType && <span>{tx.fuelType}</span>}
+                      {tx.paymentMethod && <span>{tx.paymentMethod}</span>}
+                      {tx.receiptNo && <span className="text-slate-300">Fiş {tx.receiptNo}</span>}
                       {tx.plate && (
                         <span className="font-mono text-[10px] text-slate-200 bg-slate-700/70 px-1 rounded">{tx.plate}</span>
                       )}

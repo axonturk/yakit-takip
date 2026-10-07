@@ -1,7 +1,8 @@
 import React from 'react';
-import { Fuel, PlusCircle, Download, Upload, Smartphone } from 'lucide-react';
+import { PlusCircle, Download, Upload, Smartphone } from 'lucide-react';
+import logo from '../assets/logo.png';
 
-export default function Header({ onOpenTopup, onOpenAddStation, onExport, onImport, onOpenInstall, isInstalled }) {
+export default function Header({ onOpenAddStation, onExport, onImport, onOpenInstall, isInstalled }) {
   const fileInputRef = React.useRef(null);
 
   const handleFileChange = (e) => {
@@ -17,9 +18,7 @@ export default function Header({ onOpenTopup, onOpenAddStation, onExport, onImpo
     <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 sticky top-0 z-40 backdrop-blur-md bg-slate-900/90">
       <div className="max-w-md mx-auto flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-slate-950 shadow-md">
-            <Fuel className="w-5 h-5 stroke-[2.2]" />
-          </div>
+          <img src={logo} alt="Depozit" className="w-10 h-10 rounded-xl shadow-md" />
           <div>
             <h1 className="text-sm font-bold text-white tracking-tight flex items-center gap-1.5">
               Depozit

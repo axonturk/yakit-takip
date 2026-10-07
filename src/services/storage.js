@@ -255,7 +255,10 @@ export function transactionLabel(tx) {
 export function buildCSV(transactions) {
   const num = (v) => (v === null || v === undefined || v === '' ? '' : String(v).replace('.', ','));
   const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const header = ['Tarih', 'Tür', 'İstasyon', 'Plaka', 'Tutar', 'Litre', 'Birim Fiyat', 'Not', 'Kayıt No'];
+  const header = [
+    'Tarih', 'Tür', 'İstasyon', 'Plaka', 'Tutar', 'Litre', 'Birim Fiyat',
+    'Yakıt', 'Ödeme', 'Fiş No', 'Not', 'Kayıt No'
+  ];
   const rows = transactions.map((t) =>
     [
       cell(t.date ? t.date.replace('T', ' ') : ''),
@@ -265,6 +268,9 @@ export function buildCSV(transactions) {
       cell(num(t.type === 'expense' ? -roundMoney(t.amount) : roundMoney(t.amount))),
       cell(num(t.liters)),
       cell(num(t.unitPrice)),
+      cell(t.fuelType || ''),
+      cell(t.paymentMethod || ''),
+      cell(t.receiptNo || ''),
       cell(t.note || ''),
       cell(t.id)
     ].join(';')
@@ -296,4 +302,49 @@ export function formatTRDate(isoString) {
   } catch {
     return isoString;
   }
+}
+
+export const FUEL_TYPES = ['Benzin', 'Motorin', 'LPG', 'Elektrik'];
+export const PAYMENT_METHODS = ['Nakit', 'Kredi kartı', 'Banka kartı', 'Havale / EFT', 'Diğer'];
+export const DEFAULT_LOW_BALANCE = 300;
+
+// Latest expense details for a station, used to prefill the pump-side form.
+export function lastExpenseAt(transactions, stationId) {
+  const expenses = sortTransactions(
+    transactions.filter((t) => t.type === 'expense' && t.stationId === stationId && !t.kind)
+  );
+  if (expenses.length === 0) return null;
+  const withPrice = expenses.find((t) => t.unitPrice);
+  return {
+    amount: expenses[0].amount,
+    unitPrice: withPrice ? withPrice.unitPrice : null,
+    fuelType: expenses[0].fuelType || null
+  };
+}
+
+// A likely double entry: same receipt number at the station, or the same
+// amount at the same station within 15 minutes.
+export function findDuplicate(transactions, candidate) {
+  const receipt = (candidate.receiptNo || '').trim();
+  const at = new Date(candidate.date).getTime();
+  return (
+    transactions.find((t) => {
+      if (t.id === candidate.id || t.stationId !== candidate.stationId || t.type !== candidate.type) return false;
+      if (receipt && (t.receiptNo || '').trim() === receipt) return true;
+      const sameAmount = roundMoney(t.amount) === roundMoney(candidate.amount);
+      const close = Math.abs(new Date(t.date).getTime() - at) <= 15 * 60 * 1000;
+      return sameAmount && close;
+    }) || null
+  );
+}
+
+export function lowBalanceLimit(station) {
+  const v = Number(station?.lowBalanceThreshold);
+  return Number.isFinite(v) && v >= 0 ? v : DEFAULT_LOW_BALANCE;
+}
+
+// Days since the last backup, or null if never backed up.
+export function daysSince(isoDate, now = new Date()) {
+  if (!isoDate) return null;
+  return Math.floor((now - new Date(isoDate)) / 86400000);
 }

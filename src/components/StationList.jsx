@@ -1,6 +1,6 @@
 import React from 'react';
-import { formatTL, formatTRDate } from '../services/storage';
-import { Plus, ChevronRight, CreditCard, Fuel, Sliders, Trash2 } from 'lucide-react';
+import { formatTL, formatTRDate, lowBalanceLimit } from '../services/storage';
+import { Plus, ChevronRight, CreditCard, Fuel, Sliders, Trash2, Settings2 } from 'lucide-react';
 import StationLogo from './StationLogo';
 
 export default function StationList({
@@ -11,6 +11,7 @@ export default function StationList({
   onOpenTopupForStation,
   onOpenExpenseForStation,
   onOpenAdjustBalance,
+  onEditStation,
   onDeleteStation
 }) {
   const list = Object.values(stationBalances);
@@ -53,7 +54,7 @@ export default function StationList({
         {list.map(({ station, balance, lastActivity }) => {
           const isSelected = selectedStationFilter === station.id;
           const isNegative = balance < 0;
-          const isLow = balance < 300 && !isNegative;
+          const isLow = balance < lowBalanceLimit(station) && !isNegative;
 
           return (
             <div
@@ -92,6 +93,11 @@ export default function StationList({
                   {isNegative && (
                     <span className="text-[9px] px-1.5 py-0.2 bg-rose-500/20 text-rose-300 rounded font-semibold border border-rose-500/30">
                       EKSİDE
+                    </span>
+                  )}
+                  {isLow && (
+                    <span className="text-[9px] px-1.5 py-0.2 bg-amber-500/20 text-amber-300 rounded font-semibold border border-amber-500/30">
+                      AZALDI
                     </span>
                   )}
                 </div>
@@ -141,6 +147,13 @@ export default function StationList({
                     >
                       <Sliders className="w-2.5 h-2.5 text-amber-400" />
                       <span>Bakiyeyi Düzelt</span>
+                    </button>
+                    <button
+                      onClick={() => onEditStation && onEditStation(station)}
+                      className="py-1 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-[9px] font-medium flex items-center justify-center transition"
+                      title="İstasyonu Düzenle"
+                    >
+                      <Settings2 className="w-2.5 h-2.5" />
                     </button>
                     <button
                       onClick={() => onDeleteStation && onDeleteStation(station.id)}
