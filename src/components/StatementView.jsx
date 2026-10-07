@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Printer, Share2, Download } from 'lucide-react';
+import { Printer, Download } from 'lucide-react';
+import WhatsAppShare from './WhatsAppShare';
 import {
   buildStatement,
   statementText,
@@ -42,17 +43,14 @@ export default function StatementView({ stations, transactions, defaultStationId
     );
   }
 
-  const handleShare = () => {
-    const text = statementText(stationName, from, to, s);
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
-  };
+  const csvName = `hisapo_ekstre_${stationName.replace(/\s+/g, '_')}_${from}_${to}.csv`;
 
   const handleCSV = () => {
     const blob = new Blob([buildCSV(s.rows.map((r) => r.tx))], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `hisapo_ekstre_${stationName.replace(/\s+/g, '_')}_${from}_${to}.csv`;
+    a.download = csvName;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
@@ -125,12 +123,10 @@ export default function StatementView({ stations, transactions, defaultStationId
       </div>
 
       <div className="grid grid-cols-3 gap-2">
-        <button
-          onClick={handleShare}
-          className="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1 transition"
-        >
-          <Share2 className="w-3.5 h-3.5" /> WhatsApp
-        </button>
+        <WhatsAppShare
+          text={statementText(stationName, from, to, s)}
+          file={{ content: buildCSV(s.rows.map((r) => r.tx)), name: csvName }}
+        />
         <button
           onClick={() => window.print()}
           className="py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-xs font-bold rounded-xl flex items-center justify-center gap-1 transition"
