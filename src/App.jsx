@@ -28,6 +28,8 @@ import EditTransactionModal from './components/EditTransactionModal';
 import EditStationModal from './components/EditStationModal';
 import StatementView from './components/StatementView';
 import PhotoViewer from './components/PhotoViewer';
+import CloudModal from './components/CloudModal';
+import useCloudSync from './services/useCloudSync';
 import { savePhoto, newPhotoId, cleanupPhotos } from './services/photos';
 
 import { Home, CreditCard, Clock, Fuel, Sliders } from 'lucide-react';
@@ -86,6 +88,8 @@ export default function App() {
   // History tab shows either the movement list or the period statement
   const [historyView, setHistoryView] = useState('list');
   const [viewingPhotoTx, setViewingPhotoTx] = useState(null);
+  const [isCloudOpen, setIsCloudOpen] = useState(false);
+  const cloud = useCloudSync(data, setData);
 
   // Drop receipt photos left behind by deleted or edited transactions, once per launch
   useEffect(() => {
@@ -513,6 +517,11 @@ export default function App() {
       {/* Header */}
       <Header
         onOpenAddStation={() => setIsAddStationOpen(true)}
+        cloudStatus={cloud.workspaceId ? cloud.status : 'off'}
+        onOpenCloud={() => {
+          cloud.activate();
+          setIsCloudOpen(true);
+        }}
         theme={data.settings.theme}
         onToggleTheme={handleToggleTheme}
         onExport={handleExportBackup}
@@ -864,6 +873,14 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <CloudModal
+        isOpen={isCloudOpen}
+        onClose={() => setIsCloudOpen(false)}
+        cloud={cloud}
+        localCount={data.isSample ? 0 : data.stations.length + data.transactions.length}
+        isSample={data.isSample}
+      />
 
       <PhotoViewer transaction={viewingPhotoTx} onClose={() => setViewingPhotoTx(null)} />
 

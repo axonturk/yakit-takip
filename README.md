@@ -17,7 +17,8 @@ Canlı: https://axonturk.github.io/yakit-takip/
 7. **Geçmiş:** Güne göre gruplu liste; plaka, fiş no, not veya tutarla arama ve tarih aralığı filtresi.
 8. **Fiş / dekont fotoğrafı:** Harcama ve avans kaydına telefon kamerasıyla fotoğraf eklenir; küçültülüp cihazda (IndexedDB) saklanır, yedek dosyasına girmez.
 9. **Açık / koyu tema:** Başlıktaki güneş/ay düğmesiyle değişir, tercih saklanır.
-10. **Çevrimdışı PWA:** Telefona uygulama gibi kurulur, veriler cihazda (`localStorage`) tutulur.
+10. **Bulut yedek ve ortak defter:** E-posta koduyla giriş; kayıtlar Supabase'e yedeklenir, davet koduyla ekip aynı defteri kullanır. İnternet yokken çalışır, bağlanınca eşitler. Kurulum: `supabase/schema.sql` ve `supabase/email-template.html`.
+11. **Çevrimdışı PWA:** Telefona uygulama gibi kurulur, veriler cihazda (`localStorage`) tutulur.
 
 ## 📲 Telefona Nasıl Yüklenir?
 
