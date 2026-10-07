@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Edit3, X, AlertCircle, MinusCircle, Clock } from 'lucide-react';
 import StationLogo from './StationLogo';
+import { FUEL_TYPES, lastExpenseAt, findDuplicate, formatTL, formatTRDate } from '../services/storage';
 
 
 export default function ManualExpenseModal({
@@ -9,6 +10,8 @@ export default function ManualExpenseModal({
   stations,
   onSaveExpense,
   defaultStationId,
+  lastStationId,
+  transactions = [],
   plates = []
 }) {
   const [stationId, setStationId] = useState(defaultStationId || stations[0]?.id || '');
@@ -18,6 +21,8 @@ export default function ManualExpenseModal({
   const [datetime, setDatetime] = useState('');
   const [note, setNote] = useState('');
   const [plate, setPlate] = useState('');
+  const [fuelType, setFuelType] = useState('');
+  const [receiptNo, setReceiptNo] = useState('');
   const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
@@ -27,13 +32,33 @@ export default function ManualExpenseModal({
       const now = new Date();
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
       setDatetime(now.toISOString().slice(0, 16));
-      if (defaultStationId && stations.some(s => s.id === defaultStationId)) {
-        setStationId(defaultStationId);
-      } else if (stations.length > 0 && (!stationId || !stations.some(s => s.id === stationId))) {
-        setStationId(stations[0].id);
-      }
+      // Selected station first, else the station used last, else the first one
+      const target =
+        [defaultStationId, lastStationId].find((id) => id && stations.some((s) => s.id === id)) ||
+        stations[0]?.id ||
+        '';
+      selectStation(target);
+      setAmount('');
+      setLiters('');
+      setReceiptNo('');
     }
   }, [isOpen, defaultStationId, stations]);
+
+  const last = lastExpenseAt(transactions, stationId);
+
+  // Prefill the station's last unit price and fuel type
+  const selectStation = (id) => {
+    setStationId(id);
+    const info = lastExpenseAt(transactions, id);
+    setUnitPrice(info?.unitPrice ? String(info.unitPrice) : '');
+    setFuelType(info?.fuelType || '');
+  };
+
+  const handleQuickAmount = (value) => {
+    setAmount(String(value));
+    const pv = parseFloat(unitPrice);
+    setLiters(pv > 0 ? (value / pv).toFixed(2) : '');
+  };
 
   // Litre ve birim fiyat girilirse toplam tutarı otomatik hesapla
   const recalcAmount = (l, p) => {
@@ -62,20 +87,41 @@ export default function ManualExpenseModal({
       return;
     }
 
-    onSaveExpense({
+    const pv = unitPrice ? parseFloat(unitPrice) : null;
+    // Amount and price given but no liters: derive liters
+    const lv = liters ? parseFloat(liters) : pv > 0 ? Math.round((parsedAmount / pv) * 100) / 100 : null;
+
+    const candidate = {
+      type: 'expense',
       stationId,
       amount: parsedAmount,
-      liters: liters ? parseFloat(liters) : null,
-      unitPrice: unitPrice ? parseFloat(unitPrice) : null,
+      liters: lv,
+      unitPrice: pv,
+      fuelType: fuelType || null,
+      receiptNo: receiptNo.trim() || null,
       plate: plate.trim().toUpperCase() || null,
       date: datetime,
       note: note || 'Yakıt Alımı'
-    });
+    };
+
+    const dup = findDuplicate(transactions, candidate);
+    if (
+      dup &&
+      !window.confirm(
+        `Benzer bir kayıt zaten var:\n${dup.stationName} · ${formatTL(dup.amount)} · ${formatTRDate(dup.date)}` +
+          (dup.receiptNo ? ` · Fiş ${dup.receiptNo}` : '') +
+          '\n\nYine de kaydedilsin mi?'
+      )
+    ) {
+      return;
+    }
+
+    onSaveExpense(candidate);
 
     setAmount('');
     setLiters('');
-    setUnitPrice('');
     setNote('');
+    setReceiptNo('');
     onClose();
   };
 
@@ -129,7 +175,7 @@ export default function ManualExpenseModal({
               />
               <select
                 value={stationId}
-                onChange={(e) => setStationId(e.target.value)}
+                onChange={(e) => selectStation(e.target.value)}
                 className="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-400"
               >
                 {stations.map(st => (
@@ -153,8 +199,21 @@ export default function ManualExpenseModal({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Örn: 1500"
+              autoFocus
               className="w-full bg-slate-900 border-2 border-amber-500/80 rounded-xl p-3 text-lg font-extrabold text-white focus:outline-none focus:border-amber-400"
             />
+            <div className="flex gap-1.5 mt-1.5">
+              {[...new Set([last?.amount, 500, 1000, 2000].filter(Boolean))].slice(0, 4).map((v, i) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => handleQuickAmount(v)}
+                  className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-[11px] font-semibold text-slate-200 transition"
+                >
+                  {i === 0 && last?.amount === v ? `Son: ${formatTL(v)}` : formatTL(v)}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -183,6 +242,32 @@ export default function ManualExpenseModal({
                 value={unitPrice}
                 onChange={(e) => handleUnitPriceChange(e.target.value)}
                 placeholder="Örn: 44.10"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">Yakıt Türü</label>
+              <select
+                value={fuelType}
+                onChange={(e) => setFuelType(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
+              >
+                <option value="">Seçilmedi</option>
+                {FUEL_TYPES.map((f) => (
+                  <option key={f} value={f}>{f}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">Fiş / Belge No</label>
+              <input
+                type="text"
+                value={receiptNo}
+                onChange={(e) => setReceiptNo(e.target.value)}
+                placeholder="Opsiyonel"
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
               />
             </div>

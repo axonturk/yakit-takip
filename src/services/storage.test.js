@@ -108,7 +108,7 @@ describe('buildCSV', () => {
     const csv = buildCSV([tx('1', 'expense', 'a', 1250.5, '2026-10-01T10:00', { liters: 28.4, plate: '34 ABC 12' })]);
     expect(csv.startsWith('﻿')).toBe(true);
     const [header, row] = csv.slice(1).split('\r\n');
-    expect(header.split(';')).toHaveLength(9);
+    expect(header.split(';')).toHaveLength(12);
     expect(row).toContain('"-1250,5"');
     expect(row).toContain('"28,4"');
     expect(row).toContain('"34 ABC 12"');
@@ -124,5 +124,51 @@ describe('time and money helpers', () => {
   it('roundMoney rounds to kuruş', () => {
     expect(roundMoney(44.025)).toBeCloseTo(44.03, 2);
     expect(roundMoney('abc')).toBe(0);
+  });
+});
+
+import { lastExpenseAt, findDuplicate, lowBalanceLimit, daysSince } from './storage';
+
+describe('lastExpenseAt', () => {
+  it('returns the latest expense and the latest known unit price', () => {
+    const list = [
+      tx('1', 'expense', 'a', 400, '2026-10-01T10:00', { unitPrice: 44.1, fuelType: 'Motorin' }),
+      tx('2', 'expense', 'a', 500, '2026-10-05T10:00'),
+      tx('3', 'expense', 'b', 900, '2026-10-06T10:00', { unitPrice: 50 }),
+      tx('4', 'expense', 'a', 999, '2026-10-07T10:00', { kind: 'adjustment' })
+    ];
+    expect(lastExpenseAt(list, 'a')).toEqual({ amount: 500, unitPrice: 44.1, fuelType: null });
+    expect(lastExpenseAt(list, 'zzz')).toBeNull();
+  });
+});
+
+describe('findDuplicate', () => {
+  const existing = [tx('1', 'expense', 'a', 750, '2026-10-07T10:00', { receiptNo: 'F-123' })];
+
+  it('flags the same receipt number at the same station', () => {
+    const c = { type: 'expense', stationId: 'a', amount: 10, date: '2026-10-09T10:00', receiptNo: 'F-123' };
+    expect(findDuplicate(existing, c)?.id).toBe('1');
+  });
+
+  it('flags the same amount within 15 minutes', () => {
+    const c = { type: 'expense', stationId: 'a', amount: 750, date: '2026-10-07T10:10' };
+    expect(findDuplicate(existing, c)?.id).toBe('1');
+  });
+
+  it('ignores other stations and distant times', () => {
+    expect(findDuplicate(existing, { type: 'expense', stationId: 'b', amount: 750, date: '2026-10-07T10:00' })).toBeNull();
+    expect(findDuplicate(existing, { type: 'expense', stationId: 'a', amount: 750, date: '2026-10-07T12:00' })).toBeNull();
+  });
+});
+
+describe('small helpers', () => {
+  it('lowBalanceLimit falls back to 300', () => {
+    expect(lowBalanceLimit({})).toBe(300);
+    expect(lowBalanceLimit({ lowBalanceThreshold: 1000 })).toBe(1000);
+  });
+
+  it('daysSince counts whole days', () => {
+    expect(daysSince(null)).toBeNull();
+    expect(daysSince('2026-10-01T10:00', new Date(2026, 9, 8, 11, 0))).toBe(7);
   });
 });

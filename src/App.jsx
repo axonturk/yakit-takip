@@ -10,6 +10,8 @@ import {
   nowLocalISO,
   roundMoney,
   formatTL,
+  lowBalanceLimit,
+  daysSince,
   SAMPLE_DATA
 } from './services/storage';
 
@@ -23,6 +25,7 @@ import AddStationModal from './components/AddStationModal';
 import AdjustBalanceModal from './components/AdjustBalanceModal';
 import InstallAppModal from './components/InstallAppModal';
 import EditTransactionModal from './components/EditTransactionModal';
+import EditStationModal from './components/EditStationModal';
 
 import { Home, CreditCard, Clock, Fuel, Sliders } from 'lucide-react';
 
@@ -44,7 +47,12 @@ export default function App() {
   });
   const [showAutoInstallCard, setShowAutoInstallCard] = useState(() => {
     const isStand = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-    const dismissed = sessionStorage.getItem('pwa_card_dismissed');
+    let dismissed = false;
+    try {
+      dismissed = !!localStorage.getItem('pwa_card_dismissed');
+    } catch {
+      // storage unavailable: show the card
+    }
     return !isStand && !dismissed;
   });
 
@@ -112,6 +120,19 @@ export default function App() {
     };
   }, []);
 
+  // Home screen shortcuts open a form directly (manifest "shortcuts")
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get('action');
+    if (!action) return;
+    window.history.replaceState(null, '', window.location.pathname);
+    if (data.stations.some((s) => !s.archived)) {
+      if (action === 'expense') setIsManualOpen(true);
+      if (action === 'topup') setIsTopupOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Sync state to localStorage
   useEffect(() => {
     saveData(data);
@@ -136,6 +157,19 @@ export default function App() {
   const [editingTx, setEditingTx] = useState(null);
   const [undoState, setUndoState] = useState(null);
   const undoTimer = useRef(null);
+  const [savedToast, setSavedToast] = useState(null);
+  const toastTimer = useRef(null);
+  const [editingStation, setEditingStation] = useState(null);
+
+  // Station of the most recently entered expense, preselected at the pump
+  const lastStationId = data.transactions.find((t) => t.type === 'expense' && !t.kind)?.stationId || null;
+
+  const lowStations = Object.values(stationBalances).filter(
+    (s) => s.balance >= 0 && s.balance < lowBalanceLimit(s.station)
+  );
+  const backupAge = daysSince(data.settings?.lastBackupAt);
+  const needsBackup =
+    !data.isSample && data.transactions.length >= 5 && (backupAge === null || backupAge >= 7);
 
   // Handlers
   const handleSaveExpense = (newExpense) => {
@@ -149,6 +183,8 @@ export default function App() {
       liters: newExpense.liters,
       unitPrice: newExpense.unitPrice,
       plate: newExpense.plate || null,
+      fuelType: newExpense.fuelType || null,
+      receiptNo: newExpense.receiptNo || null,
       date: newExpense.date,
       note: newExpense.note
     };
@@ -157,6 +193,7 @@ export default function App() {
       ...prev,
       transactions: [tx, ...prev.transactions]
     }));
+    showSavedToast(tx);
   };
 
   const handleSaveTopup = (newTopup) => {
@@ -169,6 +206,8 @@ export default function App() {
       amount: roundMoney(newTopup.amount),
       liters: null,
       unitPrice: null,
+      paymentMethod: newTopup.paymentMethod || null,
+      receiptNo: newTopup.receiptNo || null,
       date: newTopup.date,
       note: newTopup.note
     };
@@ -177,6 +216,36 @@ export default function App() {
       ...prev,
       transactions: [tx, ...prev.transactions]
     }));
+    showSavedToast(tx);
+  };
+
+  // After a save, show the station's new balance: the one number wanted at the pump
+  const showSavedToast = (tx) => {
+    const { stationBalances: next } = calculateBalances(data.stations, [tx, ...data.transactions]);
+    const bal = next[tx.stationId]?.balance ?? 0;
+    clearTimeout(toastTimer.current);
+    setSavedToast({ stationName: tx.stationName, balance: bal });
+    toastTimer.current = setTimeout(() => setSavedToast(null), 4000);
+  };
+
+  const handleEditStation = (stationId, changes) => {
+    setData((prev) => ({
+      ...prev,
+      stations: prev.stations.map((s) => (s.id === stationId ? { ...s, ...changes } : s)),
+      // Keep the name shown on past records in step with the station
+      transactions: changes.name
+        ? prev.transactions.map((t) => (t.stationId === stationId ? { ...t, stationName: changes.name } : t))
+        : prev.transactions
+    }));
+  };
+
+  const dismissInstallCard = () => {
+    setShowAutoInstallCard(false);
+    try {
+      localStorage.setItem('pwa_card_dismissed', '1');
+    } catch {
+      // ignore
+    }
   };
 
   const handleAddStation = (newStation, initialBal) => {
@@ -279,7 +348,11 @@ export default function App() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  const handleExportBackup = () => downloadBackup(data);
+  const handleExportBackup = () => {
+    const stamped = { ...data, settings: { ...data.settings, lastBackupAt: nowLocalISO() } };
+    downloadBackup(stamped);
+    setData(stamped);
+  };
 
   // Import JSON backup
   const handleImportBackup = (file) => {
@@ -396,7 +469,6 @@ export default function App() {
       
       {/* Header */}
       <Header
-        onOpenTopup={() => handleOpenTopup(selectedStationFilter)}
         onOpenAddStation={() => setIsAddStationOpen(true)}
         onExport={handleExportBackup}
         onImport={handleImportBackup}
@@ -404,33 +476,8 @@ export default function App() {
         isInstalled={isInstalled}
       />
 
-      {/* Install Banner (shows when app is not installed yet) */}
-      {!isInstalled && (
-        <div className="bg-gradient-to-r from-amber-500/20 via-amber-400/10 to-slate-900 border-b border-amber-500/30 px-3 py-2">
-          <div className="max-w-md mx-auto flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 truncate">
-              <span className="text-base animate-bounce shrink-0">📲</span>
-              <div className="truncate">
-                <span className="text-[11px] font-bold text-amber-300 block truncate">
-                  Uygulama Olarak Kullanın
-                </span>
-                <span className="text-[10px] text-slate-400 block truncate">
-                  Telefona yükleyin, reklamsız & internetsiz açın
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={handleInstallClick}
-              className="py-1 px-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-[11px] shadow transition shrink-0"
-            >
-              YÜKLE
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Auto-Prompt Card on Initial Launch (when not installed) */}
-      {showAutoInstallCard && !isInstalled && (
+      {/* Install suggestion, once the app has been used a little */}
+      {showAutoInstallCard && !isInstalled && data.transactions.length >= 2 && !data.isSample && !savedToast && !undoState && (
         <div className="fixed inset-x-3 bottom-20 z-50 max-w-md mx-auto animate-in slide-in-from-bottom duration-300">
           <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 p-3.5 rounded-2xl shadow-2xl border-2 border-amber-300 flex flex-col gap-2.5">
             <div className="flex items-center justify-between">
@@ -447,8 +494,7 @@ export default function App() {
               </div>
               <button
                 onClick={() => {
-                  setShowAutoInstallCard(false);
-                  sessionStorage.setItem('pwa_card_dismissed', '1');
+                  dismissInstallCard();
                 }}
                 className="p-1 text-slate-800 hover:text-slate-950 text-xs font-bold"
               >
@@ -465,8 +511,7 @@ export default function App() {
               </button>
               <button
                 onClick={() => {
-                  setShowAutoInstallCard(false);
-                  sessionStorage.setItem('pwa_card_dismissed', '1');
+                  dismissInstallCard();
                 }}
                 className="py-2.5 px-3 bg-white/20 hover:bg-white/30 text-slate-900 font-bold rounded-xl text-xs transition"
               >
@@ -488,6 +533,27 @@ export default function App() {
               className="shrink-0 py-1 px-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-lg transition"
             >
               Temizle ve başla
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'home' && lowStations.length > 0 && (
+          <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-[11px] text-amber-200">
+            Bakiyesi azalan istasyon: {lowStations.map((s) => `${s.station.name} (${formatTL(s.balance)})`).join(', ')}
+          </div>
+        )}
+
+        {activeTab === 'home' && needsBackup && (
+          <div className="p-3 bg-slate-800/80 border border-slate-700 rounded-xl text-[11px] text-slate-300 flex items-center justify-between gap-2">
+            <span>
+              {backupAge === null ? 'Henüz yedek almadınız.' : `Son yedek ${backupAge} gün önce.`} Veriler yalnızca bu
+              telefonda duruyor.
+            </span>
+            <button
+              onClick={handleExportBackup}
+              className="shrink-0 py-1 px-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition"
+            >
+              Yedek al
             </button>
           </div>
         )}
@@ -536,6 +602,7 @@ export default function App() {
               onOpenTopupForStation={handleOpenTopup}
               onOpenExpenseForStation={handleOpenExpense}
               onOpenAdjustBalance={handleOpenAdjustBalance}
+              onEditStation={setEditingStation}
               onDeleteStation={handleDeleteStation}
             />
 
@@ -653,6 +720,7 @@ export default function App() {
         onClose={() => setIsTopupOpen(false)}
         stations={activeStations}
         defaultStationId={selectedStationFilter}
+        transactions={data.transactions}
         onSaveTopup={handleSaveTopup}
       />
 
@@ -662,6 +730,8 @@ export default function App() {
         stations={activeStations}
         plates={plates}
         defaultStationId={selectedStationFilter}
+        lastStationId={lastStationId}
+        transactions={data.transactions}
         onSaveExpense={handleSaveExpense}
       />
 
@@ -687,6 +757,24 @@ export default function App() {
         onClose={() => setEditingTx(null)}
         onSave={handleEditTransaction}
       />
+
+      <EditStationModal
+        station={editingStation}
+        onClose={() => setEditingStation(null)}
+        onSave={handleEditStation}
+      />
+
+      {savedToast && !undoState && (
+        <div className="fixed inset-x-3 bottom-24 z-50 max-w-md mx-auto">
+          <div className="bg-emerald-600 text-white rounded-xl shadow-2xl px-4 py-3 flex items-center justify-between gap-3">
+            <span className="text-xs font-semibold truncate">✓ {savedToast.stationName}</span>
+            <span className="text-sm font-black shrink-0">
+              {savedToast.balance < 0 ? 'Borç ' : 'Kalan '}
+              {formatTL(savedToast.balance)}
+            </span>
+          </div>
+        </div>
+      )}
 
       {undoState && (
         <div className="fixed inset-x-3 bottom-24 z-50 max-w-md mx-auto">

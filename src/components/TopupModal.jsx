@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, X, Plus, AlertCircle, Clock } from 'lucide-react';
 import StationLogo from './StationLogo';
+import { PAYMENT_METHODS, findDuplicate, formatTL, formatTRDate } from '../services/storage';
 
 
 export default function TopupModal({
@@ -8,12 +9,15 @@ export default function TopupModal({
   onClose,
   stations,
   onSaveTopup,
-  defaultStationId
+  defaultStationId,
+  transactions = []
 }) {
   const [stationId, setStationId] = useState(defaultStationId || stations[0]?.id || '');
   const [amount, setAmount] = useState('');
   const [datetime, setDatetime] = useState('');
   const [note, setNote] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [receiptNo, setReceiptNo] = useState('');
   const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
@@ -38,15 +42,33 @@ export default function TopupModal({
       return;
     }
 
-    onSaveTopup({
+    const candidate = {
+      type: 'topup',
       stationId,
       amount: parsedAmount,
+      paymentMethod: paymentMethod || null,
+      receiptNo: receiptNo.trim() || null,
       date: datetime,
       note: note || 'Avans Çekildi'
-    });
+    };
+
+    const dup = findDuplicate(transactions, candidate);
+    if (
+      dup &&
+      !window.confirm(
+        `Benzer bir yükleme zaten var:\n${dup.stationName} · ${formatTL(dup.amount)} · ${formatTRDate(dup.date)}` +
+          (dup.receiptNo ? ` · Slip ${dup.receiptNo}` : '') +
+          '\n\nYine de kaydedilsin mi?'
+      )
+    ) {
+      return;
+    }
+
+    onSaveTopup(candidate);
 
     setAmount('');
     setNote('');
+    setReceiptNo('');
     onClose();
   };
 
@@ -121,7 +143,9 @@ export default function TopupModal({
             </label>
             <input
               type="number"
+              inputMode="decimal"
               step="0.01"
+              autoFocus
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Örn: 3000"
@@ -129,8 +153,34 @@ export default function TopupModal({
             />
           </div>
 
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">Ödeme Yöntemi</label>
+              <select
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
+              >
+                <option value="">Seçilmedi</option>
+                {PAYMENT_METHODS.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">Slip / Dekont No</label>
+              <input
+                type="text"
+                value={receiptNo}
+                onChange={(e) => setReceiptNo(e.target.value)}
+                placeholder="Opsiyonel"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
+              />
+            </div>
+          </div>
+
           <div>
-            <label className="block text-[11px] text-slate-400 mb-1">Ödeme Yöntemi / Kart / Not</label>
+            <label className="block text-[11px] text-slate-400 mb-1">Not (kart, taksit vb.)</label>
             <input
               type="text"
               value={note}

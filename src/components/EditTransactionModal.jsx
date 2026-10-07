@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Pencil, X, AlertCircle } from 'lucide-react';
-import { formatTL, transactionLabel } from '../services/storage';
+import { formatTL, transactionLabel, FUEL_TYPES, PAYMENT_METHODS } from '../services/storage';
 
 const inputClass =
   'w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-400';
@@ -29,6 +29,9 @@ function EditForm({ tx, stations, plates, onClose, onSave }) {
   const [plate, setPlate] = useState(tx.plate || '');
   const [datetime, setDatetime] = useState(tx.date || '');
   const [note, setNote] = useState(tx.note || '');
+  const [receiptNo, setReceiptNo] = useState(tx.receiptNo || '');
+  const [fuelType, setFuelType] = useState(tx.fuelType || '');
+  const [paymentMethod, setPaymentMethod] = useState(tx.paymentMethod || '');
   const [errorMsg, setErrorMsg] = useState(null);
 
   // The current station stays selectable even if it was archived later
@@ -54,12 +57,16 @@ function EditForm({ tx, stations, plates, onClose, onSave }) {
       stationId,
       amount: parsedAmount,
       date: datetime,
-      note: note.trim()
+      note: note.trim(),
+      receiptNo: receiptNo.trim() || null
     };
     if (isExpense) {
       next.liters = liters ? parseFloat(liters) : null;
       next.unitPrice = unitPrice ? parseFloat(unitPrice) : null;
       next.plate = plate.trim().toUpperCase() || null;
+      next.fuelType = fuelType || null;
+    } else {
+      next.paymentMethod = paymentMethod || null;
     }
 
     // Only record fields that actually changed
@@ -175,6 +182,34 @@ function EditForm({ tx, stations, plates, onClose, onSave }) {
               </div>
             </>
           )}
+
+          <div className="grid grid-cols-2 gap-2">
+            {isExpense ? (
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1">Yakıt Türü</label>
+                <select value={fuelType} onChange={(e) => setFuelType(e.target.value)} className={inputClass}>
+                  <option value="">Seçilmedi</option>
+                  {FUEL_TYPES.map((f) => (
+                    <option key={f} value={f}>{f}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1">Ödeme Yöntemi</label>
+                <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className={inputClass}>
+                  <option value="">Seçilmedi</option>
+                  {PAYMENT_METHODS.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">Fiş / Belge No</label>
+              <input type="text" value={receiptNo} onChange={(e) => setReceiptNo(e.target.value)} className={inputClass} />
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
