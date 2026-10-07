@@ -31,6 +31,7 @@ export default function StationList({
             </button>
           )}
         </h2>
+        {onOpenAddStation && (
         <button
           onClick={onOpenAddStation}
           className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-medium transition"
@@ -38,6 +39,7 @@ export default function StationList({
           <Plus className="w-3.5 h-3.5" />
           <span>İstasyon Ekle</span>
         </button>
+        )}
       </div>
 
       {selectedStationObj && (
@@ -121,14 +123,16 @@ export default function StationList({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex gap-1">
+                    {onOpenTopupForStation && (
                     <button
-                      onClick={() => onOpenTopupForStation && onOpenTopupForStation(station.id)}
+                      onClick={() => onOpenTopupForStation(station.id)}
                       className="flex-1 py-1.5 px-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-[9px] font-bold flex items-center justify-center gap-0.5 shadow transition"
                       title="Bakiye Yükle"
                     >
                       <CreditCard className="w-2.5 h-2.5" />
                       <span>+ Bakiye</span>
                     </button>
+                    )}
                     <button
                       onClick={() => onOpenExpenseForStation && onOpenExpenseForStation(station.id)}
                       className="flex-1 py-1.5 px-1 bg-red-600 hover:bg-red-500 text-white rounded-lg text-[9px] font-bold flex items-center justify-center gap-0.5 shadow transition"
@@ -139,9 +143,10 @@ export default function StationList({
                     </button>
                   </div>
 
+                  {onOpenAdjustBalance && (
                   <div className="flex gap-1">
                     <button
-                      onClick={() => onOpenAdjustBalance && onOpenAdjustBalance(station.id)}
+                      onClick={() => onOpenAdjustBalance(station.id)}
                       className="flex-1 py-1 px-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 hover:border-amber-500/50 rounded-lg text-[9px] font-medium flex items-center justify-center gap-1 transition"
                       title="Bakiyeyi Düzelt / Eşitle"
                     >
@@ -164,6 +169,7 @@ export default function StationList({
                       <span>Sil</span>
                     </button>
                   </div>
+                  )}
                 </div>
               )}
             </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Fuel, X, Plus } from 'lucide-react';
 import StationLogo, { BRAND_OPTIONS, BRAND_KEYS } from './StationLogo';
+import { newId } from '../services/storage';
 
 export default function AddStationModal({
   isOpen,
@@ -26,7 +27,7 @@ export default function AddStationModal({
     const brandObj = BRAND_OPTIONS.find(b => b.key === selectedBrand);
 
     const newStation = {
-      id: 'st-' + Date.now(),
+      id: newId('st'),
       name: name.trim(),
       brand: brandObj ? brandObj.name : 'İstasyon',
       color: brandObj ? brandObj.bg : '#3b82f6'

@@ -19,6 +19,7 @@ export default function TransactionHistory({
   onDeleteTransaction,
   onEditTransaction,
   onViewPhoto,
+  canChange = () => true,
   compact = false
 }) {
   const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'expense', 'topup'
@@ -246,6 +247,7 @@ export default function TransactionHistory({
                         <span className="font-mono text-[10px] text-slate-200 bg-slate-700/70 px-1 rounded">{tx.plate}</span>
                       )}
                       {tx.note && <span className="italic text-slate-400">“{tx.note}”</span>}
+                      {tx.enteredBy && <span className="text-[10px] text-slate-500">· {tx.enteredBy.split('@')[0]}</span>}
                       {tx.edits?.length > 0 && (
                         <span className="text-[10px] text-sky-300" title={`Önceki tutar: ${formatTL(tx.edits[0].before.amount ?? tx.amount)}`}>
                           düzenlendi
@@ -280,7 +282,7 @@ export default function TransactionHistory({
                       <Camera className="w-3.5 h-3.5" />
                     </button>
                   )}
-                  {onEditTransaction && (
+                  {onEditTransaction && canChange(tx) && (
                     <button
                       onClick={() => onEditTransaction(tx)}
                       title="İşlemi Düzenle"
@@ -289,6 +291,7 @@ export default function TransactionHistory({
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
                   )}
+{canChange(tx) && (
                   <button
                     onClick={() => onDeleteTransaction(tx.id)}
                     title="İşlemi Sil"
@@ -296,6 +299,7 @@ export default function TransactionHistory({
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
+                  )}
                 </div>
               </div>
             );

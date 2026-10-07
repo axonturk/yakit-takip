@@ -68,7 +68,7 @@ export default function BalanceCard({
       </div>
 
       {/* Primary Action Buttons */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className={`grid gap-2 ${onOpenTopup ? 'grid-cols-2' : 'grid-cols-1'}`}>
         <button
           onClick={onOpenExpense}
           className="py-3 px-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-red-950/40 flex items-center justify-center gap-2 transition active:scale-[0.98]"
@@ -77,6 +77,7 @@ export default function BalanceCard({
           <span>- HARCAMA GİR</span>
         </button>
 
+        {onOpenTopup && (
         <button
           onClick={onOpenTopup}
           className="py-3 px-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-950/40 flex items-center justify-center gap-2 transition active:scale-[0.98]"
@@ -84,6 +85,7 @@ export default function BalanceCard({
           <CreditCard className="w-4 h-4 stroke-[2.2]" />
           <span>+ BAKİYE YÜKLE</span>
         </button>
+        )}
       </div>
     </div>
   );

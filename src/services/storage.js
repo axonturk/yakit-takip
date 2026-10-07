@@ -105,6 +105,11 @@ export function nowLocalISO(date = new Date()) {
 
 // Money is rounded to kuruş on every write and summed as integers on read,
 // so balances never drift by floating point leftovers.
+// Unique enough across devices sharing one ledger (time plus a random tail).
+export function newId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
 export function roundMoney(value) {
   const n = Number(value);
   if (!Number.isFinite(n)) return 0;

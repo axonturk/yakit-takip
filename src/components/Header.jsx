@@ -61,6 +61,7 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
             )}
           </button>
 
+          {onOpenAddStation && (
           <button
             onClick={onOpenAddStation}
             title="Yeni İstasyon Ekle"
@@ -68,6 +69,7 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
           >
             <PlusCircle className="w-5 h-5" />
           </button>
+          )}
 
           <input
             ref={fileInputRef}
@@ -92,9 +94,11 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
                   <MenuItem icon={Download} onClick={() => { setMenuOpen(false); onExport(); }}>
                     Verileri yedekle (dosya)
                   </MenuItem>
-                  <MenuItem icon={Upload} onClick={() => { setMenuOpen(false); fileInputRef.current?.click(); }}>
-                    Yedekten geri yükle
-                  </MenuItem>
+                  {onImport && (
+                    <MenuItem icon={Upload} onClick={() => { setMenuOpen(false); fileInputRef.current?.click(); }}>
+                      Yedekten geri yükle
+                    </MenuItem>
+                  )}
                   <MenuItem icon={Lock} onClick={() => { setMenuOpen(false); onOpenLock(); }}>
                     Uygulama kilidi{isLockOn ? ' (açık)' : ''}
                   </MenuItem>
