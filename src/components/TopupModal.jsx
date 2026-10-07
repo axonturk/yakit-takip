@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PhotoPicker from './PhotoPicker';
 import { CreditCard, X, Plus, AlertCircle, Clock } from 'lucide-react';
 import StationLogo from './StationLogo';
 import { PAYMENT_METHODS, findDuplicate, formatTL, formatTRDate } from '../services/storage';
@@ -18,11 +19,13 @@ export default function TopupModal({
   const [note, setNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [receiptNo, setReceiptNo] = useState('');
+  const [photo, setPhoto] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
       setErrorMsg(null);
+      setPhoto(null);
       const now = new Date();
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
       setDatetime(now.toISOString().slice(0, 16));
@@ -64,11 +67,12 @@ export default function TopupModal({
       return;
     }
 
-    onSaveTopup(candidate);
+    onSaveTopup({ ...candidate, photo });
 
     setAmount('');
     setNote('');
     setReceiptNo('');
+    setPhoto(null);
     onClose();
   };
 
@@ -178,6 +182,8 @@ export default function TopupModal({
               />
             </div>
           </div>
+
+          <PhotoPicker value={photo} onChange={setPhoto} label="Dekont fotoğrafı" />
 
           <div>
             <label className="block text-[11px] text-slate-400 mb-1">Not (kart, taksit vb.)</label>

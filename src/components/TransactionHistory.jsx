@@ -9,7 +9,7 @@ import {
   matchesSearch,
   groupByDay
 } from '../services/storage';
-import { Trash2, Download, Pencil, Search } from 'lucide-react';
+import { Trash2, Download, Pencil, Search, Camera } from 'lucide-react';
 import StationLogo from './StationLogo';
 
 export default function TransactionHistory({
@@ -18,6 +18,7 @@ export default function TransactionHistory({
   selectedStationFilter,
   onDeleteTransaction,
   onEditTransaction,
+  onViewPhoto,
   compact = false
 }) {
   const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'expense', 'topup'
@@ -270,6 +271,15 @@ export default function TransactionHistory({
                     </div>
                   </div>
 
+                  {tx.photoId && onViewPhoto && (
+                    <button
+                      onClick={() => onViewPhoto(tx)}
+                      title="Fotoğrafı Gör"
+                      className="p-1.5 text-sky-400 hover:text-sky-300 transition rounded-lg hover:bg-slate-700/50"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                   {onEditTransaction && (
                     <button
                       onClick={() => onEditTransaction(tx)}
