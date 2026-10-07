@@ -247,3 +247,27 @@ create policy "members change records" on public.records
       or (kind = 'tx' and (deleted or (data ->> 'type' = 'expense' and coalesce(data ->> 'kind', '') = '')))
     )
   );
+
+-- Receipt photos (Faz 3B): private bucket, one folder per workspace (<workspace id>/<photo id>.jpg).
+-- Members can see and add photos of their workspace; photos are never overwritten.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('receipts', 'receipts', false, 3145728, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do nothing;
+
+create or replace function public.is_member_folder(object_name text) returns boolean
+language plpgsql security definer stable set search_path = public as $$
+begin
+  return public.is_member(split_part(object_name, '/', 1)::uuid);
+exception when invalid_text_representation then
+  return false;
+end $$;
+
+drop policy if exists "members read receipts" on storage.objects;
+create policy "members read receipts" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'receipts' and public.is_member_folder(name));
+
+drop policy if exists "members add receipts" on storage.objects;
+create policy "members add receipts" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'receipts' and public.is_member_folder(name));

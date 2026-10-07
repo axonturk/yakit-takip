@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Camera, X } from 'lucide-react';
-import { compressImage, getPhoto } from '../services/photos';
+import { compressImage, loadPhoto } from '../services/photos';
 
 // value: a new Blob, null (no photo) or undefined (keep existingId).
 export default function PhotoPicker({ value, onChange, existingId = null, label = 'Fiş fotoğrafı' }) {
@@ -17,7 +17,7 @@ export default function PhotoPicker({ value, onChange, existingId = null, label 
       setPreview(url);
     };
     if (value instanceof Blob) show(value);
-    else if (value === undefined && existingId) getPhoto(existingId).then(show, () => setPreview(null));
+    else if (value === undefined && existingId) loadPhoto(existingId).then(show, () => setPreview(null));
     else setPreview(null);
     return () => {
       cancelled = true;
@@ -66,7 +66,7 @@ export default function PhotoPicker({ value, onChange, existingId = null, label 
           {busy ? 'Hazırlanıyor…' : `${label} ekle (opsiyonel)`}
         </button>
       )}
-      <p className="text-[10px] text-slate-500 mt-1">Fotoğraflar yalnızca bu telefonda saklanır, yedek dosyasına girmez.</p>
+      <p className="text-[10px] text-slate-500 mt-1">Fotoğraflar bu telefonda, ortak defter açıksa bulutta da saklanır. Yedek dosyasına girmez.</p>
     </div>
   );
 }

@@ -1,4 +1,5 @@
-// Receipt photos live in IndexedDB on this device only; transactions keep just a photoId.
+// Receipt photos live in IndexedDB; transactions keep just a photoId.
+// With a shared ledger they are also uploaded, and a missing one is fetched from the cloud on demand.
 const DB_NAME = 'hisapo_photos';
 const STORE = 'photos';
 
@@ -35,6 +36,20 @@ export const savePhoto = (id, blob) => run('readwrite', (s) => s.put(blob, id));
 export const getPhoto = (id) => run('readonly', (s) => s.get(id));
 export const deletePhoto = (id) => run('readwrite', (s) => s.delete(id));
 export const listPhotoIds = () => run('readonly', (s) => s.getAllKeys());
+
+let remoteFetch = null;
+export function setRemotePhotoSource(fn) {
+  remoteFetch = fn;
+}
+
+// The photo from this device, else from the cloud (then kept on this device). Null if neither has it.
+export async function loadPhoto(id) {
+  const local = await getPhoto(id).catch(() => null);
+  if (local || !remoteFetch) return local || null;
+  const blob = await remoteFetch(id);
+  if (blob) await savePhoto(id, blob).catch(() => {});
+  return blob || null;
+}
 
 // Remove photos no transaction points to any more (deleted or replaced).
 export async function cleanupPhotos(transactions) {

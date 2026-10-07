@@ -1,17 +1,38 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getClient, cloudWasUsed, loadMeta, saveMeta, pullRecords, pushRecords, myMembership } from './cloud';
+import { getClient, cloudWasUsed, loadMeta, saveMeta, pullRecords, pushRecords, myMembership, uploadPhoto, downloadPhoto } from './cloud';
+import { getPhoto, listPhotoIds, setRemotePhotoSource } from './photos';
 import { applyRemote, diffLocal, markPushed, driverMayPush, dropRecords, newFromOthers, recordKey } from './sync';
 import { reportError } from './telemetry';
 
 // Re-read rows a little older than the last pull, so a change committed just
 // before our previous pull finished is not missed. Re-applying is a no-op.
 const OVERLAP_MS = 5 * 60 * 1000;
+// Photos are sent a few per sync so a long backlog never holds up the ledger itself.
+const PHOTOS_PER_SYNC = 5;
+
+// Upload receipt photos this device has and the cloud does not. Returns the updated "uploaded" map.
+export async function pushPhotos(workspaceId, transactions, uploaded) {
+  const local = new Set(await listPhotoIds().catch(() => []));
+  const todo = transactions
+    .map((t) => t.photoId)
+    .filter((id) => id && local.has(id) && !uploaded[id])
+    .slice(0, PHOTOS_PER_SYNC);
+  const next = { ...uploaded };
+  for (const id of todo) {
+    const blob = await getPhoto(id);
+    if (!blob) continue;
+    await uploadPhoto(workspaceId, id, blob);
+    next[id] = 1;
+  }
+  return next;
+}
 
 export default function useCloudSync(data, setData) {
   const [session, setSession] = useState(null);
   const [meta, setMetaState] = useState(loadMeta);
   const [status, setStatus] = useState('idle'); // idle | syncing | ok | error | offline
   const [error, setError] = useState(null);
+  const [photoError, setPhotoError] = useState(null);
 
   const dataRef = useRef(data);
   useEffect(() => {
@@ -82,7 +103,8 @@ export default function useCloudSync(data, setData) {
         monthlyLimit: mine.monthly_limit === null ? null : Number(mine.monthly_limit),
         workspaceName: mine.workspaces?.name || m.workspaceName,
         inviteCode: mine.workspaces?.invite_code || m.inviteCode,
-        driverCode: mine.workspaces?.driver_code || m.driverCode
+        driverCode: mine.workspaces?.driver_code || m.driverCode,
+        setupOutdated: Boolean(mine.outdated)
       });
       const uid = userIdRef.current;
 
@@ -135,10 +157,19 @@ export default function useCloudSync(data, setData) {
         await pushRecords(m.workspaceId, upserts, deletes);
         synced = markPushed(synced, upserts, deletes);
       }
+      // Photos last: a failure here (e.g. storage not set up yet) must not block the ledger
+      let photosUp = m.photosUp || {};
+      try {
+        photosUp = await pushPhotos(m.workspaceId, dataRef.current.transactions, photosUp);
+        setPhotoError(null);
+      } catch (e) {
+        setPhotoError(e.message);
+        reportError(`Fotoğraf yükleme: ${e.message}`);
+      }
       const lastPulledAt = rows.length ? rows[rows.length - 1].updated_at : m.lastPulledAt;
       // The user may have switched or left the workspace while this sync ran
       if (metaRef.current.workspaceId !== m.workspaceId) return;
-      setMeta({ ...metaRef.current, ...m, synced, unseen, lastPulledAt, lastSyncAt: new Date().toISOString() });
+      setMeta({ ...metaRef.current, ...m, synced, unseen, photosUp, lastPulledAt, lastSyncAt: new Date().toISOString() });
       setError(null);
       setStatus('ok');
     } catch (e) {
@@ -153,6 +184,23 @@ export default function useCloudSync(data, setData) {
       }
     }
   }, [setData, setMeta]);
+
+  // Photos entered on other phones are fetched when someone opens them
+  useEffect(() => {
+    if (!active) {
+      setRemotePhotoSource(null);
+      return undefined;
+    }
+    setRemotePhotoSource(async (photoId) => {
+      const blob = await downloadPhoto(workspaceId, photoId);
+      // Already in the cloud, so this device never needs to upload it
+      if (blob && metaRef.current.workspaceId === workspaceId) {
+        setMeta({ ...metaRef.current, photosUp: { ...(metaRef.current.photosUp || {}), [photoId]: 1 } });
+      }
+      return blob;
+    });
+    return () => setRemotePhotoSource(null);
+  }, [active, workspaceId, setMeta]);
 
   // Sync on start, shortly after every local change, on focus/online, and every minute.
   useEffect(() => {
@@ -221,10 +269,12 @@ export default function useCloudSync(data, setData) {
     monthlyLimit: meta.monthlyLimit ?? null,
     unseen: workspaceId ? meta.unseen || [] : [],
     removedFrom: meta.removedFrom || null,
+    setupOutdated: Boolean(meta.setupOutdated),
     userId,
     lastSyncAt: meta.lastSyncAt,
     status: active ? status : 'idle',
     error,
+    photoError,
     syncNow,
     activate,
     chooseWorkspace,
