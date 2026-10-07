@@ -8,7 +8,8 @@ export default function ManualExpenseModal({
   onClose,
   stations,
   onSaveExpense,
-  defaultStationId
+  defaultStationId,
+  plates = []
 }) {
   const [stationId, setStationId] = useState(defaultStationId || stations[0]?.id || '');
   const [amount, setAmount] = useState('');
@@ -16,11 +17,13 @@ export default function ManualExpenseModal({
   const [unitPrice, setUnitPrice] = useState('');
   const [datetime, setDatetime] = useState('');
   const [note, setNote] = useState('');
+  const [plate, setPlate] = useState('');
   const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
       setErrorMsg(null);
+      setPlate(plates[0] || '');
       const now = new Date();
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
       setDatetime(now.toISOString().slice(0, 16));
@@ -64,6 +67,7 @@ export default function ManualExpenseModal({
       amount: parsedAmount,
       liters: liters ? parseFloat(liters) : null,
       unitPrice: unitPrice ? parseFloat(unitPrice) : null,
+      plate: plate.trim().toUpperCase() || null,
       date: datetime,
       note: note || 'Yakıt Alımı'
     });
@@ -144,6 +148,7 @@ export default function ManualExpenseModal({
             </label>
             <input
               type="number"
+              inputMode="decimal"
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -159,6 +164,7 @@ export default function ManualExpenseModal({
               </label>
               <input
                 type="number"
+                inputMode="decimal"
                 step="0.01"
                 value={liters}
                 onChange={(e) => handleLitersChange(e.target.value)}
@@ -172,6 +178,7 @@ export default function ManualExpenseModal({
               </label>
               <input
                 type="number"
+                inputMode="decimal"
                 step="0.01"
                 value={unitPrice}
                 onChange={(e) => handleUnitPriceChange(e.target.value)}
@@ -179,6 +186,25 @@ export default function ManualExpenseModal({
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-[11px] text-slate-400 mb-1">
+              Plaka / Araç <span className="text-[10px] text-slate-500">(Opsiyonel)</span>
+            </label>
+            <input
+              type="text"
+              list="expense-plates"
+              value={plate}
+              onChange={(e) => setPlate(e.target.value)}
+              placeholder="Örn: 34 ABC 123"
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 uppercase focus:outline-none focus:border-slate-500"
+            />
+            <datalist id="expense-plates">
+              {plates.map((p) => (
+                <option key={p} value={p} />
+              ))}
+            </datalist>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
-import { formatTL, formatTRDate } from '../services/storage';
-import { Trash2, Download } from 'lucide-react';
+import { formatTL, formatTRDate, buildCSV, transactionLabel, nowLocalISO } from '../services/storage';
+import { Trash2, Download, Pencil } from 'lucide-react';
 import StationLogo from './StationLogo';
 
 export default function TransactionHistory({
   transactions,
-  stations,
+  plates = [],
   selectedStationFilter,
-  onSelectStationFilter,
-  onDeleteTransaction
+  onDeleteTransaction,
+  onEditTransaction,
+  compact = false
 }) {
   const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'expense', 'topup'
+  const [plateFilter, setPlateFilter] = useState('');
 
   // Filter transactions
   const filtered = transactions.filter((tx) => {
     if (selectedStationFilter && tx.stationId !== selectedStationFilter) return false;
     if (typeFilter !== 'all' && tx.type !== typeFilter) return false;
+    if (plateFilter && tx.plate !== plateFilter) return false;
     return true;
   });
 
@@ -29,16 +32,13 @@ export default function TransactionHistory({
     .reduce((acc, t) => acc + Number(t.amount), 0);
 
   const handleExportCSV = () => {
-    const headers = ['ID,Tur,Istasyon,Tutar,Litre,BirimFiyat,TarihSaat,Not\n'];
-    const rows = filtered.map(t =>
-      `"${t.id}","${t.type === 'expense' ? 'Harcama' : 'Avans Yükleme'}","${t.stationName}","${t.amount}","${t.liters || ''}","${t.unitPrice || ''}","${t.date}","${(t.note || '').replace(/"/g, '""')}"`
-    );
-    const blob = new Blob([headers.concat(rows.join('\n'))], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([buildCSV(filtered)], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `yakit_ekstresi_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `depozit_ekstre_${nowLocalISO().slice(0, 10)}.csv`;
     a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   return (
@@ -47,13 +47,14 @@ export default function TransactionHistory({
       <div className="flex justify-between items-center px-1">
         <div>
           <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-            İşlem Geçmişi & Hareketler
+            {compact ? 'Son İşlemler' : 'İşlem Geçmişi & Hareketler'}
           </h2>
           <p className="text-[10px] text-slate-400">
             {filtered.length} kayıt listeleniyor
           </p>
         </div>
 
+        {!compact && (
         <button
           onClick={handleExportCSV}
           className="text-xs text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition"
@@ -61,8 +62,10 @@ export default function TransactionHistory({
           <Download className="w-3.5 h-3.5 text-amber-400" />
           <span>Excel/CSV</span>
         </button>
+        )}
       </div>
 
+      {!compact && (<>
       {/* Filter Tabs */}
       <div className="flex gap-1.5 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 text-xs">
         <button
@@ -105,6 +108,20 @@ export default function TransactionHistory({
           <span className="text-red-400 font-bold">-{formatTL(filteredExpenses)}</span>
         </div>
       </div>
+
+      {plates.length > 0 && (
+        <select
+          value={plateFilter}
+          onChange={(e) => setPlateFilter(e.target.value)}
+          className="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400"
+        >
+          <option value="">Tüm araçlar</option>
+          {plates.map((p) => (
+            <option key={p} value={p}>{p}</option>
+          ))}
+        </select>
+      )}
+      </>)}
 
       {/* Transaction List */}
       <div className="space-y-2">
@@ -154,7 +171,15 @@ export default function TransactionHistory({
                           {tx.unitPrice ? ` @ ₺${tx.unitPrice}/L` : ''}
                         </span>
                       )}
+                      {tx.plate && (
+                        <span className="font-mono text-[10px] text-slate-200 bg-slate-700/70 px-1 rounded">{tx.plate}</span>
+                      )}
                       {tx.note && <span className="italic text-slate-400">“{tx.note}”</span>}
+                      {tx.edits?.length > 0 && (
+                        <span className="text-[10px] text-sky-300" title={`Önceki tutar: ${formatTL(tx.edits[0].before.amount ?? tx.amount)}`}>
+                          düzenlendi
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -171,16 +196,21 @@ export default function TransactionHistory({
                       {formatTL(tx.amount)}
                     </div>
                     <div className="text-[9px] text-slate-400">
-                      {isExpense ? 'Depo Dolumu' : 'Avans Yüklendi'}
+                      {transactionLabel(tx)}
                     </div>
                   </div>
 
+                  {onEditTransaction && (
+                    <button
+                      onClick={() => onEditTransaction(tx)}
+                      title="İşlemi Düzenle"
+                      className="p-1.5 text-slate-500 hover:text-amber-300 opacity-70 group-hover:opacity-100 transition rounded-lg hover:bg-slate-700/50"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                   <button
-                    onClick={() => {
-                      if (window.confirm('Bu işlemi silmek istediğinize emin misiniz?')) {
-                        onDeleteTransaction(tx.id);
-                      }
-                    }}
+                    onClick={() => onDeleteTransaction(tx.id)}
                     title="İşlemi Sil"
                     className="p-1.5 text-slate-600 hover:text-red-400 opacity-60 group-hover:opacity-100 transition rounded-lg hover:bg-slate-700/50"
                   >

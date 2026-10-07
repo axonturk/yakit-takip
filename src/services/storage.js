@@ -1,8 +1,8 @@
 // LocalStorage key
 const STORAGE_KEY = 'yakit_takip_data_v1';
 
-// Initial dummy data for instant demo & onboarding
-export const INITIAL_DATA = {
+// Sample data, shown only when the user asks to see an example
+export const SAMPLE_DATA = {
   stations: [
     { id: 'opet-maslak', name: 'Opet Maslak', color: '#10b981', brand: 'Opet' },
     { id: 'shell-kadikoy', name: 'Shell Kadıköy', color: '#eab308', brand: 'Shell' },
@@ -79,21 +79,89 @@ export const INITIAL_DATA = {
   ]
 };
 
+export const SCHEMA_VERSION = 2;
+
+export const DEFAULT_SETTINGS = {
+  currency: 'TRY',
+  volumeUnit: 'L'
+};
+
+export function emptyData() {
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    settings: { ...DEFAULT_SETTINGS },
+    stations: [],
+    transactions: []
+  };
+}
+
+// Local "YYYY-MM-DDTHH:mm" for datetime-local inputs and stored dates.
+// toISOString() alone is UTC, which shifts Turkish times 3 hours back.
+export function nowLocalISO(date = new Date()) {
+  const d = new Date(date);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
+}
+
+// Money is rounded to kuruş on every write and summed as integers on read,
+// so balances never drift by floating point leftovers.
+export function roundMoney(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Math.round(n * 100) / 100;
+}
+
+const toKurus = (value) => Math.round(Number(value || 0) * 100);
+
+// Upgrades any older or partial shape to the current schema without dropping data.
+export function migrateData(raw) {
+  const base = emptyData();
+  if (!raw || typeof raw !== 'object') return base;
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    settings: { ...DEFAULT_SETTINGS, ...(raw.settings || {}) },
+    stations: Array.isArray(raw.stations) ? raw.stations : [],
+    transactions: Array.isArray(raw.transactions)
+      ? raw.transactions.map((tx) => ({ ...tx, amount: roundMoney(tx.amount) }))
+      : []
+  };
+}
+
+// Checks an imported backup; returns { ok, data, error }.
+export function validateBackup(parsed) {
+  if (!parsed || typeof parsed !== 'object') {
+    return { ok: false, error: 'Dosya bir Depozit yedeği değil.' };
+  }
+  if (!Array.isArray(parsed.stations) || !Array.isArray(parsed.transactions)) {
+    return { ok: false, error: 'Yedekte istasyon veya işlem listesi yok.' };
+  }
+  const badStation = parsed.stations.find((s) => !s || !s.id || !s.name);
+  if (badStation) {
+    return { ok: false, error: 'Yedekte adı veya kimliği eksik bir istasyon var.' };
+  }
+  const badTx = parsed.transactions.find(
+    (t) =>
+      !t ||
+      !t.id ||
+      !t.stationId ||
+      (t.type !== 'topup' && t.type !== 'expense') ||
+      !Number.isFinite(Number(t.amount)) ||
+      Number(t.amount) < 0
+  );
+  if (badTx) {
+    return { ok: false, error: 'Yedekte hatalı bir işlem kaydı var (tür, istasyon veya tutar).' };
+  }
+  return { ok: true, data: migrateData(parsed) };
+}
+
 export function loadData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      saveData(INITIAL_DATA);
-      return INITIAL_DATA;
-    }
-    const parsed = JSON.parse(raw);
-    return {
-      stations: parsed.stations || INITIAL_DATA.stations,
-      transactions: parsed.transactions || INITIAL_DATA.transactions
-    };
+    if (!raw) return emptyData();
+    return migrateData(JSON.parse(raw));
   } catch (err) {
     console.error('Failed to load storage data, using fallback:', err);
-    return INITIAL_DATA;
+    return emptyData();
   }
 }
 
@@ -105,60 +173,103 @@ export function saveData(data) {
   }
 }
 
-// Calculate balances per station and total
+// Newest first; ties keep insertion order (newer entries were prepended).
+export function sortTransactions(transactions) {
+  return transactions
+    .map((tx, i) => ({ tx, i }))
+    .sort((a, b) => {
+      const diff = new Date(b.tx.date) - new Date(a.tx.date);
+      return diff !== 0 ? diff : a.i - b.i;
+    })
+    .map(({ tx }) => tx);
+}
+
+// Calculate balances per station and total. Archived stations keep their
+// history but are left out of the station list and the totals.
 export function calculateBalances(stations, transactions) {
-  const stationBalances = {};
-  
-  stations.forEach(s => {
-    stationBalances[s.id] = {
-      station: s,
-      topups: 0,
-      expenses: 0,
-      balance: 0,
-      lastActivity: null
-    };
+  const archivedIds = new Set(stations.filter((s) => s.archived).map((s) => s.id));
+  const acc = {};
+
+  stations.forEach((s) => {
+    if (s.archived) return;
+    acc[s.id] = { station: s, topups: 0, expenses: 0, balance: 0, lastActivity: null };
   });
 
-  // Process transactions chronologically
   const sorted = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  sorted.forEach(tx => {
-    if (!stationBalances[tx.stationId]) {
-      stationBalances[tx.stationId] = {
+  sorted.forEach((tx) => {
+    if (archivedIds.has(tx.stationId)) return;
+    if (!acc[tx.stationId]) {
+      acc[tx.stationId] = {
         station: { id: tx.stationId, name: tx.stationName, color: '#94a3b8' },
         topups: 0,
         expenses: 0,
         balance: 0,
-        lastActivity: tx.date
+        lastActivity: null
       };
     }
-
+    const kurus = toKurus(tx.amount);
     if (tx.type === 'topup') {
-      stationBalances[tx.stationId].topups += Number(tx.amount);
-      stationBalances[tx.stationId].balance += Number(tx.amount);
+      acc[tx.stationId].topups += kurus;
+      acc[tx.stationId].balance += kurus;
     } else {
-      stationBalances[tx.stationId].expenses += Number(tx.amount);
-      stationBalances[tx.stationId].balance -= Number(tx.amount);
+      acc[tx.stationId].expenses += kurus;
+      acc[tx.stationId].balance -= kurus;
     }
-    stationBalances[tx.stationId].lastActivity = tx.date;
+    acc[tx.stationId].lastActivity = tx.date;
   });
 
   let totalBalance = 0;
   let totalTopup = 0;
   let totalExpense = 0;
+  const stationBalances = {};
 
-  Object.values(stationBalances).forEach(s => {
+  Object.entries(acc).forEach(([id, s]) => {
     totalBalance += s.balance;
     totalTopup += s.topups;
     totalExpense += s.expenses;
+    stationBalances[id] = {
+      ...s,
+      topups: s.topups / 100,
+      expenses: s.expenses / 100,
+      balance: s.balance / 100
+    };
   });
 
   return {
     stationBalances,
-    totalBalance,
-    totalTopup,
-    totalExpense
+    totalBalance: totalBalance / 100,
+    totalTopup: totalTopup / 100,
+    totalExpense: totalExpense / 100
   };
+}
+
+// Human label for a transaction's type in lists and exports.
+export function transactionLabel(tx) {
+  if (tx.kind === 'opening') return 'Açılış Bakiyesi';
+  if (tx.kind === 'adjustment') return 'Bakiye Düzeltme';
+  return tx.type === 'expense' ? 'Depo Dolumu' : 'Avans Yüklendi';
+}
+
+// Turkish Excel opens ";" separated files with comma decimals; the BOM keeps ş, ğ, ı intact.
+export function buildCSV(transactions) {
+  const num = (v) => (v === null || v === undefined || v === '' ? '' : String(v).replace('.', ','));
+  const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const header = ['Tarih', 'Tür', 'İstasyon', 'Plaka', 'Tutar', 'Litre', 'Birim Fiyat', 'Not', 'Kayıt No'];
+  const rows = transactions.map((t) =>
+    [
+      cell(t.date ? t.date.replace('T', ' ') : ''),
+      cell(transactionLabel(t)),
+      cell(t.stationName),
+      cell(t.plate || ''),
+      cell(num(t.type === 'expense' ? -roundMoney(t.amount) : roundMoney(t.amount))),
+      cell(num(t.liters)),
+      cell(num(t.unitPrice)),
+      cell(t.note || ''),
+      cell(t.id)
+    ].join(';')
+  );
+  return '\uFEFF' + [header.map(cell).join(';'), ...rows].join('\r\n');
 }
 
 // Format currency
