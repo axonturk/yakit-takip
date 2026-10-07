@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Printer, Share2, Download } from 'lucide-react';
+import { Printer, Download } from 'lucide-react';
 import { monthRange, formatDay, formatTL, nowLocalISO, buildCSV } from '../services/storage';
+import WhatsAppShare from './WhatsAppShare';
 import { buildFleetReport, reportCSV, reportText, REPORT_GROUPS } from '../services/report';
 
 const inputClass =
@@ -61,12 +62,10 @@ export default function ReportView({ transactions, hasTeam }) {
       </div>
 
       <div className="grid grid-cols-3 gap-2">
-        <button
-          onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(reportText(report, by, from, to))}`, '_blank', 'noopener')}
-          className="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1 transition"
-        >
-          <Share2 className="w-3.5 h-3.5" /> WhatsApp
-        </button>
+        <WhatsAppShare
+          text={reportText(report, by, from, to)}
+          file={{ content: reportCSV(report, by, from, to), name: `hisapo_rapor_${month}_${by}.csv` }}
+        />
         <button
           onClick={() => window.print()}
           className="py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-xs font-bold rounded-xl flex items-center justify-center gap-1 transition"
