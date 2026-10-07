@@ -20,3 +20,19 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Statement print (Save as PDF): only the printable copy is shown */
+.print-only {
+  display: none;
+}
+@media print {
+  body {
+    background: #fff !important;
+  }
+  #root {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+}

@@ -172,3 +172,65 @@ describe('small helpers', () => {
     expect(daysSince('2026-10-01T10:00', new Date(2026, 9, 8, 11, 0))).toBe(7);
   });
 });
+
+import { monthRange, buildStatement, statementText, matchesSearch, groupByDay, formatDay } from './storage';
+
+describe('period statement', () => {
+  const txs = [
+    tx('a', 'topup', 's1', 1000, '2026-09-20T10:00'),
+    tx('b', 'expense', 's1', 300.1, '2026-09-25T10:00'),
+    tx('c', 'topup', 's1', 500, '2026-10-01T08:00'),
+    tx('d', 'expense', 's1', 200.2, '2026-10-15T09:30', { liters: 4.5, plate: '34ABC1', receiptNo: '77' }),
+    tx('e', 'expense', 's2', 999, '2026-10-16T09:30'),
+    tx('f', 'expense', 's1', 100, '2026-11-02T09:30')
+  ];
+
+  it('computes month range including leap years', () => {
+    expect(monthRange('2026-10')).toEqual({ from: '2026-10-01', to: '2026-10-31' });
+    expect(monthRange('2028-02').to).toBe('2028-02-29');
+  });
+
+  it('carries over, sums the period and keeps a running balance', () => {
+    const s = buildStatement(txs, 's1', '2026-10-01', '2026-10-31');
+    expect(s.opening).toBe(699.9);
+    expect(s.topups).toBe(500);
+    expect(s.expenses).toBe(200.2);
+    expect(s.closing).toBe(999.7);
+    expect(s.liters).toBe(4.5);
+    expect(s.rows.map((r) => [r.tx.id, r.balance])).toEqual([
+      ['c', 1199.9],
+      ['d', 999.7]
+    ]);
+  });
+
+  it('handles an empty period', () => {
+    const s = buildStatement(txs, 's1', '2026-12-01', '2026-12-31');
+    expect(s.rows).toHaveLength(0);
+    expect(s.opening).toBe(s.closing);
+    expect(s.closing).toBe(899.7);
+  });
+
+  it('builds WhatsApp text', () => {
+    const s = buildStatement(txs, 's1', '2026-10-01', '2026-10-31');
+    const text = statementText('S1', '2026-10-01', '2026-10-31', s);
+    expect(text).toContain('Dönem: 01.10.2026 – 31.10.2026');
+    expect(text).toContain('Kapanış');
+    expect(text).toContain('34ABC1 · Fiş 77');
+    expect(formatDay('2026-10-07T12:00')).toBe('07.10.2026');
+  });
+
+  it('searches plate, receipt and station case-insensitively', () => {
+    const d = txs[3];
+    expect(matchesSearch(d, '34abc')).toBe(true);
+    expect(matchesSearch(d, '77')).toBe(true);
+    expect(matchesSearch(d, '200,2')).toBe(true);
+    expect(matchesSearch(d, 'xyz')).toBe(false);
+    expect(matchesSearch(d, '  ')).toBe(true);
+  });
+
+  it('groups sorted transactions by day with totals', () => {
+    const g = groupByDay(sortTransactions(txs.filter((t) => t.date.startsWith('2026-10'))));
+    expect(g.map((x) => x.day)).toEqual(['2026-10-16', '2026-10-15', '2026-10-01']);
+    expect(g[2].topups).toBe(500);
+  });
+});

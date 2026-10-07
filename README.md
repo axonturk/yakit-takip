@@ -13,8 +13,9 @@ Canlı: https://axonturk.github.io/yakit-takip/
 3. **Güvenilir kayıt:** İşlemler düzenlenebilir (eski değerler değişiklik geçmişinde saklanır), silinen işlem "Geri al" ile geri gelir, kaldırılan istasyonun geçmişi korunur. Tutarlar kuruşa yuvarlanır.
 4. **Açılış bakiyesi ve düzeltme:** İstasyon eklerken mevcut bakiye girilebilir; "Düzelt" ekranı istasyonun defteriyle eşitleme kaydı oluşturur.
 5. **Yedekleme:** JSON yedek indirme; geri yüklemede dosya doğrulanır, özet gösterilir ve mevcut veri önce otomatik yedeklenir.
-6. **Excel/CSV:** Türkçe Excel'de doğrudan açılan ekstre (noktalı virgül, Türkçe karakter desteği).
-7. **Çevrimdışı PWA:** Telefona uygulama gibi kurulur, veriler cihazda (`localStorage`) tutulur.
+6. **Dönem ekstresi:** İstasyon ve ay (veya tarih aralığı) seçilir; devir, yükleme, tüketim, kapanış ve satır satır bakiye gösterilir. PDF (yazdır), WhatsApp ile paylaş ve Excel/CSV.
+7. **Geçmiş:** Güne göre gruplu liste; plaka, fiş no, not veya tutarla arama ve tarih aralığı filtresi.
+8. **Çevrimdışı PWA:** Telefona uygulama gibi kurulur, veriler cihazda (`localStorage`) tutulur.
 
 ## 📲 Telefona Nasıl Yüklenir?
 

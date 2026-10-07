@@ -26,6 +26,7 @@ import AdjustBalanceModal from './components/AdjustBalanceModal';
 import InstallAppModal from './components/InstallAppModal';
 import EditTransactionModal from './components/EditTransactionModal';
 import EditStationModal from './components/EditStationModal';
+import StatementView from './components/StatementView';
 
 import { Home, CreditCard, Clock, Fuel, Sliders } from 'lucide-react';
 
@@ -80,6 +81,8 @@ export default function App() {
 
   // Active bottom nav tab ('home' or 'history')
   const [activeTab, setActiveTab] = useState('home');
+  // History tab shows either the movement list or the period statement
+  const [historyView, setHistoryView] = useState('list');
 
   // Check PWA standalone mode and listen for install prompt
   useEffect(() => {
@@ -628,15 +631,41 @@ export default function App() {
           </>
         ) : (
           /* Full History View */
-          <TransactionHistory
-            transactions={sortedTransactions}
-            stations={data.stations}
-            plates={plates}
-            selectedStationFilter={selectedStationFilter}
-            onSelectStationFilter={setSelectedStationFilter}
-            onDeleteTransaction={handleDeleteTransaction}
-            onEditTransaction={setEditingTx}
-          />
+          <div className="space-y-3">
+            <div className="flex gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
+              {[
+                ['list', 'Hareketler'],
+                ['statement', 'Dönem Ekstresi']
+              ].map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setHistoryView(key)}
+                  className={`flex-1 py-2 rounded-lg font-bold transition ${
+                    historyView === key ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {historyView === 'statement' ? (
+              <StatementView
+                stations={data.stations}
+                transactions={data.transactions}
+                defaultStationId={selectedStationFilter}
+              />
+            ) : (
+              <TransactionHistory
+                transactions={sortedTransactions}
+                stations={data.stations}
+                plates={plates}
+                selectedStationFilter={selectedStationFilter}
+                onSelectStationFilter={setSelectedStationFilter}
+                onDeleteTransaction={handleDeleteTransaction}
+                onEditTransaction={setEditingTx}
+              />
+            )}
+          </div>
         )}
 
       </main>

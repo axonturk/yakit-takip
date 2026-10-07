@@ -348,3 +348,129 @@ export function daysSince(isoDate, now = new Date()) {
   if (!isoDate) return null;
   return Math.floor((now - new Date(isoDate)) / 86400000);
 }
+
+// "2026-10" → { from: '2026-10-01', to: '2026-10-31' }
+export function monthRange(ym) {
+  const [y, m] = ym.split('-').map(Number);
+  const last = new Date(y, m, 0).getDate();
+  return { from: `${ym}-01`, to: `${ym}-${String(last).padStart(2, '0')}` };
+}
+
+// "2026-10-07" → "07.10.2026"
+export function formatDay(day) {
+  if (!day) return '';
+  const [y, m, d] = day.slice(0, 10).split('-');
+  return `${d}.${m}.${y}`;
+}
+
+// Period statement for one station between two days (inclusive, 'YYYY-MM-DD').
+// Everything before `from` is carried over as the opening balance.
+export function buildStatement(transactions, stationId, from, to) {
+  const own = transactions
+    .map((t, i) => ({ t, i }))
+    .filter(({ t }) => t.stationId === stationId)
+    .sort((a, b) => {
+      const diff = new Date(a.t.date) - new Date(b.t.date);
+      return diff !== 0 ? diff : b.i - a.i;
+    })
+    .map(({ t }) => t);
+
+  let balance = 0;
+  let topups = 0;
+  let expenses = 0;
+  let liters = 0;
+  let topupCount = 0;
+  let expenseCount = 0;
+  let opening = null;
+  const rows = [];
+
+  own.forEach((t) => {
+    const day = (t.date || '').slice(0, 10);
+    if (to && day > to) return;
+    const kurus = toKurus(t.amount);
+    const signed = t.type === 'topup' ? kurus : -kurus;
+    if (from && day < from) {
+      balance += signed;
+      return;
+    }
+    if (opening === null) opening = balance;
+    balance += signed;
+    if (t.type === 'topup') {
+      topups += kurus;
+      topupCount += 1;
+    } else {
+      expenses += kurus;
+      expenseCount += 1;
+      liters += Number(t.liters) || 0;
+    }
+    rows.push({ tx: t, balance: balance / 100 });
+  });
+
+  if (opening === null) opening = balance;
+  return {
+    opening: opening / 100,
+    topups: topups / 100,
+    expenses: expenses / 100,
+    closing: balance / 100,
+    liters: Math.round(liters * 100) / 100,
+    topupCount,
+    expenseCount,
+    rows
+  };
+}
+
+// Plain-text statement for WhatsApp; *bold* is WhatsApp markup.
+export function statementText(stationName, from, to, s, maxRows = 40) {
+  const lines = [
+    '*Depozit · Dönem Ekstresi*',
+    `İstasyon: ${stationName}`,
+    `Dönem: ${formatDay(from)} – ${formatDay(to)}`,
+    '',
+    `Devir: ${formatTL(s.opening)}`,
+    `+ Yüklenen: ${formatTL(s.topups)} (${s.topupCount} işlem)`,
+    `− Tüketim: ${formatTL(s.expenses)} (${s.expenseCount} işlem${s.liters ? `, ${String(s.liters).replace('.', ',')} L` : ''})`,
+    `*= Kapanış: ${formatTL(s.closing)}*`
+  ];
+  if (s.rows.length > 0 && s.rows.length <= maxRows) {
+    lines.push('', 'Hareketler:');
+    s.rows.forEach(({ tx, balance }) => {
+      const sign = tx.type === 'topup' ? '+' : '−';
+      const extra = [tx.plate, tx.receiptNo && `Fiş ${tx.receiptNo}`].filter(Boolean).join(' · ');
+      lines.push(
+        `${formatDay(tx.date)} ${tx.date.slice(11, 16)}  ${sign}${formatTL(tx.amount)}${extra ? `  ${extra}` : ''}  → ${formatTL(balance)}`
+      );
+    });
+  }
+  return lines.join('\n');
+}
+
+// Free-text search over the fields a user would remember.
+export function matchesSearch(tx, query) {
+  const q = query.trim().toLocaleLowerCase('tr-TR');
+  if (!q) return true;
+  const hay = [
+    tx.stationName, tx.plate, tx.receiptNo, tx.note, tx.fuelType, tx.paymentMethod,
+    transactionLabel(tx), String(tx.amount), String(tx.amount).replace('.', ',')
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLocaleLowerCase('tr-TR');
+  return hay.includes(q);
+}
+
+// Group an already-sorted list into [{ day, items, topups, expenses }].
+export function groupByDay(transactions) {
+  const groups = [];
+  transactions.forEach((t) => {
+    const day = (t.date || '').slice(0, 10);
+    let g = groups[groups.length - 1];
+    if (!g || g.day !== day) {
+      g = { day, items: [], topups: 0, expenses: 0 };
+      groups.push(g);
+    }
+    g.items.push(t);
+    if (t.type === 'topup') g.topups = roundMoney(g.topups + Number(t.amount));
+    else g.expenses = roundMoney(g.expenses + Number(t.amount));
+  });
+  return groups;
+}
