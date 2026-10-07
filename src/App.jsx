@@ -11,21 +11,19 @@ import Header from './components/Header';
 import BalanceCard from './components/BalanceCard';
 import StationList from './components/StationList';
 import TransactionHistory from './components/TransactionHistory';
-import PumpScannerModal from './components/PumpScannerModal';
 import TopupModal from './components/TopupModal';
 import ManualExpenseModal from './components/ManualExpenseModal';
 import AddStationModal from './components/AddStationModal';
 import AdjustBalanceModal from './components/AdjustBalanceModal';
 import InstallAppModal from './components/InstallAppModal';
 
-import { Home, Camera, CreditCard, Clock, Plus, Fuel } from 'lucide-react';
+import { Home, CreditCard, Clock, Fuel, Sliders } from 'lucide-react';
 
 export default function App() {
   const [data, setData] = useState(() => loadData());
   const [selectedStationFilter, setSelectedStationFilter] = useState(null);
 
   // Modals
-  const [isScanOpen, setIsScanOpen] = useState(false);
   const [isTopupOpen, setIsTopupOpen] = useState(false);
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [isAddStationOpen, setIsAddStationOpen] = useState(false);
@@ -232,11 +230,6 @@ export default function App() {
     reader.readAsText(file);
   };
 
-  const handleOpenScan = (stId) => {
-    if (stId) setSelectedStationFilter(stId);
-    setIsScanOpen(true);
-  };
-
   const handleOpenTopup = (stId) => {
     if (stId) setSelectedStationFilter(stId);
     setIsTopupOpen(true);
@@ -391,7 +384,7 @@ export default function App() {
               totalTopup={totalTopup}
               totalExpense={totalExpense}
               stationCount={data.stations.length}
-              onOpenScan={() => handleOpenScan(selectedStationFilter)}
+              onOpenExpense={() => handleOpenExpense(selectedStationFilter)}
               onOpenTopup={() => handleOpenTopup(selectedStationFilter)}
             />
 
@@ -401,7 +394,6 @@ export default function App() {
               selectedStationFilter={selectedStationFilter}
               onSelectStationFilter={setSelectedStationFilter}
               onOpenAddStation={() => setIsAddStationOpen(true)}
-              onOpenScanForStation={handleOpenScan}
               onOpenTopupForStation={handleOpenTopup}
               onOpenExpenseForStation={handleOpenExpense}
               onOpenAdjustBalance={handleOpenAdjustBalance}
@@ -482,21 +474,21 @@ export default function App() {
           </button>
 
           <button
-            onClick={() => handleOpenScan(selectedStationFilter)}
-            className="flex flex-col items-center justify-center text-emerald-400 hover:text-emerald-300 text-[10px] font-bold transition -mt-3"
+            onClick={() => handleOpenExpense(selectedStationFilter)}
+            className="flex flex-col items-center justify-center text-rose-400 hover:text-rose-300 text-[10px] font-bold transition -mt-3"
           >
-            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-950/60 border-2 border-slate-900 active:scale-95 transition">
-              <Camera className="w-5 h-5" />
+            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-red-600 to-rose-500 text-white flex items-center justify-center shadow-lg shadow-red-950/60 border-2 border-slate-900 active:scale-95 transition">
+              <Fuel className="w-5 h-5" />
             </div>
-            <span className="mt-1">Pompa Tara</span>
+            <span className="mt-1">Harcama</span>
           </button>
 
           <button
-            onClick={() => handleOpenExpense(selectedStationFilter)}
-            className="flex flex-col items-center justify-center text-slate-400 hover:text-red-400 text-[10px] font-medium transition"
+            onClick={() => handleOpenAdjustBalance(selectedStationFilter)}
+            className="flex flex-col items-center justify-center text-slate-400 hover:text-amber-300 text-[10px] font-medium transition"
           >
-            <Fuel className="w-5 h-5 mb-0.5" />
-            <span>- Harcama</span>
+            <Sliders className="w-5 h-5 mb-0.5" />
+            <span>Düzelt</span>
           </button>
 
           <button
@@ -513,14 +505,6 @@ export default function App() {
       </nav>
 
       {/* MODALS */}
-      <PumpScannerModal
-        isOpen={isScanOpen}
-        onClose={() => setIsScanOpen(false)}
-        stations={data.stations}
-        defaultStationId={selectedStationFilter}
-        onSaveExpense={handleSaveExpense}
-      />
-
       <TopupModal
         isOpen={isTopupOpen}
         onClose={() => setIsTopupOpen(false)}

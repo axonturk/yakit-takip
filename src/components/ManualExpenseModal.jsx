@@ -20,6 +20,7 @@ export default function ManualExpenseModal({
 
   useEffect(() => {
     if (isOpen) {
+      setErrorMsg(null);
       const now = new Date();
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
       setDatetime(now.toISOString().slice(0, 16));
@@ -30,6 +31,25 @@ export default function ManualExpenseModal({
       }
     }
   }, [isOpen, defaultStationId, stations]);
+
+  // Litre ve birim fiyat girilirse toplam tutarı otomatik hesapla
+  const recalcAmount = (l, p) => {
+    const lv = parseFloat(l);
+    const pv = parseFloat(p);
+    if (lv > 0 && pv > 0) {
+      setAmount((lv * pv).toFixed(2));
+    }
+  };
+
+  const handleLitersChange = (val) => {
+    setLiters(val);
+    recalcAmount(val, unitPrice);
+  };
+
+  const handleUnitPriceChange = (val) => {
+    setUnitPrice(val);
+    recalcAmount(liters, val);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -45,7 +65,7 @@ export default function ManualExpenseModal({
       liters: liters ? parseFloat(liters) : null,
       unitPrice: unitPrice ? parseFloat(unitPrice) : null,
       date: datetime,
-      note: note || 'Manuel Giriş'
+      note: note || 'Yakıt Alımı'
     });
 
     setAmount('');
@@ -68,8 +88,8 @@ export default function ManualExpenseModal({
               <Edit3 className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">Manuel Harcama Girişi</h2>
-              <p className="text-[10px] text-slate-400">Toplam Tutar Zorunlu, Diğerleri Seçmeli</p>
+              <h2 className="text-sm font-bold text-white">Yakıt Harcaması Gir</h2>
+              <p className="text-[10px] text-slate-400">Litre × Fiyat girilirse tutar otomatik hesaplanır</p>
             </div>
           </div>
           <button
@@ -141,7 +161,7 @@ export default function ManualExpenseModal({
                 type="number"
                 step="0.01"
                 value={liters}
-                onChange={(e) => setLiters(e.target.value)}
+                onChange={(e) => handleLitersChange(e.target.value)}
                 placeholder="Örn: 34.00"
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
               />
@@ -154,7 +174,7 @@ export default function ManualExpenseModal({
                 type="number"
                 step="0.01"
                 value={unitPrice}
-                onChange={(e) => setUnitPrice(e.target.value)}
+                onChange={(e) => handleUnitPriceChange(e.target.value)}
                 placeholder="Örn: 44.10"
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
               />

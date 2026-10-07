@@ -1,14 +1,13 @@
 import React from 'react';
 import { formatTL } from '../services/storage';
-import { CreditCard, Camera, Edit3, TrendingUp, TrendingDown } from 'lucide-react';
+import { CreditCard, Fuel, TrendingUp, TrendingDown } from 'lucide-react';
 
 export default function BalanceCard({
   totalBalance,
   totalTopup,
   totalExpense,
   stationCount,
-  onOpenScan,
-  onOpenManual,
+  onOpenExpense,
   onOpenTopup
 }) {
   return (
@@ -71,11 +70,11 @@ export default function BalanceCard({
       {/* Primary Action Buttons */}
       <div className="grid grid-cols-2 gap-2">
         <button
-          onClick={onOpenScan}
-          className="py-3 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 transition active:scale-[0.98]"
+          onClick={onOpenExpense}
+          className="py-3 px-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-red-950/40 flex items-center justify-center gap-2 transition active:scale-[0.98]"
         >
-          <Camera className="w-4 h-4 stroke-[2.2]" />
-          <span>POMPA TARA</span>
+          <Fuel className="w-4 h-4 stroke-[2.2]" />
+          <span>- HARCAMA GİR</span>
         </button>
 
         <button

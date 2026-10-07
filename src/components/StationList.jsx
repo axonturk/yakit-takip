@@ -1,6 +1,6 @@
 import React from 'react';
 import { formatTL, formatTRDate } from '../services/storage';
-import { Plus, ChevronRight, Camera, CreditCard, Fuel, Sliders, Trash2 } from 'lucide-react';
+import { Plus, ChevronRight, CreditCard, Fuel, Sliders, Trash2 } from 'lucide-react';
 import StationLogo from './StationLogo';
 
 export default function StationList({
@@ -8,7 +8,6 @@ export default function StationList({
   selectedStationFilter,
   onSelectStationFilter,
   onOpenAddStation,
-  onOpenScanForStation,
   onOpenTopupForStation,
   onOpenExpenseForStation,
   onOpenAdjustBalance,
@@ -116,14 +115,6 @@ export default function StationList({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex gap-1">
-                    <button
-                      onClick={() => onOpenScanForStation && onOpenScanForStation(station.id)}
-                      className="flex-1 py-1.5 px-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[9px] font-bold flex items-center justify-center gap-0.5 shadow transition"
-                      title="Pompa Oku"
-                    >
-                      <Camera className="w-2.5 h-2.5" />
-                      <span>Pompa</span>
-                    </button>
                     <button
                       onClick={() => onOpenTopupForStation && onOpenTopupForStation(station.id)}
                       className="flex-1 py-1.5 px-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-[9px] font-bold flex items-center justify-center gap-0.5 shadow transition"

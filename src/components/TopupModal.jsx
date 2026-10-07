@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { CreditCard, X, Plus, Camera, Upload, AlertCircle, RefreshCw, Clock } from 'lucide-react';
-import { runOcr } from '../services/ocr';
+import React, { useState, useEffect } from 'react';
+import { CreditCard, X, Plus, AlertCircle, Clock } from 'lucide-react';
 import StationLogo from './StationLogo';
 
 
@@ -15,14 +14,11 @@ export default function TopupModal({
   const [amount, setAmount] = useState('');
   const [datetime, setDatetime] = useState('');
   const [note, setNote] = useState('');
-  const [isScanning, setIsScanning] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
-
-  const fileInputRef = useRef(null);
-  const canvasRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
+      setErrorMsg(null);
       const now = new Date();
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
       setDatetime(now.toISOString().slice(0, 16));
@@ -33,44 +29,6 @@ export default function TopupModal({
       }
     }
   }, [isOpen, defaultStationId, stations]);
-
-  const handleReceiptUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsScanning(true);
-    setErrorMsg(null);
-    const reader = new FileReader();
-
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = async () => {
-        const canvas = canvasRef.current || document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-
-        try {
-          const res = await runOcr(canvas, 'receipt');
-          if (res.amount) {
-            setAmount(res.amount.toString());
-          }
-          if (res.date) {
-            setDatetime(res.date);
-          }
-          setNote('Kredi Kartı Fişi Taraması');
-        } catch (err) {
-          console.error(err);
-          setErrorMsg('Fiş okunamadı, lütfen tutarı manuel girin.');
-        } finally {
-          setIsScanning(false);
-        }
-      };
-      img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -114,38 +72,6 @@ export default function TopupModal({
             className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
           >
             <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Fiş/Slip Scanning Option */}
-        <div className="mt-3 p-3 bg-slate-800/50 border border-slate-700/80 rounded-xl flex items-center justify-between">
-          <div>
-            <div className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-              <Camera className="w-3.5 h-3.5 text-amber-400" />
-              <span>POS Fişi / Slip Tara</span>
-            </div>
-            <div className="text-[10px] text-slate-400">Tutar ve tarihi fişten otomatik okusun</div>
-          </div>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleReceiptUpload}
-            className="hidden"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isScanning}
-            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-xs font-semibold text-white rounded-lg flex items-center gap-1 transition"
-          >
-            {isScanning ? (
-              <RefreshCw className="w-3 h-3 animate-spin" />
-            ) : (
-              <Upload className="w-3 h-3" />
-            )}
-            <span>{isScanning ? 'Okunuyor...' : 'Fiş Çek'}</span>
           </button>
         </div>
 
