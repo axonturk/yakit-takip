@@ -52,7 +52,7 @@ export default function StatementView({ stations, transactions, defaultStationId
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `pumpbook_ekstre_${stationName.replace(/\s+/g, '_')}_${from}_${to}.csv`;
+    a.download = `hisapo_ekstre_${stationName.replace(/\s+/g, '_')}_${from}_${to}.csv`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
@@ -192,7 +192,7 @@ function PrintableStatement({ stationName, from, to, s }) {
   const num = { ...cell, textAlign: 'right', whiteSpace: 'nowrap' };
   return (
     <div className="print-only" style={{ color: '#000', background: '#fff', fontSize: 11, padding: 16 }}>
-      <h1 style={{ fontSize: 18, margin: 0 }}>Pumpbook · Dönem Ekstresi</h1>
+      <h1 style={{ fontSize: 18, margin: 0 }}>Hisapo · Dönem Ekstresi</h1>
       <p style={{ margin: '4px 0 12px' }}>
         <strong>{stationName}</strong> · {formatDay(from)} – {formatDay(to)} · Hazırlanma: {formatDay(nowLocalISO())}
       </p>
