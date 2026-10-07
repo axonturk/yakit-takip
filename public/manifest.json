@@ -1,6 +1,6 @@
 {
-  "name": "Depozit · Yakıt Avans & Bakiye Takip",
-  "short_name": "Depozit",
+  "name": "Hisapo · Yakıt Avans & Bakiye Takip",
+  "short_name": "Hisapo",
   "description": "Akaryakıt istasyonlarındaki avans ve veresiye bakiyenizi tek yerde takip edin",
   "start_url": "./index.html",
   "scope": "./",

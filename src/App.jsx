@@ -346,7 +346,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `depozit_yedek_${nowLocalISO().slice(0, 10)}${suffix}.json`;
+    a.download = `hisapo_yedek_${nowLocalISO().slice(0, 10)}${suffix}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
@@ -564,7 +564,7 @@ export default function App() {
         {activeTab === 'home' && activeStations.length === 0 ? (
           <div className="p-6 text-center bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
             <div className="text-3xl">⛽</div>
-            <h2 className="text-sm font-bold text-white">Depozit'e hoş geldiniz</h2>
+            <h2 className="text-sm font-bold text-white">Hisapo'ya hoş geldiniz</h2>
             <p className="text-xs text-slate-400">
               Avans yatırdığınız veya veresiye yakıt aldığınız ilk istasyonu ekleyin. Varsa mevcut bakiyesini de
               yazabilirsiniz.
