@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PhotoPicker from './PhotoPicker';
 import { Edit3, X, AlertCircle, MinusCircle, Clock } from 'lucide-react';
 import StationLogo from './StationLogo';
 import { FUEL_TYPES, lastExpenseAt, findDuplicate, formatTL, formatTRDate } from '../services/storage';
@@ -23,6 +24,7 @@ export default function ManualExpenseModal({
   const [plate, setPlate] = useState('');
   const [fuelType, setFuelType] = useState('');
   const [receiptNo, setReceiptNo] = useState('');
+  const [photo, setPhoto] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
@@ -41,6 +43,7 @@ export default function ManualExpenseModal({
       setAmount('');
       setLiters('');
       setReceiptNo('');
+      setPhoto(null);
     }
   }, [isOpen, defaultStationId, stations]);
 
@@ -116,12 +119,13 @@ export default function ManualExpenseModal({
       return;
     }
 
-    onSaveExpense(candidate);
+    onSaveExpense({ ...candidate, photo });
 
     setAmount('');
     setLiters('');
     setNote('');
     setReceiptNo('');
+    setPhoto(null);
     onClose();
   };
 
@@ -272,6 +276,8 @@ export default function ManualExpenseModal({
               />
             </div>
           </div>
+
+          <PhotoPicker value={photo} onChange={setPhoto} />
 
           <div>
             <label className="block text-[11px] text-slate-400 mb-1">

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Pencil, X, AlertCircle } from 'lucide-react';
+import PhotoPicker from './PhotoPicker';
 import { formatTL, transactionLabel, FUEL_TYPES, PAYMENT_METHODS } from '../services/storage';
 
 const inputClass =
@@ -33,6 +34,8 @@ function EditForm({ tx, stations, plates, onClose, onSave }) {
   const [fuelType, setFuelType] = useState(tx.fuelType || '');
   const [paymentMethod, setPaymentMethod] = useState(tx.paymentMethod || '');
   const [errorMsg, setErrorMsg] = useState(null);
+  // undefined = keep current photo, Blob = replace, null = remove
+  const [photo, setPhoto] = useState(undefined);
 
   // The current station stays selectable even if it was archived later
   const stationOptions = stations.some((s) => s.id === tx.stationId)
@@ -74,7 +77,8 @@ function EditForm({ tx, stations, plates, onClose, onSave }) {
     Object.keys(next).forEach((k) => {
       if ((next[k] ?? null) !== (tx[k] ?? null)) changes[k] = next[k];
     });
-    if (Object.keys(changes).length > 0) onSave(tx.id, changes);
+    const photoChanged = photo !== undefined && !(photo === null && !tx.photoId);
+    if (Object.keys(changes).length > 0 || photoChanged) onSave(tx.id, changes, photoChanged ? photo : undefined);
     onClose();
   };
 
@@ -226,6 +230,13 @@ function EditForm({ tx, stations, plates, onClose, onSave }) {
               <input type="text" value={note} onChange={(e) => setNote(e.target.value)} className={inputClass} />
             </div>
           </div>
+
+          <PhotoPicker
+            value={photo}
+            onChange={setPhoto}
+            existingId={tx.photoId}
+            label={isExpense ? 'Fiş fotoğrafı' : 'Dekont fotoğrafı'}
+          />
 
           {tx.edits?.length > 0 && (
             <div className="text-[10px] text-slate-400 bg-slate-800/60 border border-slate-700/60 rounded-xl p-2 space-y-0.5">

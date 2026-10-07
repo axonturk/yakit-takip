@@ -27,6 +27,8 @@ import InstallAppModal from './components/InstallAppModal';
 import EditTransactionModal from './components/EditTransactionModal';
 import EditStationModal from './components/EditStationModal';
 import StatementView from './components/StatementView';
+import PhotoViewer from './components/PhotoViewer';
+import { savePhoto, newPhotoId, cleanupPhotos } from './services/photos';
 
 import { Home, CreditCard, Clock, Fuel, Sliders } from 'lucide-react';
 
@@ -83,6 +85,14 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   // History tab shows either the movement list or the period statement
   const [historyView, setHistoryView] = useState('list');
+  const [viewingPhotoTx, setViewingPhotoTx] = useState(null);
+
+  // Drop receipt photos left behind by deleted or edited transactions, once per launch
+  useEffect(() => {
+    const t = setTimeout(() => cleanupPhotos(data.transactions).catch(() => {}), 3000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Check PWA standalone mode and listen for install prompt
   useEffect(() => {
@@ -175,6 +185,14 @@ export default function App() {
     !data.isSample && data.transactions.length >= 5 && (backupAge === null || backupAge >= 7);
 
   // Handlers
+  // Stores the photo on the device and returns its id (null if none or storing failed).
+  const storePhoto = (blob) => {
+    if (!blob) return null;
+    const id = newPhotoId();
+    savePhoto(id, blob).catch(() => alert('Fotoğraf kaydedilemedi; kayıt fotoğrafsız saklandı.'));
+    return id;
+  };
+
   const handleSaveExpense = (newExpense) => {
     const st = data.stations.find((s) => s.id === newExpense.stationId);
     const tx = {
@@ -188,6 +206,7 @@ export default function App() {
       plate: newExpense.plate || null,
       fuelType: newExpense.fuelType || null,
       receiptNo: newExpense.receiptNo || null,
+      photoId: storePhoto(newExpense.photo),
       date: newExpense.date,
       note: newExpense.note
     };
@@ -211,6 +230,7 @@ export default function App() {
       unitPrice: null,
       paymentMethod: newTopup.paymentMethod || null,
       receiptNo: newTopup.receiptNo || null,
+      photoId: storePhoto(newTopup.photo),
       date: newTopup.date,
       note: newTopup.note
     };
@@ -319,7 +339,9 @@ export default function App() {
   };
 
   // Edits keep the previous values in tx.edits so a corrected amount stays traceable.
-  const handleEditTransaction = (id, changes) => {
+  const handleEditTransaction = (id, fieldChanges, photo) => {
+    // photo: undefined = unchanged, Blob = replaced, null = removed
+    const changes = photo === undefined ? fieldChanges : { ...fieldChanges, photoId: storePhoto(photo) };
     setData((prev) => ({
       ...prev,
       transactions: prev.transactions.map((t) => {
@@ -350,6 +372,18 @@ export default function App() {
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
+
+  const theme = data.settings.theme === 'light' ? 'light' : 'dark';
+  useEffect(() => {
+    document.documentElement.classList.toggle('theme-light', theme === 'light');
+    document.querySelector('meta[name=theme-color]')?.setAttribute('content', theme === 'light' ? '#f1f5f9' : '#090d16');
+  }, [theme]);
+
+  const handleToggleTheme = () =>
+    setData((prev) => ({
+      ...prev,
+      settings: { ...prev.settings, theme: prev.settings.theme === 'light' ? 'dark' : 'light' }
+    }));
 
   const handleExportBackup = () => {
     const stamped = { ...data, settings: { ...data.settings, lastBackupAt: nowLocalISO() } };
@@ -457,11 +491,17 @@ export default function App() {
   };
 
   const handleLoadSample = () => {
-    setData({ ...migrateData(SAMPLE_DATA), isSample: true });
+    setData((prev) => {
+      const sample = migrateData(SAMPLE_DATA);
+      return { ...sample, settings: { ...sample.settings, theme: prev.settings.theme }, isSample: true };
+    });
   };
 
   const handleClearSample = () => {
-    setData(emptyData());
+    setData((prev) => {
+      const fresh = emptyData();
+      return { ...fresh, settings: { ...fresh.settings, theme: prev.settings.theme } };
+    });
     setSelectedStationFilter(null);
   };
 
@@ -473,6 +513,8 @@ export default function App() {
       {/* Header */}
       <Header
         onOpenAddStation={() => setIsAddStationOpen(true)}
+        theme={data.settings.theme}
+        onToggleTheme={handleToggleTheme}
         onExport={handleExportBackup}
         onImport={handleImportBackup}
         onOpenInstall={handleInstallClick}
@@ -617,6 +659,7 @@ export default function App() {
               onSelectStationFilter={setSelectedStationFilter}
               onDeleteTransaction={handleDeleteTransaction}
               onEditTransaction={setEditingTx}
+              onViewPhoto={setViewingPhotoTx}
               compact
             />
 
@@ -663,6 +706,7 @@ export default function App() {
                 onSelectStationFilter={setSelectedStationFilter}
                 onDeleteTransaction={handleDeleteTransaction}
                 onEditTransaction={setEditingTx}
+              onViewPhoto={setViewingPhotoTx}
               />
             )}
           </div>
@@ -820,6 +864,8 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <PhotoViewer transaction={viewingPhotoTx} onClose={() => setViewingPhotoTx(null)} />
 
       <InstallAppModal
         isOpen={isInstallModalOpen}

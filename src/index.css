@@ -36,3 +36,53 @@
     display: block !important;
   }
 }
+
+/* Light theme: remap the dark palette instead of restyling every component.
+   Slate scale is flipped, light accent text shades are darkened for contrast. */
+html.theme-light {
+  color-scheme: light;
+  --color-slate-950: oklch(96.8% .007 247.896);
+  --color-slate-900: #ffffff;
+  --color-slate-800: oklch(96.8% .007 247.896);
+  --color-slate-700: oklch(92.9% .013 255.508);
+  --color-slate-600: oklch(86.9% .022 252.894);
+  --color-slate-500: oklch(55.4% .046 257.417);
+  --color-slate-400: oklch(55.4% .046 257.417);
+  --color-slate-300: oklch(44.6% .043 257.281);
+  --color-slate-200: oklch(37.2% .044 257.287);
+  --color-slate-100: oklch(27.9% .041 260.031);
+  --color-white: oklch(20.8% .042 265.755);
+  --color-amber-200: oklch(47.3% .137 46.201);
+  --color-amber-300: oklch(55.5% .163 48.998);
+  --color-amber-400: oklch(55.5% .163 48.998);
+  --color-emerald-200: oklch(43.2% .095 166.913);
+  --color-emerald-300: oklch(50.8% .118 165.612);
+  --color-emerald-400: oklch(50.8% .118 165.612);
+  --color-red-200: oklch(44.4% .177 26.899);
+  --color-red-300: oklch(50.5% .213 27.518);
+  --color-red-400: oklch(50.5% .213 27.518);
+  --color-rose-200: oklch(45.5% .188 13.697);
+  --color-rose-300: oklch(51.4% .222 16.935);
+  --color-rose-400: oklch(51.4% .222 16.935);
+  --color-sky-200: oklch(44.3% .11 240.79);
+  --color-sky-300: oklch(50% .134 242.749);
+  --color-sky-400: oklch(50% .134 242.749);
+  --color-blue-200: oklch(42.4% .199 265.638);
+}
+html.theme-light body {
+  background-color: oklch(96.8% .007 247.896);
+  color: oklch(20.8% .042 265.755);
+}
+/* Solid colored surfaces keep white text */
+html.theme-light :is(
+  [class~="bg-white"], [class~="bg-emerald-500"], [class~="bg-emerald-600"], [class~="bg-red-500"],
+  [class~="bg-red-600"], [class~="bg-sky-500"], [class~="bg-rose-500"], [class*="from-red-"],
+  [class*="from-rose-"], [class~="bg-black/90"]
+) {
+  --color-white: #fff;
+}
+/* Amber buttons keep dark text */
+html.theme-light :is([class~="bg-amber-500"], [class~="bg-amber-400"], [class~="bg-sky-500"], [class~="from-amber-400"], [class~="from-amber-500"]) {
+  --color-slate-950: oklch(12.9% .042 264.695);
+  --color-slate-900: oklch(20.8% .042 265.755);
+}

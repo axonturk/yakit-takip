@@ -15,7 +15,9 @@ Canlı: https://axonturk.github.io/yakit-takip/
 5. **Yedekleme:** JSON yedek indirme; geri yüklemede dosya doğrulanır, özet gösterilir ve mevcut veri önce otomatik yedeklenir.
 6. **Dönem ekstresi:** İstasyon ve ay (veya tarih aralığı) seçilir; devir, yükleme, tüketim, kapanış ve satır satır bakiye gösterilir. PDF (yazdır), WhatsApp ile paylaş ve Excel/CSV.
 7. **Geçmiş:** Güne göre gruplu liste; plaka, fiş no, not veya tutarla arama ve tarih aralığı filtresi.
-8. **Çevrimdışı PWA:** Telefona uygulama gibi kurulur, veriler cihazda (`localStorage`) tutulur.
+8. **Fiş / dekont fotoğrafı:** Harcama ve avans kaydına telefon kamerasıyla fotoğraf eklenir; küçültülüp cihazda (IndexedDB) saklanır, yedek dosyasına girmez.
+9. **Açık / koyu tema:** Başlıktaki güneş/ay düğmesiyle değişir, tercih saklanır.
+10. **Çevrimdışı PWA:** Telefona uygulama gibi kurulur, veriler cihazda (`localStorage`) tutulur.
 
 ## 📲 Telefona Nasıl Yüklenir?
 
