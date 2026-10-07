@@ -85,7 +85,7 @@ function SignIn() {
   return (
     <div className="space-y-3">
       <p className="text-xs text-slate-300">
-        E-posta adresinle giriş yap. Şifre yok: adresine bir giriş kodu gönderiyoruz.
+        E-posta adresinle giriş yap. Şifre yok: adresine bir giriş bağlantısı gönderiyoruz.
       </p>
       <input
         type="email"
@@ -105,12 +105,12 @@ function SignIn() {
             setSent(true);
           })}
         >
-          {busy ? 'Gönderiliyor…' : 'Giriş kodu gönder'}
+          {busy ? 'Gönderiliyor…' : 'Giriş bağlantısı gönder'}
         </button>
       ) : (
         <>
           <p className="text-[11px] text-emerald-300">
-            Kod gönderildi. E-postadaki kodu yaz ya da e-postadaki bağlantıya bu cihazda dokun.
+            E-posta gönderildi. İçindeki bağlantıya bu telefonda dokun. E-postada 6 haneli kod varsa aşağıya da yazabilirsin.
           </p>
           <input
             type="text"
