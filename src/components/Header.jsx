@@ -9,6 +9,8 @@ export default function Header({ onOpenTopup, onOpenAddStation, onExport, onImpo
     if (file) {
       onImport(file);
     }
+    // Allow choosing the same file again later
+    e.target.value = '';
   };
 
   return (
@@ -20,12 +22,9 @@ export default function Header({ onOpenTopup, onOpenAddStation, onExport, onImpo
           </div>
           <div>
             <h1 className="text-sm font-bold text-white tracking-tight flex items-center gap-1.5">
-              Yakıt Avans Takip
-              <span className="text-[10px] bg-emerald-500/15 text-emerald-400 font-semibold px-1.5 py-0.5 rounded border border-emerald-500/20">
-                PRO
-              </span>
+              Depozit
             </h1>
-            <p className="text-[11px] text-slate-400">İstasyon Peşin Bakiye Defteri</p>
+            <p className="text-[11px] text-slate-400">Yakıt avans defteri</p>
           </div>
         </div>
 
@@ -51,7 +50,7 @@ export default function Header({ onOpenTopup, onOpenAddStation, onExport, onImpo
 
           <button
             onClick={onExport}
-            title="Verileri Yedekle (Excel/JSON)"
+            title="Verileri Yedekle (JSON)"
             className="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition"
           >
             <Download className="w-4 h-4" />

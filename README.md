@@ -1,37 +1,20 @@
-# ⛽ Yakıt Avans & Pompa Takip (PWA)
+# ⛽ Depozit · Yakıt Avans & Bakiye Takip (PWA)
 
-İstasyonlara yapılan peşin avans ödemelerini (kredi kartı / nakit) ve her depo dolumundaki yakıt harcamalarını takip eden mobil öncelikli **Progressive Web App (PWA)**.
+Akaryakıt istasyonlarına yatırılan peşin avansları ve istasyondan veresiye (eksi bakiye) alınan yakıtı istasyon bazında takip eden, mobil öncelikli **Progressive Web App**.
+
+Canlı: https://axonturk.github.io/yakit-takip/
 
 ---
 
 ## 🚀 Temel Özellikler
 
-1. **İstasyon Bazlı Bakiye Takibi:**
-   - Opet, Shell, BP, Petrol Ofisi, TotalEnergies, Aytemiz, Türkiye Petrolleri ve Bağımsız istasyonlar için ayrı avans bakiyesi yönetimi.
-   - Her istasyon için gerçek zamanlı kalan bakiye, son işlem tarihi ve bakiye uyarıları.
-
-2. **📷 Kamera ile Pompa Ekranı Okuma (OCR):**
-   - Pompa ekranını telefon kamerasıyla tarayarak **Toplam Tutar (TL)**, **Litre (L)** ve **Birim Fiyat (TL/L)** değerlerini otomatik okuma.
-   - Matematiksel çapraz doğrulama formülü: $\text{Litre} \times \text{Birim Fiyat} \approx \text{Tutar}$ kontrolü ile %100 doğruluk güvencesi.
-
-3. **💳 Peşin Avans Yükleme:**
-   - İstasyonlara ay içinde peşin çektirilen avans tutarlarını hesaba ekleme.
-   - Kamera ile POS slip / fiş okuma desteği.
-
-4. **⚡ Doğrudan Seçili İstasyon Desteği:**
-   - Ana ekranda hangi istasyona tıklandıysa, alt menüdeki **Pompa Tara**, **+ Bakiye** veya **- Harcama** butonları otomatik olarak o istasyon için açılır.
-   - İstenirse açılan penceredeki listeden istasyon kolayca değiştirilebilir.
-
-5. **📱 Telefona Doğrudan Yükleme (PWA):**
-   - Tarayıcıda açıldıktan sonra **"Ana Ekrana Ekle"** veya **"Yükle"** butonuna basılarak telefona yerel uygulama gibi kurulabilir.
-   - Çevrimdışı (offline) çalışma desteği.
-   - Veriler kullanıcının cihazında (`localStorage`) güvenle saklanır, harici API maliyeti ve sunucu bağımlılığı yoktur.
-
-6. **💾 Yedekleme & Dışa Aktarma:**
-   - JSON formatında tüm veriyi indirme ve geri yükleme.
-   - İşlem geçmişini Excel/CSV formatında tek tıkla indirme.
-
----
+1. **İstasyon bazlı bakiye:** Her istasyon için avans, harcama ve kalan bakiye; borç varsa eksi bakiye olarak gösterilir.
+2. **Hızlı harcama girişi:** Litre × birim fiyat girilince tutar otomatik hesaplanır. İsteğe bağlı plaka etiketi, geçmişte araca göre filtre.
+3. **Güvenilir kayıt:** İşlemler düzenlenebilir (eski değerler değişiklik geçmişinde saklanır), silinen işlem "Geri al" ile geri gelir, kaldırılan istasyonun geçmişi korunur. Tutarlar kuruşa yuvarlanır.
+4. **Açılış bakiyesi ve düzeltme:** İstasyon eklerken mevcut bakiye girilebilir; "Düzelt" ekranı istasyonun defteriyle eşitleme kaydı oluşturur.
+5. **Yedekleme:** JSON yedek indirme; geri yüklemede dosya doğrulanır, özet gösterilir ve mevcut veri önce otomatik yedeklenir.
+6. **Excel/CSV:** Türkçe Excel'de doğrudan açılan ekstre (noktalı virgül, Türkçe karakter desteği).
+7. **Çevrimdışı PWA:** Telefona uygulama gibi kurulur, veriler cihazda (`localStorage`) tutulur.
 
 ## 📲 Telefona Nasıl Yüklenir?
 
@@ -50,9 +33,16 @@
 ---
 
 ## 🛠️ Teknolojiler
-- **React 19**
-- **Vite 8**
-- **Tailwind CSS v4**
-- **Tesseract.js** (İstemci taraflı OCR)
-- **Lucide React** (İkonlar)
+- **React 19**, **Vite 8**, **Tailwind CSS v4**
+- **Lucide React** (ikonlar)
+- **Vitest** (birim testleri)
 - **PWA Service Worker & Web App Manifest**
+
+## 👩‍💻 Geliştirme
+
+```bash
+npm ci
+npm run dev     # yerel geliştirme sunucusu
+npm test        # birim testleri
+npm run build   # dist/ klasörüne üretim çıktısı
+```

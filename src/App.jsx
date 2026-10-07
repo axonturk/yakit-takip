@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   loadData,
   saveData,
   calculateBalances,
+  sortTransactions,
+  validateBackup,
+  migrateData,
+  emptyData,
+  nowLocalISO,
+  roundMoney,
   formatTL,
-  INITIAL_DATA
+  SAMPLE_DATA
 } from './services/storage';
 
 import Header from './components/Header';
@@ -16,6 +22,7 @@ import ManualExpenseModal from './components/ManualExpenseModal';
 import AddStationModal from './components/AddStationModal';
 import AdjustBalanceModal from './components/AdjustBalanceModal';
 import InstallAppModal from './components/InstallAppModal';
+import EditTransactionModal from './components/EditTransactionModal';
 
 import { Home, CreditCard, Clock, Fuel, Sliders } from 'lucide-react';
 
@@ -115,6 +122,21 @@ export default function App() {
     data.transactions
   );
 
+  const sortedTransactions = useMemo(() => sortTransactions(data.transactions), [data.transactions]);
+  const activeStations = useMemo(() => data.stations.filter((s) => !s.archived), [data.stations]);
+  const plates = useMemo(
+    () => [...new Set(sortedTransactions.map((t) => t.plate).filter(Boolean))],
+    [sortedTransactions]
+  );
+  const recentTransactions = sortedTransactions
+    .filter((t) => !selectedStationFilter || t.stationId === selectedStationFilter)
+    .slice(0, 5);
+
+  // Transaction being edited, and the last deleted one (for "Geri al")
+  const [editingTx, setEditingTx] = useState(null);
+  const [undoState, setUndoState] = useState(null);
+  const undoTimer = useRef(null);
+
   // Handlers
   const handleSaveExpense = (newExpense) => {
     const st = data.stations.find((s) => s.id === newExpense.stationId);
@@ -123,9 +145,10 @@ export default function App() {
       type: 'expense',
       stationId: newExpense.stationId,
       stationName: st ? st.name : 'Bilinmeyen İstasyon',
-      amount: newExpense.amount,
+      amount: roundMoney(newExpense.amount),
       liters: newExpense.liters,
       unitPrice: newExpense.unitPrice,
+      plate: newExpense.plate || null,
       date: newExpense.date,
       note: newExpense.note
     };
@@ -143,7 +166,7 @@ export default function App() {
       type: 'topup',
       stationId: newTopup.stationId,
       stationName: st ? st.name : 'Bilinmeyen İstasyon',
-      amount: newTopup.amount,
+      amount: roundMoney(newTopup.amount),
       liters: null,
       unitPrice: null,
       date: newTopup.date,
@@ -166,10 +189,11 @@ export default function App() {
         type: 'topup',
         stationId: newStation.id,
         stationName: newStation.name,
-        amount: initialBal,
+        kind: 'opening',
+        amount: roundMoney(initialBal),
         liters: null,
         unitPrice: null,
-        date: new Date().toISOString().slice(0, 16),
+        date: nowLocalISO(),
         note: 'Başlangıç Avans Bakiyesi'
       };
       updatedTx = [topupTx, ...updatedTx];
@@ -179,68 +203,137 @@ export default function App() {
         type: 'expense',
         stationId: newStation.id,
         stationName: newStation.name,
-        amount: Math.abs(initialBal),
+        kind: 'opening',
+        amount: roundMoney(Math.abs(initialBal)),
         liters: null,
         unitPrice: null,
-        date: new Date().toISOString().slice(0, 16),
+        date: nowLocalISO(),
         note: 'Başlangıç Borç / Eksi Bakiye'
       };
       updatedTx = [debtTx, ...updatedTx];
     }
 
-    setData({
+    setData((prev) => ({
+      ...prev,
+      isSample: false,
       stations: updatedStations,
       transactions: updatedTx
-    });
+    }));
   };
 
   const handleDeleteTransaction = (id) => {
+    const index = data.transactions.findIndex((t) => t.id === id);
+    if (index === -1) return;
+    const tx = data.transactions[index];
     setData((prev) => ({
       ...prev,
       transactions: prev.transactions.filter((t) => t.id !== id)
     }));
+    clearTimeout(undoTimer.current);
+    setUndoState({ tx, index });
+    undoTimer.current = setTimeout(() => setUndoState(null), 7000);
+  };
+
+  const handleUndoDelete = () => {
+    if (!undoState) return;
+    const { tx, index } = undoState;
+    setData((prev) => {
+      const next = [...prev.transactions];
+      next.splice(Math.min(index, next.length), 0, tx);
+      return { ...prev, transactions: next };
+    });
+    clearTimeout(undoTimer.current);
+    setUndoState(null);
+  };
+
+  // Edits keep the previous values in tx.edits so a corrected amount stays traceable.
+  const handleEditTransaction = (id, changes) => {
+    setData((prev) => ({
+      ...prev,
+      transactions: prev.transactions.map((t) => {
+        if (t.id !== id) return t;
+        const before = {};
+        Object.keys(changes).forEach((k) => {
+          before[k] = t[k] ?? null;
+        });
+        const st = prev.stations.find((s) => s.id === (changes.stationId || t.stationId));
+        return {
+          ...t,
+          ...changes,
+          amount: roundMoney(changes.amount ?? t.amount),
+          stationName: st ? st.name : t.stationName,
+          edits: [...(t.edits || []), { at: nowLocalISO(), before }]
+        };
+      })
+    }));
   };
 
   // Export JSON backup
-  const handleExportBackup = () => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const downloadBackup = (payload, suffix = '') => {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `yakit_takip_yedek_${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `depozit_yedek_${nowLocalISO().slice(0, 10)}${suffix}.json`;
     a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
+
+  const handleExportBackup = () => downloadBackup(data);
 
   // Import JSON backup
   const handleImportBackup = (file) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const parsed = JSON.parse(e.target.result);
-        if (parsed.stations && parsed.transactions) {
-          setData(parsed);
-          alert('✅ Yedek başarıyla geri yüklendi!');
-        } else {
-          alert('❌ Geçersiz yedek dosyası formatı!');
+        const result = validateBackup(JSON.parse(e.target.result));
+        if (!result.ok) {
+          alert(`❌ Yedek yüklenemedi: ${result.error}`);
+          return;
         }
-      } catch (err) {
-        alert('❌ Dosya okunurken hata oluştu!');
+        const incoming = result.data;
+        const hasCurrent = data.transactions.length > 0 || data.stations.length > 0;
+        const summary =
+          `Yedekte ${incoming.stations.length} istasyon ve ${incoming.transactions.length} işlem var.` +
+          (hasCurrent
+            ? `\n\nMevcut ${data.stations.length} istasyon ve ${data.transactions.length} işlem bunlarla DEĞİŞTİRİLECEK. ` +
+              'Güvenlik için mevcut verinin yedeği önce indirilecek.'
+            : '') +
+          '\n\nDevam edilsin mi?';
+        if (!window.confirm(summary)) return;
+        if (hasCurrent) downloadBackup(data, '_geri_yukleme_oncesi');
+        setData(incoming);
+        alert('✅ Yedek başarıyla geri yüklendi!');
+      } catch {
+        alert('❌ Dosya okunamadı, geçerli bir JSON yedeği değil.');
       }
     };
     reader.readAsText(file);
   };
 
   const handleOpenTopup = (stId) => {
+    if (activeStations.length === 0) {
+      setIsAddStationOpen(true);
+      return;
+    }
     if (stId) setSelectedStationFilter(stId);
     setIsTopupOpen(true);
   };
 
   const handleOpenExpense = (stId) => {
+    if (activeStations.length === 0) {
+      setIsAddStationOpen(true);
+      return;
+    }
     if (stId) setSelectedStationFilter(stId);
     setIsManualOpen(true);
   };
 
   const handleOpenAdjustBalance = (stId) => {
+    if (activeStations.length === 0) {
+      setIsAddStationOpen(true);
+      return;
+    }
     if (stId) setSelectedStationFilter(stId);
     setIsAdjustBalanceOpen(true);
   };
@@ -249,13 +342,14 @@ export default function App() {
     const st = data.stations.find((s) => s.id === stationId);
     const stationName = st ? st.name : 'bu istasyonu';
     const txCount = data.transactions.filter((t) => t.stationId === stationId).length;
-    if (!window.confirm(`"${stationName}" istasyonunu silmek istediğinize emin misiniz?${txCount > 0 ? `\n(Bu istasyona ait ${txCount} adet işlem kaydı da silinecektir)` : ''}`)) {
+    if (!window.confirm(`"${stationName}" istasyonu listeden kaldırılsın mı?${txCount > 0 ? `\n(${txCount} işlem kaydı geçmişte ve yedekte korunur, bakiyesi toplamdan çıkar)` : ''}`)) {
       return;
     }
 
+    // Archive instead of deleting so past records stay in history and exports.
     setData((prev) => ({
-      stations: prev.stations.filter((s) => s.id !== stationId),
-      transactions: prev.transactions.filter((t) => t.stationId !== stationId)
+      ...prev,
+      stations: prev.stations.map((s) => (s.id === stationId ? { ...s, archived: true } : s))
     }));
 
     if (selectedStationFilter === stationId) {
@@ -263,19 +357,20 @@ export default function App() {
     }
   };
 
-  const handleAdjustBalance = ({ stationId, newBalance, diff, date, note }) => {
+  const handleAdjustBalance = ({ stationId, diff, date, note }) => {
     const st = data.stations.find((s) => s.id === stationId);
     const stationName = st ? st.name : 'İstasyon';
 
     const tx = {
       id: 'tx-' + Date.now(),
       type: diff > 0 ? 'topup' : 'expense',
+      kind: 'adjustment',
       stationId,
       stationName,
-      amount: Math.abs(diff),
+      amount: roundMoney(Math.abs(diff)),
       liters: null,
       unitPrice: null,
-      date: date || new Date().toISOString().slice(0, 16),
+      date: date || nowLocalISO(),
       note: note || `Bakiye Düzeltme (${diff > 0 ? '+' : '-'}${formatTL(Math.abs(diff))})`
     };
 
@@ -285,7 +380,16 @@ export default function App() {
     }));
   };
 
-  const activeStation = data.stations.find((s) => s.id === selectedStationFilter);
+  const handleLoadSample = () => {
+    setData({ ...migrateData(SAMPLE_DATA), isSample: true });
+  };
+
+  const handleClearSample = () => {
+    setData(emptyData());
+    setSelectedStationFilter(null);
+  };
+
+  const activeStation = activeStations.find((s) => s.id === selectedStationFilter);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans pb-24 selection:bg-amber-500 selection:text-slate-950">
@@ -376,14 +480,49 @@ export default function App() {
       {/* Main Container (Mobile Max Width) */}
       <main className="max-w-md mx-auto w-full p-4 space-y-5 flex-1">
 
-        {activeTab === 'home' ? (
+        {data.isSample && (
+          <div className="p-3 bg-sky-500/10 border border-sky-500/30 rounded-xl text-[11px] text-sky-200 flex items-center justify-between gap-2">
+            <span>Örnek verileri görüyorsunuz. Kendi kayıtlarınıza başlamak için temizleyin.</span>
+            <button
+              onClick={handleClearSample}
+              className="shrink-0 py-1 px-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-lg transition"
+            >
+              Temizle ve başla
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'home' && activeStations.length === 0 ? (
+          <div className="p-6 text-center bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
+            <div className="text-3xl">⛽</div>
+            <h2 className="text-sm font-bold text-white">Depozit'e hoş geldiniz</h2>
+            <p className="text-xs text-slate-400">
+              Avans yatırdığınız veya veresiye yakıt aldığınız ilk istasyonu ekleyin. Varsa mevcut bakiyesini de
+              yazabilirsiniz.
+            </p>
+            <button
+              onClick={() => setIsAddStationOpen(true)}
+              className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl transition"
+            >
+              İlk istasyonu ekle
+            </button>
+            {data.transactions.length === 0 && (
+              <button
+                onClick={handleLoadSample}
+                className="w-full py-2 text-xs text-slate-300 hover:text-white bg-slate-800 border border-slate-700 rounded-xl transition"
+              >
+                Önce örnek verilerle dene
+              </button>
+            )}
+          </div>
+        ) : activeTab === 'home' ? (
           <>
             {/* Top Total Balance Card */}
             <BalanceCard
               totalBalance={totalBalance}
               totalTopup={totalTopup}
               totalExpense={totalExpense}
-              stationCount={data.stations.length}
+              stationCount={activeStations.length}
               onOpenExpense={() => handleOpenExpense(selectedStationFilter)}
               onOpenTopup={() => handleOpenTopup(selectedStationFilter)}
             />
@@ -402,11 +541,13 @@ export default function App() {
 
             {/* Recent Activity Mini-Section */}
             <TransactionHistory
-              transactions={data.transactions.slice(0, 5)}
+              transactions={recentTransactions}
               stations={data.stations}
               selectedStationFilter={selectedStationFilter}
               onSelectStationFilter={setSelectedStationFilter}
               onDeleteTransaction={handleDeleteTransaction}
+              onEditTransaction={setEditingTx}
+              compact
             />
 
             {data.transactions.length > 5 && (
@@ -421,11 +562,13 @@ export default function App() {
         ) : (
           /* Full History View */
           <TransactionHistory
-            transactions={data.transactions}
+            transactions={sortedTransactions}
             stations={data.stations}
+            plates={plates}
             selectedStationFilter={selectedStationFilter}
             onSelectStationFilter={setSelectedStationFilter}
             onDeleteTransaction={handleDeleteTransaction}
+            onEditTransaction={setEditingTx}
           />
         )}
 
@@ -508,7 +651,7 @@ export default function App() {
       <TopupModal
         isOpen={isTopupOpen}
         onClose={() => setIsTopupOpen(false)}
-        stations={data.stations}
+        stations={activeStations}
         defaultStationId={selectedStationFilter}
         onSaveTopup={handleSaveTopup}
       />
@@ -516,7 +659,8 @@ export default function App() {
       <ManualExpenseModal
         isOpen={isManualOpen}
         onClose={() => setIsManualOpen(false)}
-        stations={data.stations}
+        stations={activeStations}
+        plates={plates}
         defaultStationId={selectedStationFilter}
         onSaveExpense={handleSaveExpense}
       />
@@ -524,7 +668,7 @@ export default function App() {
       <AdjustBalanceModal
         isOpen={isAdjustBalanceOpen}
         onClose={() => setIsAdjustBalanceOpen(false)}
-        stations={data.stations}
+        stations={activeStations}
         stationBalances={stationBalances}
         defaultStationId={selectedStationFilter}
         onAdjustBalance={handleAdjustBalance}
@@ -535,6 +679,30 @@ export default function App() {
         onClose={() => setIsAddStationOpen(false)}
         onAddStation={handleAddStation}
       />
+
+      <EditTransactionModal
+        transaction={editingTx}
+        stations={activeStations}
+        plates={plates}
+        onClose={() => setEditingTx(null)}
+        onSave={handleEditTransaction}
+      />
+
+      {undoState && (
+        <div className="fixed inset-x-3 bottom-24 z-50 max-w-md mx-auto">
+          <div className="bg-slate-800 border border-slate-700 text-slate-100 text-xs rounded-xl shadow-2xl px-3 py-2.5 flex items-center justify-between gap-3">
+            <span className="truncate">
+              {undoState.tx.stationName} · {formatTL(undoState.tx.amount)} silindi
+            </span>
+            <button
+              onClick={handleUndoDelete}
+              className="shrink-0 font-bold text-amber-400 hover:text-amber-300"
+            >
+              Geri al
+            </button>
+          </div>
+        </div>
+      )}
 
       <InstallAppModal
         isOpen={isInstallModalOpen}
