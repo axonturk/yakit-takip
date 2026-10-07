@@ -1,6 +1,6 @@
 // Public project URL and anon key: safe to ship; access is enforced by row-level security.
-const SUPABASE_URL = 'https://pmymlyerxwxonmknrxgs.supabase.co';
-const SUPABASE_ANON_KEY =
+export const SUPABASE_URL = 'https://pmymlyerxwxonmknrxgs.supabase.co';
+export const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBteW1seWVyeHd4b25ta25yeGdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzOTAyNDQsImV4cCI6MjEwNjk2NjI0NH0.liuuVjiNfaQ4icjl782_OwOx_XvzVEMnvDWb128rDr0';
 
 // The client library is loaded only when the cloud is used, keeping first load small.
@@ -139,4 +139,20 @@ export async function pushRecords(workspaceId, upserts, deletes) {
     });
     fail(error);
   }
+}
+
+// Latest changes in the workspace, or the history of one record, newest first.
+export async function changeLog(workspaceId, { kind, id, limit = 50 } = {}) {
+  const supabase = await getClient();
+  let q = supabase
+    .from('record_log')
+    .select('log_id, kind, id, action, data, previous, changed_at, changed_by_email')
+    .eq('workspace_id', workspaceId)
+    .order('changed_at', { ascending: false })
+    .limit(limit);
+  if (kind) q = q.eq('kind', kind).eq('id', id);
+  const { data, error } = await q;
+  if (error && /record_log/.test(error.message)) throw new Error('Değişiklik geçmişi için Supabase kurulumu güncellenmeli.');
+  fail(error);
+  return data;
 }

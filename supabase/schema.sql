@@ -1,4 +1,4 @@
--- Hisapo cloud schema. Paste into Supabase → SQL Editor → Run. Safe to run once on a new project.
+-- Hisapo cloud schema. Paste into Supabase → SQL Editor → Run. Safe to run again after updates: it only adds what is missing.
 
 -- A workspace is one business; everyone in it shares the same stations and transactions.
 create table if not exists public.workspaces (
@@ -114,3 +114,72 @@ revoke all on function public.create_workspace(text) from public, anon;
 revoke all on function public.join_workspace(text) from public, anon;
 grant execute on function public.create_workspace(text) to authenticated;
 grant execute on function public.join_workspace(text) to authenticated;
+
+-- Change history: who changed which record, when, and what it was before.
+-- Written only by the trigger below; members can read it, nobody can edit it.
+create table if not exists public.record_log (
+  log_id bigint generated always as identity primary key,
+  workspace_id uuid not null references public.workspaces (id) on delete cascade,
+  kind text not null,
+  id text not null,
+  action text not null check (action in ('create', 'update', 'delete')),
+  data jsonb,
+  previous jsonb,
+  changed_at timestamptz not null default clock_timestamp(),
+  changed_by uuid,
+  changed_by_email text
+);
+create index if not exists record_log_recent on public.record_log (workspace_id, changed_at desc);
+create index if not exists record_log_record on public.record_log (workspace_id, kind, id, changed_at desc);
+
+create or replace function public.log_record() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare act text;
+begin
+  if tg_op = 'INSERT' then
+    act := case when new.deleted then 'delete' else 'create' end;
+  elsif old.deleted = new.deleted and old.data is not distinct from new.data then
+    return null;
+  elsif new.deleted then
+    act := 'delete';
+  elsif old.deleted then
+    act := 'create';
+  else
+    act := 'update';
+  end if;
+  insert into record_log (workspace_id, kind, id, action, data, previous, changed_by, changed_by_email)
+  values (
+    new.workspace_id, new.kind, new.id, act, new.data,
+    case when tg_op = 'UPDATE' then old.data end,
+    auth.uid(), auth.jwt() ->> 'email'
+  );
+  return null;
+end $$;
+
+drop trigger if exists records_log on public.records;
+create trigger records_log after insert or update on public.records
+for each row execute function public.log_record();
+
+alter table public.record_log enable row level security;
+drop policy if exists "members read log" on public.record_log;
+create policy "members read log" on public.record_log
+  for select using (public.is_member(workspace_id));
+
+-- Anonymous app health: daily opens and error messages. No amounts, names or e-mails.
+-- Anyone can add a row; only the project owner sees them (Table Editor → app_events).
+create table if not exists public.app_events (
+  event_id bigint generated always as identity primary key,
+  at timestamptz not null default now(),
+  device text not null check (char_length(device) <= 64),
+  kind text not null check (kind in ('open', 'error')),
+  version text check (char_length(version) <= 32),
+  message text check (char_length(message) <= 500),
+  detail text check (char_length(detail) <= 4000),
+  info jsonb check (pg_column_size(info) <= 2000)
+);
+create index if not exists app_events_at on public.app_events (at desc);
+
+alter table public.app_events enable row level security;
+drop policy if exists "anyone reports" on public.app_events;
+create policy "anyone reports" on public.app_events
+  for insert to anon, authenticated with check (true);

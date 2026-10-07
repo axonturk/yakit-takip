@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getClient, cloudWasUsed, loadMeta, saveMeta, pullRecords, pushRecords } from './cloud';
 import { applyRemote, diffLocal, markPushed } from './sync';
+import { reportError } from './telemetry';
 
 // Re-read rows a little older than the last pull, so a change committed just
 // before our previous pull finished is not missed. Re-applying is a no-op.
@@ -96,6 +97,7 @@ export default function useCloudSync(data, setData) {
     } catch (e) {
       setError(e.message);
       setStatus(navigator.onLine ? 'error' : 'offline');
+      if (navigator.onLine) reportError(`Eşitleme: ${e.message}`, e.stack);
     } finally {
       busy.current = false;
       if (again.current) {

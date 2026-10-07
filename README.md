@@ -16,9 +16,12 @@ Canlı: https://axonturk.github.io/yakit-takip/
 6. **Dönem ekstresi:** İstasyon ve ay (veya tarih aralığı) seçilir; devir, yükleme, tüketim, kapanış ve satır satır bakiye gösterilir. PDF (yazdır), WhatsApp ile paylaş ve Excel/CSV.
 7. **Geçmiş:** Güne göre gruplu liste; plaka, fiş no, not veya tutarla arama ve tarih aralığı filtresi.
 8. **Fiş / dekont fotoğrafı:** Harcama ve avans kaydına telefon kamerasıyla fotoğraf eklenir; küçültülüp cihazda (IndexedDB) saklanır, yedek dosyasına girmez.
-9. **Açık / koyu tema:** Başlıktaki güneş/ay düğmesiyle değişir, tercih saklanır.
-10. **Bulut yedek ve ortak defter:** E-posta koduyla giriş; kayıtlar Supabase'e yedeklenir, davet koduyla ekip aynı defteri kullanır. İnternet yokken çalışır, bağlanınca eşitler. Kurulum: `supabase/schema.sql` ve `supabase/email-template.html`.
-11. **Çevrimdışı PWA:** Telefona uygulama gibi kurulur, veriler cihazda (`localStorage`) tutulur.
+9. **Açık / koyu tema:** Başlıktaki ⋮ menüsünden değişir, tercih saklanır.
+10. **Bulut yedek ve ortak defter:** E-postadaki bağlantı (ya da kod) ile giriş; kayıtlar Supabase'e yedeklenir, davet koduyla ekip aynı defteri kullanır. İnternet yokken çalışır, bağlanınca eşitler. Kurulum: `supabase/schema.sql` ve `supabase/email-template.html`.
+11. **Değişiklik geçmişi:** Bulutta kim, hangi kaydı, ne zaman ekledi, düzenledi ya da sildi; düzenlemede eski ve yeni değerler. Bulut ekranında ve işlem düzenleme penceresinde görünür.
+12. **Uygulama kilidi:** 4-6 haneli PIN; açılışta ve uygulama arka planda seçilen süreyi geçince sorulur. PIN yalnızca tuzlanmış özet olarak cihazda saklanır. Bu bir ekran kilididir, verileri şifrelemez.
+13. **Hata kaydı ve kullanım ölçümü:** Cihaz başına günde bir anonim "açıldı" kaydı (kayıt sayıları, tema, kurulu mu) ve hata mesajları Supabase `app_events` tablosuna gider. Tutar, istasyon adı, not ya da e-posta gönderilmez.
+14. **Çevrimdışı PWA:** Telefona uygulama gibi kurulur, veriler cihazda (`localStorage`) tutulur.
 
 ## 📲 Telefona Nasıl Yüklenir?
 

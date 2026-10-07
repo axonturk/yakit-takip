@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Pencil, X, AlertCircle } from 'lucide-react';
 import PhotoPicker from './PhotoPicker';
+import ChangeLog, { ChangeLogTitle } from './ChangeLog';
 import { formatTL, transactionLabel, FUEL_TYPES, PAYMENT_METHODS } from '../services/storage';
 
 const inputClass =
   'w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-400';
 
-export default function EditTransactionModal({ transaction, stations, plates = [], onClose, onSave }) {
+export default function EditTransactionModal({ transaction, stations, plates = [], onClose, onSave, workspaceId }) {
   if (!transaction) return null;
   // Keyed by id so the form resets for each transaction opened
   return (
@@ -17,11 +18,12 @@ export default function EditTransactionModal({ transaction, stations, plates = [
       plates={plates}
       onClose={onClose}
       onSave={onSave}
+      workspaceId={workspaceId}
     />
   );
 }
 
-function EditForm({ tx, stations, plates, onClose, onSave }) {
+function EditForm({ tx, stations, plates, onClose, onSave, workspaceId }) {
   const isExpense = tx.type === 'expense';
   const [stationId, setStationId] = useState(tx.stationId);
   const [amount, setAmount] = useState(String(tx.amount ?? ''));
@@ -238,7 +240,12 @@ function EditForm({ tx, stations, plates, onClose, onSave }) {
             label={isExpense ? 'Fiş fotoğrafı' : 'Dekont fotoğrafı'}
           />
 
-          {tx.edits?.length > 0 && (
+          {workspaceId ? (
+            <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-2 space-y-2">
+              <ChangeLogTitle>Kim, ne zaman değiştirdi</ChangeLogTitle>
+              <ChangeLog workspaceId={workspaceId} kind="tx" id={tx.id} limit={10} emptyText="Bu kayıt henüz buluta gitmedi." />
+            </div>
+          ) : tx.edits?.length > 0 && (
             <div className="text-[10px] text-slate-400 bg-slate-800/60 border border-slate-700/60 rounded-xl p-2 space-y-0.5">
               <div className="font-semibold text-slate-300">Değişiklik geçmişi</div>
               {tx.edits.map((ed, i) => (

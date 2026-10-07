@@ -1,9 +1,10 @@
 import React from 'react';
-import { PlusCircle, Download, Upload, Smartphone, Sun, Moon, Cloud, CloudOff } from 'lucide-react';
+import { PlusCircle, Download, Upload, Smartphone, Sun, Moon, Cloud, CloudOff, Lock, MoreVertical } from 'lucide-react';
 import logo from '../assets/logo.png';
 
-export default function Header({ onOpenAddStation, onExport, onImport, onOpenInstall, isInstalled, theme, onToggleTheme, cloudStatus = 'off', onOpenCloud }) {
+export default function Header({ onOpenAddStation, onExport, onImport, onOpenInstall, isInstalled, theme, onToggleTheme, cloudStatus = 'off', onOpenCloud, isLockOn = false, onOpenLock }) {
   const fileInputRef = React.useRef(null);
+  const [menuOpen, setMenuOpen] = React.useState(false);
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -17,17 +18,17 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
   return (
     <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 sticky top-0 z-40 backdrop-blur-md bg-slate-900/90">
       <div className="max-w-md mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <img src={logo} alt="Hisapo" className="w-10 h-10 rounded-xl shadow-md" />
-          <div>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <img src={logo} alt="Hisapo" className="w-10 h-10 rounded-xl shadow-md shrink-0" />
+          <div className="min-w-0">
             <h1 className="text-sm font-bold text-white tracking-tight flex items-center gap-1.5">
               Hisapo
             </h1>
-            <p className="text-[11px] text-slate-400 whitespace-nowrap">Yakıt avans defteri</p>
+            <p className="text-[11px] text-slate-400 whitespace-nowrap truncate">Yakıt avans defteri</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           {!isInstalled && (
             <button
               onClick={onOpenInstall}
@@ -35,7 +36,7 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
               className="p-1.5 px-2 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-semibold flex items-center gap-1 transition animate-pulse"
             >
               <Smartphone className="w-4 h-4 text-amber-400" />
-              <span className="text-[11px] hidden min-[380px]:inline">Yükle</span>
+              <span className="text-[11px]">Yükle</span>
             </button>
           )}
 
@@ -61,27 +62,11 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
           </button>
 
           <button
-            onClick={onToggleTheme}
-            title={theme === 'light' ? 'Koyu temaya geç' : 'Açık temaya geç'}
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition"
-          >
-            {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-          </button>
-
-          <button
             onClick={onOpenAddStation}
             title="Yeni İstasyon Ekle"
             className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition"
           >
             <PlusCircle className="w-5 h-5" />
-          </button>
-
-          <button
-            onClick={onExport}
-            title="Verileri Yedekle (JSON)"
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition"
-          >
-            <Download className="w-4 h-4" />
           </button>
 
           <input
@@ -91,15 +76,49 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
             onChange={handleFileChange}
             className="hidden"
           />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            title="Yedekten Geri Yükle"
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition"
-          >
-            <Upload className="w-4 h-4" />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              title="Diğer"
+              className="relative p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition"
+            >
+              <MoreVertical className="w-4 h-4" />
+              {isLockOn && <Lock className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 text-amber-300" />}
+            </button>
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                <div className="absolute right-0 top-full mt-2 z-50 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-1">
+                  <MenuItem icon={Download} onClick={() => { setMenuOpen(false); onExport(); }}>
+                    Verileri yedekle (dosya)
+                  </MenuItem>
+                  <MenuItem icon={Upload} onClick={() => { setMenuOpen(false); fileInputRef.current?.click(); }}>
+                    Yedekten geri yükle
+                  </MenuItem>
+                  <MenuItem icon={Lock} onClick={() => { setMenuOpen(false); onOpenLock(); }}>
+                    Uygulama kilidi{isLockOn ? ' (açık)' : ''}
+                  </MenuItem>
+                  <MenuItem icon={theme === 'light' ? Moon : Sun} onClick={() => { setMenuOpen(false); onToggleTheme(); }}>
+                    {theme === 'light' ? 'Koyu temaya geç' : 'Açık temaya geç'}
+                  </MenuItem>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </header>
+  );
+}
+
+function MenuItem({ icon: Icon, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs text-slate-200 hover:bg-slate-800 rounded-lg text-left transition"
+    >
+      <Icon className="w-4 h-4 text-slate-400" />
+      {children}
+    </button>
   );
 }

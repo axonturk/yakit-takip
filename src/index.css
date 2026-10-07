@@ -86,3 +86,9 @@ html.theme-light :is([class~="bg-amber-500"], [class~="bg-amber-400"], [class~="
   --color-slate-950: oklch(12.9% .042 264.695);
   --color-slate-900: oklch(20.8% .042 265.755);
 }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
