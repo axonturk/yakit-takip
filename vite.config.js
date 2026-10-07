@@ -5,6 +5,8 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   base: './',
+  // The app lives at hisapo.com/app/; the landing page (landing/) is copied to the site root after the build.
+  build: { outDir: 'dist/app', emptyOutDir: true },
   plugins: [react(), tailwindcss()],
   server: {
     host: true, // allow local network access so user can open on mobile phone!

@@ -2,7 +2,7 @@
 
 Akaryakıt istasyonlarına yatırılan peşin avansları ve istasyondan veresiye (eksi bakiye) alınan yakıtı istasyon bazında takip eden, mobil öncelikli **Progressive Web App**.
 
-Canlı: https://hisapo.com (eski adres https://axonturk.github.io/yakit-takip/ buraya yönlenir)
+Canlı: https://hisapo.com (tanıtım sayfası, `landing/`) · uygulama: https://hisapo.com/app/ · gizlilik: https://hisapo.com/gizlilik.html. Eski adres https://axonturk.github.io/yakit-takip/ hisapo.com'a yönlenir.
 
 ---
 
