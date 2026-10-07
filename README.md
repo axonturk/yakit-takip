@@ -23,7 +23,8 @@ Canlı: https://axonturk.github.io/yakit-takip/
 13. **Hata kaydı ve kullanım ölçümü:** Cihaz başına günde bir anonim "açıldı" kaydı (kayıt sayıları, tema, kurulu mu) ve hata mesajları Supabase `app_events` tablosuna gider. Tutar, istasyon adı, not ya da e-posta gönderilmez.
 14. **Şoför rolü ve ekip:** Ortak defterde iki davet kodu var. Yönetici koduyla katılan her şeyi yapar; şoför koduyla katılan sadece harcama girer ve yalnızca kendi girdiğini düzeltip silebilir (Supabase kurallarıyla da zorunlu). Kurucu, ekip listesinden rol, varsayılan plaka ve aylık harcama limiti belirler, kişiyi ekipten çıkarır. Yeni şoför harcamaları kurucu ve yöneticilerin ana sayfasında "Ekipten yeni harcama" olarak görünür.
 15. **Fiş fotoğrafları bulutta:** Ortak defterde fotoğraflar eşitlemede Supabase Storage'daki özel `receipts` kovasına yüklenir (her eşitlemede en fazla 5). Başka telefonun çektiği fotoğraf, kayda dokununca indirilir ve cihazda saklanır. Kovayı yalnızca o defterin üyeleri görür.
-16. **Çevrimdışı PWA:** Telefona uygulama gibi kurulur, veriler cihazda (`localStorage`) tutulur.
+16. **Aylık yakıt raporu:** Geçmiş → Rapor. Seçilen ayın harcamaları araç (plaka), kişi ya da istasyon bazında; tutar, litre, ortalama TL/L, pay. WhatsApp, PDF ve muhasebe için Excel (özet ve tüm satırlar, "Giren" sütunuyla).
+17. **Çevrimdışı PWA:** Telefona uygulama gibi kurulur, veriler cihazda (`localStorage`) tutulur.
 
 ## 📲 Telefona Nasıl Yüklenir?
 

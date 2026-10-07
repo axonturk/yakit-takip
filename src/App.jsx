@@ -28,6 +28,7 @@ import InstallAppModal from './components/InstallAppModal';
 import EditTransactionModal from './components/EditTransactionModal';
 import EditStationModal from './components/EditStationModal';
 import StatementView from './components/StatementView';
+import ReportView from './components/ReportView';
 import PhotoViewer from './components/PhotoViewer';
 import CloudModal from './components/CloudModal';
 import LockScreen from './components/LockScreen';
@@ -820,7 +821,8 @@ export default function App() {
             <div className="flex gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
               {[
                 ['list', 'Hareketler'],
-                ['statement', 'Dönem Ekstresi']
+                ['statement', 'Ekstre'],
+                ['report', 'Rapor']
               ].map(([key, label]) => (
                 <button
                   key={key}
@@ -833,7 +835,9 @@ export default function App() {
                 </button>
               ))}
             </div>
-            {historyView === 'statement' ? (
+            {historyView === 'report' ? (
+              <ReportView transactions={data.transactions} hasTeam={Boolean(cloud.workspaceId) && !data.isSample} />
+            ) : historyView === 'statement' ? (
               <StatementView
                 stations={data.stations}
                 transactions={data.transactions}
