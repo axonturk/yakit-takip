@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'yakit-takip-v13';
+﻿const CACHE_NAME = 'yakit-takip-v14';
 
 const PRECACHE_ASSETS = [
   './',

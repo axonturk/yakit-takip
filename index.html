@@ -15,6 +15,14 @@
     <title>Hisapo · Yakıt Avans & Bakiye Takip</title>
 
     <script>
+      // Apply the saved theme before first paint
+      try {
+        var saved = JSON.parse(localStorage.getItem('yakit_takip_data_v1') || '{}');
+        if (saved.settings && saved.settings.theme === 'light') {
+          document.documentElement.classList.add('theme-light');
+          document.querySelector('meta[name=theme-color]').setAttribute('content', '#f1f5f9');
+        }
+      } catch (e) {}
       window.deferredInstallPrompt = null;
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
@@ -26,8 +34,8 @@
         window.dispatchEvent(new CustomEvent('pwa-installed'));
       });
     </script>
-    <script type="module" crossorigin src="./assets/index-DNew4Gjb.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-CE1pxgcC.css">
+    <script type="module" crossorigin src="./assets/index-LfmREmbN.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-mlXF1jjg.css">
   </head>
   <body class="bg-slate-950 text-slate-100 antialiased selection:bg-amber-500 selection:text-black">
     <div id="root"></div>
