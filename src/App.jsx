@@ -29,6 +29,11 @@ import EditStationModal from './components/EditStationModal';
 import StatementView from './components/StatementView';
 import PhotoViewer from './components/PhotoViewer';
 import CloudModal from './components/CloudModal';
+import LockScreen from './components/LockScreen';
+import LockSettingsModal from './components/LockSettingsModal';
+import { loadLock, saveLock, shouldRelock } from './services/lock';
+import { signOut } from './services/cloud';
+import { reportOpen } from './services/telemetry';
 import useCloudSync from './services/useCloudSync';
 import { savePhoto, newPhotoId, cleanupPhotos } from './services/photos';
 
@@ -90,6 +95,59 @@ export default function App() {
   const [viewingPhotoTx, setViewingPhotoTx] = useState(null);
   const [isCloudOpen, setIsCloudOpen] = useState(false);
   const cloud = useCloudSync(data, setData);
+
+  // App lock: ask for the PIN on launch and after the app was in the background long enough
+  const [lockCfg, setLockCfg] = useState(loadLock);
+  const [locked, setLocked] = useState(() => Boolean(loadLock()));
+  const [isLockOpen, setIsLockOpen] = useState(false);
+  useEffect(() => {
+    if (!lockCfg) return undefined;
+    let hiddenAt = null;
+    const onVisibility = () => {
+      if (document.hidden) hiddenAt = Date.now();
+      else if (shouldRelock(lockCfg, hiddenAt)) setLocked(true);
+      if (!document.hidden) hiddenAt = null;
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [lockCfg]);
+
+  const handleLockChange = (cfg) => {
+    saveLock(cfg);
+    setLockCfg(cfg);
+  };
+
+  // Forgotten PIN: wipe this device. With a cloud backup the records come back after signing in again.
+  const handleLockReset = async () => {
+    cloud.leave();
+    try {
+      await signOut();
+    } catch {
+      // offline: the stored session is cleared locally anyway
+    }
+    handleLockChange(null);
+    setData((prev) => {
+      const fresh = emptyData();
+      return { ...fresh, settings: { ...fresh.settings, theme: prev.settings.theme } };
+    });
+    setSelectedStationFilter(null);
+    setLocked(false);
+  };
+
+  // Anonymous daily usage ping: record counts only, never amounts or names
+  useEffect(() => {
+    reportOpen({
+      stations: data.stations.length,
+      transactions: data.transactions.length,
+      sample: Boolean(data.isSample),
+      cloud: Boolean(cloud.workspaceId),
+      lock: Boolean(lockCfg),
+      installed: isInstalled,
+      theme: data.settings.theme || 'dark',
+      lang: navigator.language
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Drop receipt photos left behind by deleted or edited transactions, once per launch
   useEffect(() => {
@@ -528,6 +586,8 @@ export default function App() {
         onImport={handleImportBackup}
         onOpenInstall={handleInstallClick}
         isInstalled={isInstalled}
+        isLockOn={Boolean(lockCfg)}
+        onOpenLock={() => setIsLockOpen(true)}
       />
 
       {/* Install suggestion, once the app has been used a little */}
@@ -838,6 +898,7 @@ export default function App() {
         plates={plates}
         onClose={() => setEditingTx(null)}
         onSave={handleEditTransaction}
+        workspaceId={data.isSample ? null : cloud.workspaceId}
       />
 
       <EditStationModal
@@ -881,6 +942,24 @@ export default function App() {
         localCount={data.isSample ? 0 : data.stations.length + data.transactions.length}
         isSample={data.isSample}
       />
+
+      <LockSettingsModal
+        isOpen={isLockOpen}
+        onClose={() => setIsLockOpen(false)}
+        cfg={lockCfg}
+        onChange={handleLockChange}
+        onLockNow={() => setLocked(true)}
+        hasCloud={Boolean(cloud.workspaceId)}
+      />
+
+      {locked && lockCfg && (
+        <LockScreen
+          cfg={lockCfg}
+          onUnlock={() => setLocked(false)}
+          hasCloud={Boolean(cloud.workspaceId)}
+          onReset={handleLockReset}
+        />
+      )}
 
       <PhotoViewer transaction={viewingPhotoTx} onClose={() => setViewingPhotoTx(null)} />
 

@@ -10,6 +10,7 @@ import {
   workspaceMembers
 } from '../services/cloud';
 import { formatTRDate } from '../services/storage';
+import ChangeLog, { ChangeLogTitle } from './ChangeLog';
 
 const inputClass =
   'w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-400';
@@ -218,6 +219,7 @@ function PickWorkspace({ cloud, localCount }) {
 function Connected({ cloud, isSample }) {
   const [members, setMembers] = useState([]);
   const [copied, setCopied] = useState(false);
+  const [showLog, setShowLog] = useState(false);
 
   useEffect(() => {
     workspaceMembers(cloud.workspaceId).then(setMembers, () => setMembers([]));
@@ -288,6 +290,19 @@ function Connected({ cloud, isSample }) {
         <p className="text-[10px] text-slate-500">
           {copied ? 'Kopyalandı. ' : ''}Bu kodu alan kişi aynı defteri görür ve kayıt girebilir.
         </p>
+      </div>
+
+      <div className="space-y-2">
+        {showLog ? (
+          <>
+            <ChangeLogTitle>Son değişiklikler</ChangeLogTitle>
+            <ChangeLog workspaceId={cloud.workspaceId} />
+          </>
+        ) : (
+          <button className={secondary} onClick={() => setShowLog(true)}>
+            Değişiklik geçmişi (kim, ne zaman, ne)
+          </button>
+        )}
       </div>
 
       <p className="text-[10px] text-slate-500">
