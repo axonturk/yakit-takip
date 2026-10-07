@@ -1,8 +1,8 @@
 import React from 'react';
-import { PlusCircle, Download, Upload, Smartphone, Sun, Moon } from 'lucide-react';
+import { PlusCircle, Download, Upload, Smartphone, Sun, Moon, Cloud, CloudOff } from 'lucide-react';
 import logo from '../assets/logo.png';
 
-export default function Header({ onOpenAddStation, onExport, onImport, onOpenInstall, isInstalled, theme, onToggleTheme }) {
+export default function Header({ onOpenAddStation, onExport, onImport, onOpenInstall, isInstalled, theme, onToggleTheme, cloudStatus = 'off', onOpenCloud }) {
   const fileInputRef = React.useRef(null);
 
   const handleFileChange = (e) => {
@@ -38,6 +38,27 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
               <span className="text-[11px] hidden min-[380px]:inline">Yükle</span>
             </button>
           )}
+
+          <button
+            onClick={onOpenCloud}
+            title="Bulut yedek ve ortak defter"
+            className="relative p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition"
+          >
+            {cloudStatus === 'off' ? <CloudOff className="w-4 h-4" /> : <Cloud className="w-4 h-4" />}
+            {cloudStatus !== 'off' && (
+              <span
+                className={`absolute top-1 right-1 w-2 h-2 rounded-full ${
+                  cloudStatus === 'ok'
+                    ? 'bg-emerald-400'
+                    : cloudStatus === 'error'
+                      ? 'bg-red-500'
+                      : cloudStatus === 'syncing'
+                        ? 'bg-sky-400 animate-pulse'
+                        : 'bg-slate-500'
+                }`}
+              />
+            )}
+          </button>
 
           <button
             onClick={onToggleTheme}
