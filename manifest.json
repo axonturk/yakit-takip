@@ -1,7 +1,7 @@
 {
-  "name": "Yakıt Avans & Pompa Takip",
-  "short_name": "YakıtTakip",
-  "description": "Akaryakıt istasyon avans bakiyesi ve kamera ile pompa ekranı okuyucu",
+  "name": "Depozit · Yakıt Avans & Bakiye Takip",
+  "short_name": "Depozit",
+  "description": "Akaryakıt istasyonlarındaki avans ve veresiye bakiyenizi tek yerde takip edin",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
