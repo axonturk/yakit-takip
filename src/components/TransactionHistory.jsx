@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
-import { formatTL, formatTRDate, buildCSV, transactionLabel, nowLocalISO } from '../services/storage';
-import { Trash2, Download, Pencil } from 'lucide-react';
+import {
+  formatTL,
+  formatTRDate,
+  formatDay,
+  buildCSV,
+  transactionLabel,
+  nowLocalISO,
+  matchesSearch,
+  groupByDay
+} from '../services/storage';
+import { Trash2, Download, Pencil, Search } from 'lucide-react';
 import StationLogo from './StationLogo';
 
 export default function TransactionHistory({
@@ -13,12 +22,19 @@ export default function TransactionHistory({
 }) {
   const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'expense', 'topup'
   const [plateFilter, setPlateFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   // Filter transactions
   const filtered = transactions.filter((tx) => {
     if (selectedStationFilter && tx.stationId !== selectedStationFilter) return false;
     if (typeFilter !== 'all' && tx.type !== typeFilter) return false;
     if (plateFilter && tx.plate !== plateFilter) return false;
+    const day = (tx.date || '').slice(0, 10);
+    if (dateFrom && day < dateFrom) return false;
+    if (dateTo && day > dateTo) return false;
+    if (!matchesSearch(tx, search)) return false;
     return true;
   });
 
@@ -121,6 +137,46 @@ export default function TransactionHistory({
           ))}
         </select>
       )}
+
+      <div className="relative">
+        <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Ara: plaka, fiş no, not, tutar…"
+          className="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl p-2 pl-8 text-xs text-slate-200 focus:outline-none focus:border-amber-400"
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          aria-label="Başlangıç tarihi"
+          className="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400"
+        />
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          aria-label="Bitiş tarihi"
+          className="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400"
+        />
+      </div>
+      {(search || dateFrom || dateTo || plateFilter) && (
+        <button
+          onClick={() => {
+            setSearch('');
+            setDateFrom('');
+            setDateTo('');
+            setPlateFilter('');
+          }}
+          className="text-[11px] text-amber-400 hover:text-amber-300 px-1"
+        >
+          Filtreleri temizle ✕
+        </button>
+      )}
       </>)}
 
       {/* Transaction List */}
@@ -130,7 +186,18 @@ export default function TransactionHistory({
             Henüz bu kritere uygun işlem bulunmuyor.
           </div>
         ) : (
-          filtered.map((tx) => {
+          (compact ? [{ day: null, items: filtered }] : groupByDay(filtered)).map((group) => (
+          <div key={group.day || 'all'} className="space-y-2">
+            {group.day && (
+              <div className="flex justify-between items-center px-1 pt-1 text-[10px] font-semibold text-slate-400">
+                <span>{formatDay(group.day)}</span>
+                <span className="flex gap-2">
+                  {group.topups > 0 && <span className="text-emerald-400/80">+{formatTL(group.topups)}</span>}
+                  {group.expenses > 0 && <span className="text-red-400/80">-{formatTL(group.expenses)}</span>}
+                </span>
+              </div>
+            )}
+          {group.items.map((tx) => {
             const isExpense = tx.type === 'expense';
 
             return (
@@ -222,7 +289,9 @@ export default function TransactionHistory({
                 </div>
               </div>
             );
-          })
+          })}
+          </div>
+          ))
         )}
       </div>
     </div>
