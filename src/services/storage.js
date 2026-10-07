@@ -130,7 +130,7 @@ export function migrateData(raw) {
 // Checks an imported backup; returns { ok, data, error }.
 export function validateBackup(parsed) {
   if (!parsed || typeof parsed !== 'object') {
-    return { ok: false, error: 'Dosya bir Depozit yedeği değil.' };
+    return { ok: false, error: 'Dosya bir Pumpbook yedeği değil.' };
   }
   if (!Array.isArray(parsed.stations) || !Array.isArray(parsed.transactions)) {
     return { ok: false, error: 'Yedekte istasyon veya işlem listesi yok.' };
@@ -422,7 +422,7 @@ export function buildStatement(transactions, stationId, from, to) {
 // Plain-text statement for WhatsApp; *bold* is WhatsApp markup.
 export function statementText(stationName, from, to, s, maxRows = 40) {
   const lines = [
-    '*Depozit · Dönem Ekstresi*',
+    '*Pumpbook · Dönem Ekstresi*',
     `İstasyon: ${stationName}`,
     `Dönem: ${formatDay(from)} – ${formatDay(to)}`,
     '',

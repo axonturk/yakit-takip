@@ -1,4 +1,4 @@
-# ⛽ Depozit · Yakıt Avans & Bakiye Takip (PWA)
+# ⛽ Pumpbook · Yakıt Avans & Bakiye Takip (PWA)
 
 Akaryakıt istasyonlarına yatırılan peşin avansları ve istasyondan veresiye (eksi bakiye) alınan yakıtı istasyon bazında takip eden, mobil öncelikli **Progressive Web App**.
 

@@ -18,10 +18,10 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
     <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 sticky top-0 z-40 backdrop-blur-md bg-slate-900/90">
       <div className="max-w-md mx-auto flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <img src={logo} alt="Depozit" className="w-10 h-10 rounded-xl shadow-md" />
+          <img src={logo} alt="Pumpbook" className="w-10 h-10 rounded-xl shadow-md" />
           <div>
             <h1 className="text-sm font-bold text-white tracking-tight flex items-center gap-1.5">
-              Depozit
+              Pumpbook
             </h1>
             <p className="text-[11px] text-slate-400">Yakıt avans defteri</p>
           </div>
