@@ -71,7 +71,7 @@ export async function signOut() {
 
 export async function myWorkspaces() {
   const supabase = await getClient();
-  const { data, error } = await supabase.from('workspaces').select('id, name, invite_code, created_at').order('created_at');
+  const { data, error } = await supabase.from('workspaces').select('id, name, invite_code, driver_code, created_at').order('created_at');
   fail(error);
   return data;
 }
@@ -80,11 +80,57 @@ export async function workspaceMembers(workspaceId) {
   const supabase = await getClient();
   const { data, error } = await supabase
     .from('workspace_members')
-    .select('user_id, email, role, joined_at')
+    .select('user_id, email, role, plate, monthly_limit, joined_at')
     .eq('workspace_id', workspaceId)
     .order('joined_at');
   fail(error);
   return data;
+}
+
+// This user's role in the workspace with the workspace's current name and codes; null if no longer a member.
+export async function myMembership(workspaceId) {
+  const supabase = await getClient();
+  const { data: s } = await supabase.auth.getSession();
+  const uid = s.session?.user?.id;
+  if (!uid) return null;
+  const { data, error } = await supabase
+    .from('workspace_members')
+    .select('role, plate, monthly_limit, workspaces(name, invite_code, driver_code)')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', uid)
+    .maybeSingle();
+  fail(error);
+  return data;
+}
+
+export async function updateMember(workspaceId, userId, { role, plate, monthlyLimit }) {
+  const supabase = await getClient();
+  const { error } = await supabase.rpc('update_member', {
+    ws: workspaceId,
+    member: userId,
+    new_role: role,
+    new_plate: plate || '',
+    new_limit: monthlyLimit === '' || monthlyLimit === null || monthlyLimit === undefined ? null : Number(monthlyLimit)
+  });
+  fail(error);
+}
+
+export async function removeMember(workspaceId, userId) {
+  const supabase = await getClient();
+  const { error } = await supabase.rpc('remove_member', { ws: workspaceId, member: userId });
+  fail(error);
+}
+
+// Leave a workspace this user just joined (used when a driver declines to drop local records).
+export async function leaveWorkspace(workspaceId) {
+  const supabase = await getClient();
+  const { data: s } = await supabase.auth.getSession();
+  const { error } = await supabase
+    .from('workspace_members')
+    .delete()
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', s.session?.user?.id);
+  fail(error);
 }
 
 export async function createWorkspace(name) {

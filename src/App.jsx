@@ -8,6 +8,7 @@ import {
   migrateData,
   emptyData,
   nowLocalISO,
+  newId,
   roundMoney,
   formatTL,
   lowBalanceLimit,
@@ -34,6 +35,7 @@ import LockSettingsModal from './components/LockSettingsModal';
 import { loadLock, saveLock, shouldRelock } from './services/lock';
 import { signOut } from './services/cloud';
 import { reportOpen } from './services/telemetry';
+import { permissions, memberMonthSpend } from './services/team';
 import useCloudSync from './services/useCloudSync';
 import { savePhoto, newPhotoId, cleanupPhotos } from './services/photos';
 
@@ -95,6 +97,8 @@ export default function App() {
   const [viewingPhotoTx, setViewingPhotoTx] = useState(null);
   const [isCloudOpen, setIsCloudOpen] = useState(false);
   const cloud = useCloudSync(data, setData);
+  const can = permissions(data.isSample ? null : cloud.role, cloud.userId);
+  const ifManager = (fn) => (can.manage ? fn : undefined);
 
   // App lock: ask for the PIN on launch and after the app was in the background long enough
   const [lockCfg, setLockCfg] = useState(loadLock);
@@ -242,9 +246,14 @@ export default function App() {
   const lowStations = Object.values(stationBalances).filter(
     (s) => s.balance >= 0 && s.balance < lowBalanceLimit(s.station)
   );
+  const driverSpend = can.driver ? memberMonthSpend(data.transactions, cloud.userId) : 0;
+  const unseenTx = useMemo(() => {
+    const ids = new Set(cloud.unseen);
+    return data.transactions.filter((t) => ids.has(t.id));
+  }, [cloud.unseen, data.transactions]);
   const backupAge = daysSince(data.settings?.lastBackupAt);
   const needsBackup =
-    !data.isSample && data.transactions.length >= 5 && (backupAge === null || backupAge >= 7);
+    !data.isSample && !cloud.workspaceId && data.transactions.length >= 5 && (backupAge === null || backupAge >= 7);
 
   // Handlers
   // Stores the photo on the device and returns its id (null if none or storing failed).
@@ -258,7 +267,8 @@ export default function App() {
   const handleSaveExpense = (newExpense) => {
     const st = data.stations.find((s) => s.id === newExpense.stationId);
     const tx = {
-      id: 'tx-' + Date.now(),
+      id: newId('tx'),
+      ...cloud.stamp(),
       type: 'expense',
       stationId: newExpense.stationId,
       stationName: st ? st.name : 'Bilinmeyen İstasyon',
@@ -278,12 +288,21 @@ export default function App() {
       transactions: [tx, ...prev.transactions]
     }));
     showSavedToast(tx);
+    // A driver is told when this purchase takes them over the monthly limit the owner set
+    if (can.driver && cloud.monthlyLimit !== null) {
+      const before = memberMonthSpend(data.transactions, cloud.userId);
+      const after = memberMonthSpend([tx, ...data.transactions], cloud.userId);
+      if (before <= cloud.monthlyLimit && after > cloud.monthlyLimit) {
+        setTimeout(() => alert(`Bu ayki harcama limitini aştın: ${formatTL(after)} / ${formatTL(cloud.monthlyLimit)}`), 300);
+      }
+    }
   };
 
   const handleSaveTopup = (newTopup) => {
     const st = data.stations.find((s) => s.id === newTopup.stationId);
     const tx = {
-      id: 'tx-' + Date.now(),
+      id: newId('tx'),
+      ...cloud.stamp(),
       type: 'topup',
       stationId: newTopup.stationId,
       stationName: st ? st.name : 'Bilinmeyen İstasyon',
@@ -339,7 +358,8 @@ export default function App() {
 
     if (initialBal > 0) {
       const topupTx = {
-        id: 'tx-' + Date.now(),
+        id: newId('tx'),
+        ...cloud.stamp(),
         type: 'topup',
         stationId: newStation.id,
         stationName: newStation.name,
@@ -353,7 +373,8 @@ export default function App() {
       updatedTx = [topupTx, ...updatedTx];
     } else if (initialBal < 0) {
       const debtTx = {
-        id: 'tx-' + Date.now(),
+        id: newId('tx'),
+        ...cloud.stamp(),
         type: 'expense',
         stationId: newStation.id,
         stationName: newStation.name,
@@ -534,7 +555,8 @@ export default function App() {
     const stationName = st ? st.name : 'İstasyon';
 
     const tx = {
-      id: 'tx-' + Date.now(),
+      id: newId('tx'),
+      ...cloud.stamp(),
       type: diff > 0 ? 'topup' : 'expense',
       kind: 'adjustment',
       stationId,
@@ -574,7 +596,7 @@ export default function App() {
       
       {/* Header */}
       <Header
-        onOpenAddStation={() => setIsAddStationOpen(true)}
+        onOpenAddStation={ifManager(() => setIsAddStationOpen(true))}
         cloudStatus={cloud.workspaceId ? cloud.status : 'off'}
         onOpenCloud={() => {
           cloud.activate();
@@ -583,7 +605,7 @@ export default function App() {
         theme={data.settings.theme}
         onToggleTheme={handleToggleTheme}
         onExport={handleExportBackup}
-        onImport={handleImportBackup}
+        onImport={ifManager(handleImportBackup)}
         onOpenInstall={handleInstallClick}
         isInstalled={isInstalled}
         isLockOn={Boolean(lockCfg)}
@@ -651,6 +673,48 @@ export default function App() {
           </div>
         )}
 
+        {activeTab === 'home' && can.driver && (
+          <div
+            className={`p-3 rounded-xl text-[11px] border flex justify-between gap-2 ${
+              cloud.monthlyLimit !== null && driverSpend > cloud.monthlyLimit
+                ? 'bg-red-500/15 border-red-500/30 text-red-200'
+                : 'bg-slate-800/80 border-slate-700 text-slate-300'
+            }`}
+          >
+            <span>
+              Şoför olarak giriş yaptın{cloud.plate ? ` · ${cloud.plate}` : ''}
+            </span>
+            <span className="font-semibold shrink-0">
+              Bu ay {formatTL(driverSpend)}
+              {cloud.monthlyLimit !== null ? ` / ${formatTL(cloud.monthlyLimit)}` : ''}
+            </span>
+          </div>
+        )}
+
+        {activeTab === 'home' && unseenTx.length > 0 && (
+          <div className="p-3 bg-sky-500/10 border border-sky-500/30 rounded-xl text-[11px] text-sky-100 space-y-1.5">
+            <div className="flex justify-between items-center gap-2">
+              <span className="font-bold">Ekipten {unseenTx.length} yeni harcama</span>
+              <button
+                onClick={cloud.markSeen}
+                className="shrink-0 py-1 px-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-lg transition"
+              >
+                Tamam
+              </button>
+            </div>
+            {unseenTx.slice(0, 3).map((t) => (
+              <div key={t.id} className="flex justify-between gap-2 text-sky-200">
+                <span className="truncate">
+                  {(t.enteredBy || '').split('@')[0]} · {t.stationName}
+                  {t.plate ? ` · ${t.plate}` : ''}
+                </span>
+                <span className="font-semibold shrink-0">{formatTL(t.amount)}</span>
+              </div>
+            ))}
+            {unseenTx.length > 3 && <div className="text-sky-300">ve {unseenTx.length - 3} tane daha (Geçmiş sekmesinde)</div>}
+          </div>
+        )}
+
         {activeTab === 'home' && lowStations.length > 0 && (
           <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-[11px] text-amber-200">
             Bakiyesi azalan istasyon: {lowStations.map((s) => `${s.station.name} (${formatTL(s.balance)})`).join(', ')}
@@ -672,7 +736,15 @@ export default function App() {
           </div>
         )}
 
-        {activeTab === 'home' && activeStations.length === 0 ? (
+        {activeTab === 'home' && activeStations.length === 0 && can.driver ? (
+          <div className="p-6 text-center bg-slate-900 border border-slate-800 rounded-2xl space-y-2">
+            <div className="text-3xl">⛽</div>
+            <h2 className="text-sm font-bold text-white">{cloud.workspaceName} defteri</h2>
+            <p className="text-xs text-slate-400">
+              Henüz istasyon yok. Yöneticin istasyon ekleyince burada görünür, sen de harcama girebilirsin.
+            </p>
+          </div>
+        ) : activeTab === 'home' && activeStations.length === 0 ? (
           <div className="p-6 text-center bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
             <div className="text-3xl">⛽</div>
             <h2 className="text-sm font-bold text-white">Hisapo'ya hoş geldiniz</h2>
@@ -704,7 +776,7 @@ export default function App() {
               totalExpense={totalExpense}
               stationCount={activeStations.length}
               onOpenExpense={() => handleOpenExpense(selectedStationFilter)}
-              onOpenTopup={() => handleOpenTopup(selectedStationFilter)}
+              onOpenTopup={ifManager(() => handleOpenTopup(selectedStationFilter))}
             />
 
             {/* Individual Station Balances Grid */}
@@ -712,10 +784,10 @@ export default function App() {
               stationBalances={stationBalances}
               selectedStationFilter={selectedStationFilter}
               onSelectStationFilter={setSelectedStationFilter}
-              onOpenAddStation={() => setIsAddStationOpen(true)}
-              onOpenTopupForStation={handleOpenTopup}
+              onOpenAddStation={ifManager(() => setIsAddStationOpen(true))}
+              onOpenTopupForStation={ifManager(handleOpenTopup)}
               onOpenExpenseForStation={handleOpenExpense}
-              onOpenAdjustBalance={handleOpenAdjustBalance}
+              onOpenAdjustBalance={ifManager(handleOpenAdjustBalance)}
               onEditStation={setEditingStation}
               onDeleteStation={handleDeleteStation}
             />
@@ -728,6 +800,7 @@ export default function App() {
               onSelectStationFilter={setSelectedStationFilter}
               onDeleteTransaction={handleDeleteTransaction}
               onEditTransaction={setEditingTx}
+              canChange={can.changeTx}
               onViewPhoto={setViewingPhotoTx}
               compact
             />
@@ -775,6 +848,7 @@ export default function App() {
                 onSelectStationFilter={setSelectedStationFilter}
                 onDeleteTransaction={handleDeleteTransaction}
                 onEditTransaction={setEditingTx}
+              canChange={can.changeTx}
               onViewPhoto={setViewingPhotoTx}
               />
             )}
@@ -817,6 +891,7 @@ export default function App() {
             <span>Ana Sayfa</span>
           </button>
 
+{can.manage ? (
           <button
             onClick={() => handleOpenTopup(selectedStationFilter)}
             className="flex flex-col items-center justify-center text-slate-400 hover:text-amber-400 text-[10px] font-medium transition"
@@ -824,6 +899,7 @@ export default function App() {
             <CreditCard className="w-5 h-5 mb-0.5" />
             <span>+ Bakiye</span>
           </button>
+          ) : <span />}
 
           <button
             onClick={() => handleOpenExpense(selectedStationFilter)}
@@ -835,6 +911,7 @@ export default function App() {
             <span className="mt-1">Harcama</span>
           </button>
 
+{can.manage ? (
           <button
             onClick={() => handleOpenAdjustBalance(selectedStationFilter)}
             className="flex flex-col items-center justify-center text-slate-400 hover:text-amber-300 text-[10px] font-medium transition"
@@ -842,6 +919,7 @@ export default function App() {
             <Sliders className="w-5 h-5 mb-0.5" />
             <span>Düzelt</span>
           </button>
+          ) : <span />}
 
           <button
             onClick={() => setActiveTab('history')}
@@ -870,7 +948,7 @@ export default function App() {
         isOpen={isManualOpen}
         onClose={() => setIsManualOpen(false)}
         stations={activeStations}
-        plates={plates}
+        plates={cloud.plate ? [cloud.plate, ...plates.filter((p) => p !== cloud.plate)] : plates}
         defaultStationId={selectedStationFilter}
         lastStationId={lastStationId}
         transactions={data.transactions}
@@ -940,6 +1018,7 @@ export default function App() {
         onClose={() => setIsCloudOpen(false)}
         cloud={cloud}
         localCount={data.isSample ? 0 : data.stations.length + data.transactions.length}
+        transactions={data.transactions}
         isSample={data.isSample}
       />
 

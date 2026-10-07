@@ -21,7 +21,8 @@ Canlı: https://axonturk.github.io/yakit-takip/
 11. **Değişiklik geçmişi:** Bulutta kim, hangi kaydı, ne zaman ekledi, düzenledi ya da sildi; düzenlemede eski ve yeni değerler. Bulut ekranında ve işlem düzenleme penceresinde görünür.
 12. **Uygulama kilidi:** 4-6 haneli PIN; açılışta ve uygulama arka planda seçilen süreyi geçince sorulur. PIN yalnızca tuzlanmış özet olarak cihazda saklanır. Bu bir ekran kilididir, verileri şifrelemez.
 13. **Hata kaydı ve kullanım ölçümü:** Cihaz başına günde bir anonim "açıldı" kaydı (kayıt sayıları, tema, kurulu mu) ve hata mesajları Supabase `app_events` tablosuna gider. Tutar, istasyon adı, not ya da e-posta gönderilmez.
-14. **Çevrimdışı PWA:** Telefona uygulama gibi kurulur, veriler cihazda (`localStorage`) tutulur.
+14. **Şoför rolü ve ekip:** Ortak defterde iki davet kodu var. Yönetici koduyla katılan her şeyi yapar; şoför koduyla katılan sadece harcama girer ve yalnızca kendi girdiğini düzeltip silebilir (Supabase kurallarıyla da zorunlu). Kurucu, ekip listesinden rol, varsayılan plaka ve aylık harcama limiti belirler, kişiyi ekipten çıkarır. Yeni şoför harcamaları kurucu ve yöneticilerin ana sayfasında "Ekipten yeni harcama" olarak görünür.
+15. **Çevrimdışı PWA:** Telefona uygulama gibi kurulur, veriler cihazda (`localStorage`) tutulur.
 
 ## 📲 Telefona Nasıl Yüklenir?
 

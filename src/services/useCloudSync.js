@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getClient, cloudWasUsed, loadMeta, saveMeta, pullRecords, pushRecords } from './cloud';
-import { applyRemote, diffLocal, markPushed } from './sync';
+import { getClient, cloudWasUsed, loadMeta, saveMeta, pullRecords, pushRecords, myMembership } from './cloud';
+import { applyRemote, diffLocal, markPushed, driverMayPush, dropRecords, newFromOthers, recordKey } from './sync';
 import { reportError } from './telemetry';
 
 // Re-read rows a little older than the last pull, so a change committed just
@@ -46,11 +46,16 @@ export default function useCloudSync(data, setData) {
     };
   }, [wanted]);
 
+  const userId = session?.user?.id || null;
+  const userIdRef = useRef(userId);
+  useEffect(() => {
+    userIdRef.current = userId;
+  }, [userId]);
   const workspaceId = session ? meta.workspaceId : null;
   const active = Boolean(workspaceId) && !data.isSample;
 
   const syncNow = useCallback(async () => {
-    const m = metaRef.current;
+    const m = { ...metaRef.current };
     if (!m.workspaceId || dataRef.current.isSample) return;
     if (busy.current) {
       again.current = true;
@@ -63,6 +68,24 @@ export default function useCloudSync(data, setData) {
     busy.current = true;
     setStatus('syncing');
     try {
+      // Role, plate, limit and codes can change on the server (or the owner removed us)
+      const mine = await myMembership(m.workspaceId);
+      if (!mine) {
+        setMeta({ removedFrom: m.workspaceName || 'defter' });
+        setStatus('idle');
+        return;
+      }
+      const role = mine.role;
+      Object.assign(m, {
+        role,
+        plate: mine.plate || null,
+        monthlyLimit: mine.monthly_limit === null ? null : Number(mine.monthly_limit),
+        workspaceName: mine.workspaces?.name || m.workspaceName,
+        inviteCode: mine.workspaces?.invite_code || m.inviteCode,
+        driverCode: mine.workspaces?.driver_code || m.driverCode
+      });
+      const uid = userIdRef.current;
+
       const since = m.lastPulledAt ? new Date(new Date(m.lastPulledAt).getTime() - OVERLAP_MS).toISOString() : null;
       let synced = m.synced || {};
       let pullFrom = since;
@@ -76,13 +99,35 @@ export default function useCloudSync(data, setData) {
         synced = {};
         pullFrom = null;
       }
+      // A driver's local changes to anything but their own purchases are dropped and re-read from the cloud
+      if (role === 'driver') {
+        const blocked = new Set(
+          diffLocal(dataRef.current, synced)
+            .upserts.filter((rec) => !driverMayPush(rec, uid))
+            .map((rec) => recordKey(rec.kind, rec.id))
+        );
+        if (blocked.size) {
+          const cleaned = dropRecords(dataRef.current, blocked);
+          dataRef.current = cleaned;
+          setData(cleaned);
+          synced = Object.fromEntries(Object.entries(synced).filter(([k]) => !blocked.has(k)));
+          pullFrom = null;
+        }
+      }
       const rows = await pullRecords(m.workspaceId, pullFrom);
+      let unseen = m.unseen || [];
       if (rows.length > 0) {
-        const r = applyRemote(dataRef.current, rows, synced);
+        const before = dataRef.current;
+        const r = applyRemote(before, rows, synced);
         synced = r.synced;
         if (r.changed) {
           dataRef.current = r.data;
           setData(r.data);
+          // Purchases other people entered show up as news for the owner and managers
+          if (role !== 'driver' && m.lastSyncAt) {
+            const fresh = newFromOthers(before, r.data, uid).filter((t) => t.type === 'expense').map((t) => t.id);
+            unseen = [...new Set([...unseen, ...fresh])].slice(-50);
+          }
         }
       }
       const { upserts, deletes } = diffLocal(dataRef.current, synced);
@@ -91,7 +136,9 @@ export default function useCloudSync(data, setData) {
         synced = markPushed(synced, upserts, deletes);
       }
       const lastPulledAt = rows.length ? rows[rows.length - 1].updated_at : m.lastPulledAt;
-      setMeta({ ...metaRef.current, synced, lastPulledAt, lastSyncAt: new Date().toISOString() });
+      // The user may have switched or left the workspace while this sync ran
+      if (metaRef.current.workspaceId !== m.workspaceId) return;
+      setMeta({ ...metaRef.current, ...m, synced, unseen, lastPulledAt, lastSyncAt: new Date().toISOString() });
       setError(null);
       setStatus('ok');
     } catch (e) {
@@ -128,9 +175,33 @@ export default function useCloudSync(data, setData) {
   }, [active, syncNow]);
 
   // Switching workspace starts a fresh sync history for this device.
+  // A driver starts from the shared ledger only: local records are not merged into it.
   const chooseWorkspace = useCallback(
-    (ws) => setMeta({ workspaceId: ws.id, workspaceName: ws.name, inviteCode: ws.invite_code, synced: {}, lastPulledAt: null }),
-    [setMeta]
+    (ws, role = null) => {
+      if (role === 'driver') {
+        const cleared = { ...dataRef.current, stations: [], transactions: [], isSample: false };
+        dataRef.current = cleared;
+        setData(cleared);
+      }
+      setMeta({
+        workspaceId: ws.id,
+        workspaceName: ws.name,
+        inviteCode: ws.invite_code,
+        driverCode: ws.driver_code,
+        role,
+        synced: {},
+        lastPulledAt: null
+      });
+    },
+    [setMeta, setData]
+  );
+
+  const markSeen = useCallback(() => setMeta({ ...metaRef.current, unseen: [] }), [setMeta]);
+
+  // Who entered a new record, stored on the record itself for lists and reports
+  const stamp = useCallback(
+    () => (session && metaRef.current.workspaceId ? { enteredBy: session.user.email, enteredById: session.user.id } : {}),
+    [session]
   );
 
   const leave = useCallback(() => {
@@ -144,12 +215,21 @@ export default function useCloudSync(data, setData) {
     workspaceId,
     workspaceName: meta.workspaceName,
     inviteCode: meta.inviteCode,
+    driverCode: meta.driverCode,
+    role: workspaceId ? meta.role || 'member' : null,
+    plate: meta.plate || null,
+    monthlyLimit: meta.monthlyLimit ?? null,
+    unseen: workspaceId ? meta.unseen || [] : [],
+    removedFrom: meta.removedFrom || null,
+    userId,
     lastSyncAt: meta.lastSyncAt,
     status: active ? status : 'idle',
     error,
     syncNow,
     activate,
     chooseWorkspace,
+    markSeen,
+    stamp,
     leave,
     setMeta
   };

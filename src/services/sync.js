@@ -99,3 +99,26 @@ export function markPushed(synced, upserts, deletes) {
   deletes.forEach((r) => delete next[recordKey(r.kind, r.id)]);
   return next;
 }
+
+// A driver may only send fuel purchases they entered themselves.
+export function driverMayPush(rec, userId) {
+  return (
+    rec.kind === 'tx' && rec.data?.type === 'expense' && !rec.data?.kind && Boolean(userId) && rec.data?.enteredById === userId
+  );
+}
+
+// Remove records by key from the local ledger, so the next full pull restores the cloud copy.
+export function dropRecords(data, keys) {
+  if (keys.size === 0) return data;
+  return {
+    ...data,
+    stations: data.stations.filter((s) => !keys.has(recordKey('station', s.id))),
+    transactions: data.transactions.filter((t) => !keys.has(recordKey('tx', t.id)))
+  };
+}
+
+// Transactions in `after` that were not in `before` and were entered by someone else.
+export function newFromOthers(before, after, userId) {
+  const known = new Set(before.transactions.map((t) => t.id));
+  return after.transactions.filter((t) => !known.has(t.id) && t.enteredById && t.enteredById !== userId);
+}

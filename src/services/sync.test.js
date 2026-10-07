@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { diffLocal, applyRemote, markPushed, hashRecord, recordKey } from './sync';
+import { diffLocal, applyRemote, markPushed, hashRecord, recordKey, driverMayPush, dropRecords, newFromOthers } from './sync';
 
 const data = (stations, transactions) => ({ schemaVersion: 2, settings: {}, stations, transactions });
 const st = (id, name = id) => ({ id, name });
@@ -62,5 +62,25 @@ describe('sync', () => {
     const r = applyRemote(d, upserts.map((u) => ({ ...u, deleted: false })), synced);
     expect(r.changed).toBe(false);
     expect(r.data).toBe(d);
+  });
+
+  it('lets a driver push only their own fuel purchases', () => {
+    const mine = { kind: 'tx', id: 'a', data: tx('a', 10, { enteredById: 'u1' }) };
+    expect(driverMayPush(mine, 'u1')).toBe(true);
+    expect(driverMayPush(mine, 'u2')).toBe(false);
+    expect(driverMayPush({ kind: 'tx', id: 'b', data: tx('b', 10, { type: 'topup', enteredById: 'u1' }) }, 'u1')).toBe(false);
+    expect(driverMayPush({ kind: 'tx', id: 'c', data: tx('c', 10, { kind: 'adjustment', enteredById: 'u1' }) }, 'u1')).toBe(false);
+    expect(driverMayPush({ kind: 'station', id: 's1', data: st('s1') }, 'u1')).toBe(false);
+    expect(driverMayPush({ kind: 'tx', id: 'd', data: tx('d', 10) }, null)).toBe(false);
+  });
+
+  it('drops records by key and finds new ones from others', () => {
+    const d = data([st('s1'), st('s2')], [tx('t1', 1), tx('t2', 2)]);
+    const dropped = dropRecords(d, new Set([recordKey('station', 's2'), recordKey('tx', 't1')]));
+    expect(dropped.stations.map((s) => s.id)).toEqual(['s1']);
+    expect(dropped.transactions.map((t) => t.id)).toEqual(['t2']);
+    expect(dropRecords(d, new Set())).toBe(d);
+    const after = data([st('s1')], [tx('t3', 3, { enteredById: 'u2' }), tx('t4', 4, { enteredById: 'u1' }), tx('t5', 5), ...d.transactions]);
+    expect(newFromOthers(d, after, 'u1').map((t) => t.id)).toEqual(['t3']);
   });
 });
