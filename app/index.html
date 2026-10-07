@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="tr" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#090d16" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Hisapo" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Hisapo" />
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <title>Hisapo · Yakıt Avans & Bakiye Takip</title>
+
+    <script>
+      // Apply the saved theme before first paint
+      try {
+        var saved = JSON.parse(localStorage.getItem('yakit_takip_data_v1') || '{}');
+        if (saved.settings && saved.settings.theme === 'light') {
+          document.documentElement.classList.add('theme-light');
+          document.querySelector('meta[name=theme-color]').setAttribute('content', '#f1f5f9');
+        }
+      } catch (e) {}
+      window.deferredInstallPrompt = null;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.deferredInstallPrompt = e;
+        window.dispatchEvent(new CustomEvent('pwa-prompt-ready'));
+      });
+      window.addEventListener('appinstalled', () => {
+        window.deferredInstallPrompt = null;
+        window.dispatchEvent(new CustomEvent('pwa-installed'));
+      });
+    </script>
+    <script type="module" crossorigin src="./assets/index-w_xd0onL.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-Cz84B05l.css">
+  </head>
+  <body class="bg-slate-950 text-slate-100 antialiased selection:bg-amber-500 selection:text-black">
+    <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
+
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').then((reg) => {
+            console.log('SW kayıt başarılı:', reg.scope);
+            reg.update();
+          }).catch((err) => {
+            console.warn('SW kayıt hatası:', err);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
