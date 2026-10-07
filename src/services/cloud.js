@@ -99,6 +99,17 @@ export async function myMembership(workspaceId) {
     .eq('workspace_id', workspaceId)
     .eq('user_id', uid)
     .maybeSingle();
+  // Before the newer schema.sql is run the extra columns are missing: keep syncing with the role alone
+  if (error && /column|does not exist|relationship|schema cache/i.test(error.message)) {
+    const basic = await supabase
+      .from('workspace_members')
+      .select('role')
+      .eq('workspace_id', workspaceId)
+      .eq('user_id', uid)
+      .maybeSingle();
+    fail(basic.error);
+    return basic.data && { ...basic.data, plate: null, monthly_limit: null, outdated: true };
+  }
   fail(error);
   return data;
 }
@@ -200,5 +211,28 @@ export async function changeLog(workspaceId, { kind, id, limit = 50 } = {}) {
   const { data, error } = await q;
   if (error && /record_log/.test(error.message)) throw new Error('Değişiklik geçmişi için Supabase kurulumu güncellenmeli.');
   fail(error);
+  return data;
+}
+
+// Receipt photos: private bucket, one folder per workspace. Photos never change, so an existing copy counts as done.
+const BUCKET = 'receipts';
+const photoPath = (workspaceId, photoId) => `${workspaceId}/${photoId}.jpg`;
+
+export async function uploadPhoto(workspaceId, photoId, blob) {
+  const supabase = await getClient();
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(photoPath(workspaceId, photoId), blob, { contentType: blob.type || 'image/jpeg', upsert: false });
+  if (error && !/exists|duplicate/i.test(error.message)) fail(error);
+}
+
+// The photo as a Blob, or null if nobody uploaded it.
+export async function downloadPhoto(workspaceId, photoId) {
+  const supabase = await getClient();
+  const { data, error } = await supabase.storage.from(BUCKET).download(photoPath(workspaceId, photoId));
+  if (error) {
+    if (/not.?found|404|400/i.test(`${error.message} ${error.statusCode || ''}`)) return null;
+    fail(error);
+  }
   return data;
 }

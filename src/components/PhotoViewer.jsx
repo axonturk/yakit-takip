@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
-import { getPhoto } from '../services/photos';
+import { loadPhoto } from '../services/photos';
 import { formatTL, formatTRDate, transactionLabel } from '../services/storage';
 
 export default function PhotoViewer({ transaction, onClose }) {
@@ -10,7 +10,7 @@ export default function PhotoViewer({ transaction, onClose }) {
   useEffect(() => {
     if (!transaction?.photoId) return undefined;
     let objectUrl = null;
-    getPhoto(transaction.photoId).then(
+    loadPhoto(transaction.photoId).then(
       (blob) => {
         if (!blob) return setMissing(true);
         objectUrl = URL.createObjectURL(blob);
@@ -39,7 +39,7 @@ export default function PhotoViewer({ transaction, onClose }) {
           <img src={url} alt="Fiş fotoğrafı" className="max-w-full max-h-full object-contain rounded-lg" />
         ) : (
           <p className="text-xs text-white/60">
-            {missing ? 'Fotoğraf bu cihazda bulunamadı.' : 'Yükleniyor…'}
+            {missing ? 'Fotoğraf bulunamadı. Çeken telefon henüz eşitlememiş olabilir.' : 'Yükleniyor…'}
           </p>
         )}
       </div>

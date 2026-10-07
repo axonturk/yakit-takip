@@ -274,6 +274,13 @@ function Connected({ cloud, isSample, transactions }) {
         {cloud.status === 'error' && cloud.error && <div className="text-[10px] text-red-300">{cloud.error}</div>}
       </div>
 
+      {cloud.setupOutdated && (
+        <p className="text-[11px] text-amber-200 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2">
+          Supabase kurulumu eski: şoför kodu, plaka ve limit için güncel schema.sql dosyası Supabase SQL Editor'de bir kez
+          daha çalıştırılmalı. Kayıtların eşitlenmeye devam ediyor.
+        </p>
+      )}
+
       <button className={secondary} onClick={cloud.syncNow} disabled={cloud.status === 'syncing' || isSample}>
         <span className="inline-flex items-center gap-1.5">
           <RefreshCw className={`w-3.5 h-3.5 ${cloud.status === 'syncing' ? 'animate-spin' : ''}`} /> Şimdi eşitle
@@ -344,7 +351,8 @@ function Connected({ cloud, isSample, transactions }) {
       </div>
 
       <p className="text-[10px] text-slate-500">
-        Fiş fotoğrafları şimdilik buluta gitmez, sadece çekildiği telefonda kalır.
+        Fiş fotoğrafları da buluta yüklenir; ekipten herkes kayda dokununca fotoğrafı görür.
+        {cloud.photoError && <span className="block text-amber-300 mt-0.5">Fotoğraflar şu an yüklenemiyor: {cloud.photoError}</span>}
       </p>
 
       <button
