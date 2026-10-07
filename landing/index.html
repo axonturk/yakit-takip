@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Hisapo · Yakıt avans ve veresiye defteri</title>
+  <meta name="description" content="İstasyonlardaki yakıt avansınızı, veresiyenizi ve araç bazında harcamanızı telefondan takip edin. Ekip, şoför, fiş fotoğrafı, aylık rapor." />
+  <meta name="theme-color" content="#090d16" />
+  <meta property="og:title" content="Hisapo · Yakıt avans ve veresiye defteri" />
+  <meta property="og:description" content="İstasyon bakiyesi, şoför harcamaları ve aylık yakıt raporu tek uygulamada." />
+  <meta property="og:image" content="https://hisapo.com/icon-192.png" />
+  <link rel="icon" type="image/png" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <script>
+    // Home-screen icons added before the app moved to /app/ open here; send them straight to the app.
+    if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
+      location.replace('/app/');
+    }
+  </script>
+  <style>
+    :root {
+      --bg: #070b16; --card: #0f1626; --line: #1e293b; --text: #e2e8f0; --muted: #94a3b8;
+      --gold: #f59e0b; --gold-2: #fbbf24; --green: #10b981;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    a { color: inherit; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px; }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; text-decoration: none; }
+    .brand img { width: 36px; height: 36px; border-radius: 10px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 22px; border-radius: 14px; font-weight: 800; text-decoration: none; font-size: 15px; }
+    .btn-gold { background: var(--gold); color: #0b0f19; }
+    .btn-gold:hover { background: var(--gold-2); }
+    .btn-ghost { border: 1px solid var(--line); color: var(--text); background: var(--card); }
+    .btn-sm { padding: 9px 16px; font-size: 14px; border-radius: 12px; }
+    .hero { padding: 48px 0 40px; display: grid; gap: 36px; align-items: center; }
+    @media (min-width: 820px) { .hero { grid-template-columns: 1.15fr 0.85fr; padding: 72px 0 56px; } }
+    h1 { font-size: clamp(30px, 6vw, 46px); line-height: 1.12; margin: 0 0 16px; letter-spacing: -0.02em; }
+    h1 em { color: var(--gold); font-style: normal; }
+    .lead { color: var(--muted); font-size: 18px; margin: 0 0 26px; max-width: 34em; }
+    .cta { display: flex; flex-wrap: wrap; gap: 10px; }
+    .note { color: var(--muted); font-size: 13px; margin-top: 12px; }
+    .phone { background: linear-gradient(160deg, #111a2e, #0b1120); border: 1px solid var(--line); border-radius: 28px; padding: 18px; box-shadow: 0 30px 80px rgba(0,0,0,.45); max-width: 340px; margin: 0 auto; width: 100%; }
+    .bal { border-radius: 18px; padding: 16px; background: #0b1222; border: 1px solid var(--line); margin-bottom: 10px; }
+    .bal small { color: var(--muted); font-size: 12px; }
+    .bal b { display: block; font-size: 26px; color: var(--gold-2); }
+    .row { display: flex; justify-content: space-between; font-size: 13px; padding: 9px 12px; border-radius: 12px; background: #131c30; margin-top: 6px; }
+    .row span:last-child { font-weight: 800; color: #f87171; }
+    .row.up span:last-child { color: var(--green); }
+    section { padding: 36px 0; border-top: 1px solid var(--line); }
+    h2 { font-size: 26px; margin: 0 0 20px; letter-spacing: -0.01em; }
+    .grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
+    @media (min-width: 640px) { .grid { grid-template-columns: 1fr 1fr; } }
+    @media (min-width: 900px) { .grid.three { grid-template-columns: 1fr 1fr 1fr; } }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+    .card h3 { margin: 0 0 6px; font-size: 16px; }
+    .card p { margin: 0; color: var(--muted); font-size: 14px; }
+    .ico { font-size: 22px; margin-bottom: 8px; display: block; }
+    ol.steps { margin: 0; padding-left: 20px; color: var(--muted); }
+    ol.steps li { margin-bottom: 6px; }
+    ol.steps b { color: var(--text); }
+    footer { border-top: 1px solid var(--line); padding: 26px 0 40px; color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="brand" href="/"><img src="icon-192.png" alt="" />Hisapo</a>
+      <a class="btn btn-gold btn-sm" href="/app/">Uygulamayı aç</a>
+    </header>
+
+    <div class="hero">
+      <div>
+        <h1>İstasyondaki yakıt hesabınız <em>cebinizde</em></h1>
+        <p class="lead">Avans yatırdığınız ya da veresiye aldığınız istasyonların bakiyesini, şoförlerin harcamalarını ve araç başına aylık yakıt masrafını tek yerden takip edin.</p>
+        <div class="cta">
+          <a class="btn btn-gold" href="/app/">Ücretsiz başla</a>
+          <a class="btn btn-ghost" href="#kurulum">Telefona kur</a>
+        </div>
+        <p class="note">Kayıt gerekmez, hemen kullanmaya başlarsınız. İnternet yokken de çalışır.</p>
+      </div>
+      <div class="phone" aria-hidden="true">
+        <div class="bal"><small>Opet Maslak · kalan avans</small><b>12.450,00 ₺</b></div>
+        <div class="row"><span>34 ABC 12 · 52 L</span><span>−2.400 ₺</span></div>
+        <div class="row"><span>06 XYZ 99 · 67 L</span><span>−3.100 ₺</span></div>
+        <div class="row up"><span>Avans yüklendi</span><span>+10.000 ₺</span></div>
+        <div class="row"><span>35 KLM 07 · 20,5 L</span><span>−950 ₺</span></div>
+      </div>
+    </div>
+
+    <section>
+      <h2>Neler yapar?</h2>
+      <div class="grid three">
+        <div class="card"><span class="ico">⛽</span><h3>İstasyon bakiyesi</h3><p>Her istasyon için avans, harcama ve kalan bakiye. Borçtaysanız eksi bakiye olarak görünür, limit yaklaşınca uyarır.</p></div>
+        <div class="card"><span class="ico">🚚</span><h3>Şoför ve ekip</h3><p>Şoförler sadece kendi harcamasını girer. Yönetici her şeyi görür, kim ne zaman neyi değiştirdi kayıtlıdır.</p></div>
+        <div class="card"><span class="ico">🧾</span><h3>Fiş fotoğrafı</h3><p>Fişi ya da dekontu kayda ekleyin. Ekipteki herkes aynı fotoğrafı görür, kâğıt kaybolsa da kanıt durur.</p></div>
+        <div class="card"><span class="ico">📊</span><h3>Aylık rapor</h3><p>Araç, şoför ya da istasyon bazında aylık yakıt masrafı, litre ve ortalama fiyat. Muhasebeye Excel ve PDF.</p></div>
+        <div class="card"><span class="ico">💬</span><h3>WhatsApp'tan gönder</h3><p>Ekstreyi ve raporu muhasebeciye, ortağa ya da istasyona tek dokunuşla gönderin.</p></div>
+        <div class="card"><span class="ico">☁️</span><h3>Bulut yedek</h3><p>Telefon kaybolsa da kayıtlar kaybolmaz. Birden çok telefon aynı defteri kullanır, PIN kilidiyle korunur.</p></div>
+      </div>
+    </section>
+
+    <section id="kurulum">
+      <h2>Telefona kurulum</h2>
+      <div class="grid">
+        <div class="card"><h3>Android (Chrome)</h3>
+          <ol class="steps"><li><a href="/app/"><b>hisapo.com/app</b></a> adresini açın.</li><li>Sağ üstteki <b>⋮</b> menüsüne dokunun.</li><li><b>Uygulamayı yükle</b> ya da <b>Ana ekrana ekle</b>'yi seçin.</li></ol>
+        </div>
+        <div class="card"><h3>iPhone (Safari)</h3>
+          <ol class="steps"><li><a href="/app/"><b>hisapo.com/app</b></a> adresini Safari'de açın.</li><li>Alttaki <b>Paylaş</b> simgesine dokunun.</li><li><b>Ana Ekrana Ekle</b>'yi seçin.</li></ol>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <span>© 2026 Hisapo</span>
+      <span><a href="/gizlilik.html">Gizlilik</a> · <a href="/app/">Uygulama</a></span>
+    </footer>
+  </div>
+</body>
+</html>

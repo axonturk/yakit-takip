@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'yakit-takip-v20';
+﻿const CACHE_NAME = 'hisapo-app-v21';
 
 const PRECACHE_ASSETS = [
   './',
