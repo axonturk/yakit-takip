@@ -262,7 +262,7 @@ export function buildCSV(transactions) {
   const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const header = [
     'Tarih', 'Tür', 'İstasyon', 'Plaka', 'Tutar', 'Litre', 'Birim Fiyat',
-    'Yakıt', 'Ödeme', 'Fiş No', 'Not', 'Kayıt No'
+    'Yakıt', 'Ödeme', 'Fiş No', 'Not', 'Giren', 'Kayıt No'
   ];
   const rows = transactions.map((t) =>
     [
@@ -277,6 +277,7 @@ export function buildCSV(transactions) {
       cell(t.paymentMethod || ''),
       cell(t.receiptNo || ''),
       cell(t.note || ''),
+      cell(t.enteredBy || ''),
       cell(t.id)
     ].join(';')
   );

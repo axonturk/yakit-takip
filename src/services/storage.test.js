@@ -108,7 +108,7 @@ describe('buildCSV', () => {
     const csv = buildCSV([tx('1', 'expense', 'a', 1250.5, '2026-10-01T10:00', { liters: 28.4, plate: '34 ABC 12' })]);
     expect(csv.startsWith('﻿')).toBe(true);
     const [header, row] = csv.slice(1).split('\r\n');
-    expect(header.split(';')).toHaveLength(12);
+    expect(header.split(';')).toHaveLength(13);
     expect(row).toContain('"-1250,5"');
     expect(row).toContain('"28,4"');
     expect(row).toContain('"34 ABC 12"');
