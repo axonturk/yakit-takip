@@ -5,6 +5,7 @@ import ChangeLog, { ChangeLogTitle } from './ChangeLog';
 import { formatTL, transactionLabel, FUEL_TYPES, PAYMENT_METHODS } from '../services/storage';
 import { checkFill, lastOdometer } from '../services/consumption';
 import KmField, { FillNotice } from './KmField';
+import { t } from '../i18n';
 
 const inputClass =
   'w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-400';
@@ -58,7 +59,7 @@ function EditForm({ tx, stations, plates, transactions, onClose, onSave, workspa
     e.preventDefault();
     const parsedAmount = parseFloat(amount);
     if (!parsedAmount || isNaN(parsedAmount) || parsedAmount <= 0) {
-      setErrorMsg('Lütfen geçerli bir tutar girin!');
+      setErrorMsg(t('Lütfen geçerli bir tutar girin!'));
       return;
     }
 
@@ -98,9 +99,9 @@ function EditForm({ tx, stations, plates, transactions, onClose, onSave, workspa
               <Pencil className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">İşlemi Düzenle</h2>
+              <h2 className="text-sm font-bold text-white">{t('İşlemi Düzenle')}</h2>
               <p className="text-[10px] text-slate-400">
-                {transactionLabel(tx)} · eski değerler geçmişte saklanır
+                {transactionLabel(tx)} · {t('eski değerler geçmişte saklanır')}
               </p>
             </div>
           </div>
@@ -121,7 +122,7 @@ function EditForm({ tx, stations, plates, transactions, onClose, onSave, workspa
 
         <form onSubmit={handleSubmit} className="mt-3 space-y-3">
           <div>
-            <label className="block text-[11px] text-slate-400 mb-1">İstasyon</label>
+            <label className="block text-[11px] text-slate-400 mb-1">{t('İstasyon')}</label>
             <select value={stationId} onChange={(e) => setStationId(e.target.value)} className={inputClass}>
               {stationOptions.map((st) => (
                 <option key={st.id} value={st.id}>
@@ -132,7 +133,7 @@ function EditForm({ tx, stations, plates, transactions, onClose, onSave, workspa
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-amber-400 mb-1">Tutar (TL)</label>
+            <label className="block text-xs font-bold text-amber-400 mb-1">{t('Tutar ({cur})')}</label>
             <input
               type="number"
               inputMode="decimal"
@@ -147,7 +148,7 @@ function EditForm({ tx, stations, plates, transactions, onClose, onSave, workspa
             <>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">Litre</label>
+                  <label className="block text-[11px] text-slate-400 mb-1">{t('Litre')}</label>
                   <input
                     type="number"
                     inputMode="decimal"
@@ -161,7 +162,7 @@ function EditForm({ tx, stations, plates, transactions, onClose, onSave, workspa
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">Birim Fiyat (TL/L)</label>
+                  <label className="block text-[11px] text-slate-400 mb-1">{t('Birim Fiyat ({cur}/L)')}</label>
                   <input
                     type="number"
                     inputMode="decimal"
@@ -177,13 +178,13 @@ function EditForm({ tx, stations, plates, transactions, onClose, onSave, workspa
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">Plaka (opsiyonel)</label>
+                  <label className="block text-[11px] text-slate-400 mb-1">{t('Plaka (opsiyonel)')}</label>
                   <input
                     type="text"
                     list="edit-plates"
                     value={plate}
                     onChange={(e) => setPlate(e.target.value)}
-                    placeholder="Örn: 34 ABC 123"
+                    placeholder={t('Örn: 34 ABC 123')}
                     className={`${inputClass} uppercase`}
                   />
                   <datalist id="edit-plates">
@@ -214,34 +215,34 @@ function EditForm({ tx, stations, plates, transactions, onClose, onSave, workspa
           <div className="grid grid-cols-2 gap-2">
             {isExpense ? (
               <div>
-                <label className="block text-[11px] text-slate-400 mb-1">Yakıt Türü</label>
+                <label className="block text-[11px] text-slate-400 mb-1">{t('Yakıt Türü')}</label>
                 <select value={fuelType} onChange={(e) => setFuelType(e.target.value)} className={inputClass}>
-                  <option value="">Seçilmedi</option>
+                  <option value="">{t('Seçilmedi')}</option>
                   {FUEL_TYPES.map((f) => (
-                    <option key={f} value={f}>{f}</option>
+                    <option key={f} value={f}>{t(f)}</option>
                   ))}
                 </select>
               </div>
             ) : (
               <div>
-                <label className="block text-[11px] text-slate-400 mb-1">Ödeme Yöntemi</label>
+                <label className="block text-[11px] text-slate-400 mb-1">{t('Ödeme Yöntemi')}</label>
                 <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className={inputClass}>
-                  <option value="">Seçilmedi</option>
+                  <option value="">{t('Seçilmedi')}</option>
                   {PAYMENT_METHODS.map((m) => (
-                    <option key={m} value={m}>{m}</option>
+                    <option key={m} value={m}>{t(m)}</option>
                   ))}
                 </select>
               </div>
             )}
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Fiş / Belge No</label>
+              <label className="block text-[11px] text-slate-400 mb-1">{t('Fiş / Belge No')}</label>
               <input type="text" value={receiptNo} onChange={(e) => setReceiptNo(e.target.value)} className={inputClass} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Tarih & Saat</label>
+              <label className="block text-[11px] text-slate-400 mb-1">{t('Tarih & Saat')}</label>
               <input
                 type="datetime-local"
                 value={datetime}
@@ -250,7 +251,7 @@ function EditForm({ tx, stations, plates, transactions, onClose, onSave, workspa
               />
             </div>
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Not</label>
+              <label className="block text-[11px] text-slate-400 mb-1">{t('Not')}</label>
               <input type="text" value={note} onChange={(e) => setNote(e.target.value)} className={inputClass} />
             </div>
           </div>
@@ -259,21 +260,21 @@ function EditForm({ tx, stations, plates, transactions, onClose, onSave, workspa
             value={photo}
             onChange={setPhoto}
             existingId={tx.photoId}
-            label={isExpense ? 'Fiş fotoğrafı' : 'Dekont fotoğrafı'}
+            label={isExpense ? t('Fiş fotoğrafı') : t('Dekont fotoğrafı')}
           />
 
           {workspaceId ? (
             <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-2 space-y-2">
-              <ChangeLogTitle>Kim, ne zaman değiştirdi</ChangeLogTitle>
-              <ChangeLog workspaceId={workspaceId} kind="tx" id={tx.id} limit={10} emptyText="Bu kayıt henüz buluta gitmedi." />
+              <ChangeLogTitle>{t('Kim, ne zaman değiştirdi')}</ChangeLogTitle>
+              <ChangeLog workspaceId={workspaceId} kind="tx" id={tx.id} limit={10} emptyText={t('Bu kayıt henüz buluta gitmedi.')} />
             </div>
           ) : tx.edits?.length > 0 && (
             <div className="text-[10px] text-slate-400 bg-slate-800/60 border border-slate-700/60 rounded-xl p-2 space-y-0.5">
-              <div className="font-semibold text-slate-300">Değişiklik geçmişi</div>
+              <div className="font-semibold text-slate-300">{t('Değişiklik geçmişi')}</div>
               {tx.edits.map((ed, i) => (
                 <div key={i}>
                   {ed.at.replace('T', ' ')}
-                  {ed.before.amount != null ? ` · önceki tutar ${formatTL(ed.before.amount)}` : ''}
+                  {ed.before.amount != null ? ' · ' + t('önceki tutar {v}', { v: formatTL(ed.before.amount) }) : ''}
                 </div>
               ))}
             </div>
@@ -283,7 +284,7 @@ function EditForm({ tx, stations, plates, transactions, onClose, onSave, workspa
             type="submit"
             className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition active:scale-[0.98]"
           >
-            DEĞİŞİKLİKLERİ KAYDET
+            {t('DEĞİŞİKLİKLERİ KAYDET')}
           </button>
         </form>
       </div>

@@ -16,6 +16,9 @@ import {
 import { formatTRDate, formatTL } from '../services/storage';
 import { memberMonthSpend, ROLE_LABEL } from '../services/team';
 import ChangeLog, { ChangeLogTitle } from './ChangeLog';
+import PushToggle from './PushToggle';
+import { disablePush } from '../services/push';
+import { t } from '../i18n';
 
 const inputClass =
   'w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-400';
@@ -43,8 +46,8 @@ export default function CloudModal({ isOpen, onClose, cloud, localCount, isSampl
               <Cloud className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">Bulut Yedek ve Ortak Defter</h2>
-              <p className="text-[10px] text-slate-400">Kayıtlar buluta yedeklenir, ekibinle paylaşılır</p>
+              <h2 className="text-sm font-bold text-white">{t('Bulut Yedek ve Ortak Defter')}</h2>
+              <p className="text-[10px] text-slate-400">{t('Kayıtlar buluta yedeklenir, ekibinle paylaşılır')}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition">
@@ -91,13 +94,13 @@ function SignIn() {
   return (
     <div className="space-y-3">
       <p className="text-xs text-slate-300">
-        E-posta adresinle giriş yap. Şifre yok: adresine bir giriş bağlantısı gönderiyoruz.
+        {t('E-posta adresinle giriş yap. Şifre yok: adresine bir giriş bağlantısı gönderiyoruz.')}
       </p>
       <input
         type="email"
         inputMode="email"
         autoComplete="email"
-        placeholder="ornek@firma.com"
+        placeholder={t('ornek@firma.com')}
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         className={inputClass}
@@ -111,18 +114,18 @@ function SignIn() {
             setSent(true);
           })}
         >
-          {busy ? 'Gönderiliyor…' : 'Giriş bağlantısı gönder'}
+          {busy ? t('Gönderiliyor…') : t('Giriş bağlantısı gönder')}
         </button>
       ) : (
         <>
           <p className="text-[11px] text-emerald-300">
-            E-posta gönderildi. İçindeki bağlantıya bu telefonda dokun. E-postada 6 haneli kod varsa aşağıya da yazabilirsin.
+            {t('E-posta gönderildi. İçindeki bağlantıya bu telefonda dokun. E-postada 6 haneli kod varsa aşağıya da yazabilirsin.')}
           </p>
           <input
             type="text"
             inputMode="numeric"
             autoComplete="one-time-code"
-            placeholder="6 haneli kod"
+            placeholder={t('6 haneli kod')}
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
             className={`${inputClass} tracking-[0.4em] text-center font-bold`}
@@ -132,10 +135,10 @@ function SignIn() {
             disabled={busy || code.length < 6}
             onClick={() => run(() => verifyCode(email.trim(), code))}
           >
-            {busy ? 'Kontrol ediliyor…' : 'Giriş yap'}
+            {busy ? t('Kontrol ediliyor…') : t('Giriş yap')}
           </button>
           <button className="text-[11px] text-slate-400 hover:text-slate-200" onClick={() => setSent(false)}>
-            Kodu tekrar gönder
+            {t('Kodu tekrar gönder')}
           </button>
         </>
       )}
@@ -146,7 +149,7 @@ function SignIn() {
 
 function PickWorkspace({ cloud, localCount }) {
   const [list, setList] = useState(null);
-  const [name, setName] = useState('İşletmem');
+  const [name, setName] = useState(() => t('İşletmem'));
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
@@ -164,7 +167,10 @@ function PickWorkspace({ cloud, localCount }) {
     const role = mine?.role || 'member';
     if (role === 'driver' && localCount > 0) {
       const ok = window.confirm(
-        `"${ws.name}" defterine şoför olarak katılıyorsun. Bu telefondaki ${localCount} kayıt deftere eklenmez ve telefondan kaldırılır. Devam edilsin mi?`
+        t('"{name}" defterine şoför olarak katılıyorsun. Bu telefondaki {n} kayıt deftere eklenmez ve telefondan kaldırılır. Devam edilsin mi?', {
+          name: ws.name,
+          n: localCount
+        })
       );
       if (!ok) {
         if (justJoined) await leaveWorkspace(ws.id);
@@ -187,21 +193,21 @@ function PickWorkspace({ cloud, localCount }) {
 
   return (
     <div className="space-y-4">
-      <p className="text-[11px] text-slate-400">Giriş yapıldı: {cloud.email}</p>
+      <p className="text-[11px] text-slate-400">{t('Giriş yapıldı: {email}', { email: cloud.email })}</p>
       {cloud.removedFrom && (
         <p className="text-[11px] text-red-300 bg-red-500/15 border border-red-500/30 rounded-lg p-2">
-          "{cloud.removedFrom}" defterinden çıkarıldın. Kayıtlar bu telefonda duruyor.
+          {t('"{name}" defterinden çıkarıldın. Kayıtlar bu telefonda duruyor.', { name: cloud.removedFrom })}
         </p>
       )}
       {localCount > 0 && (
         <p className="text-[11px] text-amber-200 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2">
-          Bu telefondaki {localCount} kayıt seçtiğin deftere eklenecek, hiçbir şey silinmez. (Şoför koduyla katılırsan eklenmez.)
+          {t('Bu telefondaki {n} kayıt seçtiğin deftere eklenecek, hiçbir şey silinmez. (Şoför koduyla katılırsan eklenmez.)', { n: localCount })}
         </p>
       )}
 
       {list?.length > 0 && (
         <div className="space-y-2">
-          <div className="text-[11px] font-bold text-slate-300">Defterlerin</div>
+          <div className="text-[11px] font-bold text-slate-300">{t('Defterlerin')}</div>
           {list.map((ws) => (
             <button key={ws.id} className={secondary} disabled={busy} onClick={() => run(async () => ws)}>
               {ws.name}
@@ -211,23 +217,23 @@ function PickWorkspace({ cloud, localCount }) {
       )}
 
       <div className="space-y-2">
-        <div className="text-[11px] font-bold text-slate-300">Yeni ortak defter oluştur</div>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="İşletme adı" className={inputClass} />
+        <div className="text-[11px] font-bold text-slate-300">{t('Yeni ortak defter oluştur')}</div>
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('İşletme adı')} className={inputClass} />
         <button className={primary} disabled={busy || !name.trim()} onClick={() => run(() => createWorkspace(name.trim()))}>
-          Oluştur ve yedeklemeye başla
+          {t('Oluştur ve yedeklemeye başla')}
         </button>
       </div>
 
       <div className="space-y-2">
-        <div className="text-[11px] font-bold text-slate-300">Ya da davet koduyla katıl</div>
+        <div className="text-[11px] font-bold text-slate-300">{t('Ya da davet koduyla katıl')}</div>
         <input
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
-          placeholder="Örn: 7F3K9QAB"
+          placeholder={t('Örn: 7F3K9QAB')}
           className={`${inputClass} uppercase tracking-widest`}
         />
         <button className={secondary} disabled={busy || code.trim().length < 6} onClick={() => run(() => joinWorkspace(code), true)}>
-          Katıl
+          {t('Katıl')}
         </button>
       </div>
 
@@ -236,7 +242,7 @@ function PickWorkspace({ cloud, localCount }) {
         className="w-full text-[11px] text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1"
         onClick={signOut}
       >
-        <LogOut className="w-3 h-3" /> Çıkış yap
+        <LogOut className="w-3 h-3" /> {t('Çıkış yap')}
       </button>
     </div>
   );
@@ -265,31 +271,32 @@ function Connected({ cloud, isSample, transactions }) {
       <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 space-y-1">
         <div className="text-sm font-bold text-white">{cloud.workspaceName}</div>
         <div className="text-[11px] text-slate-400">
-          {cloud.email} · {ROLE_LABEL[cloud.role] || 'Yönetici'}
+          {cloud.email} · {t(ROLE_LABEL[cloud.role] || 'Yönetici')}
         </div>
         <div className={`text-[11px] font-semibold ${tone}`}>
-          {isSample ? 'Örnek verilerle eşitleme kapalı' : STATUS_TEXT[cloud.status] || ''}
-          {cloud.lastSyncAt && cloud.status !== 'syncing' ? ` · son: ${formatTRDate(cloud.lastSyncAt)}` : ''}
+          {isSample ? t('Örnek verilerle eşitleme kapalı') : STATUS_TEXT[cloud.status] ? t(STATUS_TEXT[cloud.status]) : ''}
+          {cloud.lastSyncAt && cloud.status !== 'syncing' ? ` · ${t('son: {date}', { date: formatTRDate(cloud.lastSyncAt) })}` : ''}
         </div>
         {cloud.status === 'error' && cloud.error && <div className="text-[10px] text-red-300">{cloud.error}</div>}
       </div>
 
       {cloud.setupOutdated && (
         <p className="text-[11px] text-amber-200 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2">
-          Supabase kurulumu eski: şoför kodu, plaka ve limit için güncel schema.sql dosyası Supabase SQL Editor'de bir kez
-          daha çalıştırılmalı. Kayıtların eşitlenmeye devam ediyor.
+          {t('Supabase kurulumu eski: şoför kodu, plaka ve limit için güncel schema.sql dosyası Supabase SQL Editor\'de bir kez daha çalıştırılmalı. Kayıtların eşitlenmeye devam ediyor.')}
         </p>
       )}
 
       <button className={secondary} onClick={cloud.syncNow} disabled={cloud.status === 'syncing' || isSample}>
         <span className="inline-flex items-center gap-1.5">
-          <RefreshCw className={`w-3.5 h-3.5 ${cloud.status === 'syncing' ? 'animate-spin' : ''}`} /> Şimdi eşitle
+          <RefreshCw className={`w-3.5 h-3.5 ${cloud.status === 'syncing' ? 'animate-spin' : ''}`} /> {t('Şimdi eşitle')}
         </span>
       </button>
 
+      {canInvite && !isSample && <PushToggle workspaceId={cloud.workspaceId} />}
+
       <div className="space-y-2">
         <div className="text-[11px] font-bold text-slate-300 flex items-center gap-1">
-          <Users className="w-3.5 h-3.5" /> Ekip ({members.length})
+          <Users className="w-3.5 h-3.5" /> {t('Ekip ({n})', { n: members.length })}
         </div>
         {members.map((m) =>
           editing === m.user_id ? (
@@ -314,24 +321,24 @@ function Connected({ cloud, isSample, transactions }) {
           )
         )}
         {isOwner && members.length > 1 && (
-          <p className="text-[10px] text-slate-500">Rolünü, plakasını ya da aylık limitini değiştirmek için kişiye dokun.</p>
+          <p className="text-[10px] text-slate-500">{t('Rolünü, plakasını ya da aylık limitini değiştirmek için kişiye dokun.')}</p>
         )}
       </div>
 
       {canInvite && (
         <div className="space-y-3">
           <InviteCode
-            title="Şoför davet kodu"
-            hint="Şoför sadece harcama girer, kendi girdiğini düzeltebilir."
+            title={t('Şoför davet kodu')}
+            hint={t('Şoför sadece harcama girer, kendi girdiğini düzeltebilir.')}
             code={cloud.driverCode}
-            role="şoför"
+            role={t('şoför')}
             cloud={cloud}
           />
           <InviteCode
-            title="Yönetici davet kodu"
-            hint="Yönetici her şeyi görür ve girer: istasyon, bakiye, düzeltme."
+            title={t('Yönetici davet kodu')}
+            hint={t('Yönetici her şeyi görür ve girer: istasyon, bakiye, düzeltme.')}
             code={cloud.inviteCode}
-            role="yönetici"
+            role={t('yönetici')}
             cloud={cloud}
           />
         </div>
@@ -340,30 +347,33 @@ function Connected({ cloud, isSample, transactions }) {
       <div className="space-y-2">
         {showLog ? (
           <>
-            <ChangeLogTitle>Son değişiklikler</ChangeLogTitle>
+            <ChangeLogTitle>{t('Son değişiklikler')}</ChangeLogTitle>
             <ChangeLog workspaceId={cloud.workspaceId} />
           </>
         ) : (
           <button className={secondary} onClick={() => setShowLog(true)}>
-            Değişiklik geçmişi (kim, ne zaman, ne)
+            {t('Değişiklik geçmişi (kim, ne zaman, ne)')}
           </button>
         )}
       </div>
 
       <p className="text-[10px] text-slate-500">
-        Fiş fotoğrafları da buluta yüklenir; ekipten herkes kayda dokununca fotoğrafı görür.
-        {cloud.photoError && <span className="block text-amber-300 mt-0.5">Fotoğraflar şu an yüklenemiyor: {cloud.photoError}</span>}
+        {t('Fiş fotoğrafları da buluta yüklenir; ekipten herkes kayda dokununca fotoğrafı görür.')}
+        {cloud.photoError && (
+          <span className="block text-amber-300 mt-0.5">{t('Fotoğraflar şu an yüklenemiyor: {error}', { error: cloud.photoError })}</span>
+        )}
       </p>
 
       <button
         className="w-full text-[11px] text-slate-400 hover:text-red-300 flex items-center justify-center gap-1"
         onClick={async () => {
-          if (!window.confirm('Bu cihaz buluttan çıkarılsın mı? Telefondaki kayıtlar silinmez.')) return;
+          if (!window.confirm(t('Bu cihaz buluttan çıkarılsın mı? Telefondaki kayıtlar silinmez.'))) return;
+          await disablePush().catch(() => {});
           cloud.leave();
           await signOut();
         }}
       >
-        <LogOut className="w-3 h-3" /> Çıkış yap
+        <LogOut className="w-3 h-3" /> {t('Çıkış yap')}
       </button>
     </div>
   );
@@ -375,14 +385,14 @@ function MemberRow({ member, spend, editable, onEdit }) {
   const body = (
     <>
       <div className="flex justify-between gap-2">
-        <span className="truncate text-slate-200">{member.email || 'Kullanıcı'}</span>
-        <span className="text-slate-500 shrink-0">{ROLE_LABEL[member.role]}</span>
+        <span className="truncate text-slate-200">{member.email || t('Kullanıcı')}</span>
+        <span className="text-slate-500 shrink-0">{ROLE_LABEL[member.role] ? t(ROLE_LABEL[member.role]) : ''}</span>
       </div>
       {(member.role === 'driver' || member.plate) && (
         <div className="flex justify-between gap-2 text-[10px] text-slate-400">
-          <span>{member.plate ? <span className="font-mono">{member.plate}</span> : 'Plaka yok'}</span>
+          <span>{member.plate ? <span className="font-mono">{member.plate}</span> : t('Plaka yok')}</span>
           <span className={over ? 'text-red-300 font-semibold' : ''}>
-            Bu ay {formatTL(spend)}
+            {t('Bu ay {amount}', { amount: formatTL(spend) })}
             {limit !== null ? ` / ${formatTL(limit)}` : ''}
           </span>
         </div>
@@ -429,41 +439,41 @@ function MemberEditor({ member, workspaceId, onDone }) {
               role === r ? 'bg-amber-500/20 border-amber-400 text-amber-200' : 'bg-slate-800 border-slate-700 text-slate-300'
             }`}
           >
-            {ROLE_LABEL[r]}
+            {t(ROLE_LABEL[r])}
           </button>
         ))}
       </div>
       <input
         value={plate}
         onChange={(e) => setPlate(e.target.value.toUpperCase())}
-        placeholder="Plaka (isteğe bağlı)"
+        placeholder={t('Plaka (isteğe bağlı)')}
         className={`${inputClass} font-mono`}
       />
       <input
         value={limit}
         onChange={(e) => setLimit(e.target.value.replace(/[^\d]/g, ''))}
         inputMode="numeric"
-        placeholder="Aylık harcama limiti TL (isteğe bağlı)"
+        placeholder={t('Aylık harcama limiti {cur} (isteğe bağlı)')}
         className={inputClass}
       />
       <ErrorLine text={err} />
       <div className="flex gap-2">
         <button className={primary} disabled={busy} onClick={() => run(() => updateMember(workspaceId, member.user_id, { role, plate, monthlyLimit: limit }))}>
-          Kaydet
+          {t('Kaydet')}
         </button>
         <button className={secondary} disabled={busy} onClick={onDone}>
-          Vazgeç
+          {t('Vazgeç')}
         </button>
       </div>
       <button
         disabled={busy}
         className="w-full text-[11px] text-red-300 hover:text-red-200"
         onClick={() => {
-          if (!window.confirm(`${member.email} ekipten çıkarılsın mı? Girdiği kayıtlar defterde kalır.`)) return;
+          if (!window.confirm(t('{email} ekipten çıkarılsın mı? Girdiği kayıtlar defterde kalır.', { email: member.email }))) return;
           run(() => removeMember(workspaceId, member.user_id));
         }}
       >
-        Ekipten çıkar
+        {t('Ekipten çıkar')}
       </button>
     </div>
   );
@@ -473,10 +483,10 @@ function InviteCode({ title, hint, code, role, cloud }) {
   const [copied, setCopied] = useState(false);
   if (!code) return null;
   const inviteText =
-    `Hisapo'da "${cloud.workspaceName}" yakıt defterine ${role} olarak katıl.\n` +
-    `1) ${window.location.origin + window.location.pathname} adresini aç\n` +
-    `2) Bulut düğmesine bas, e-postanla giriş yap\n` +
-    `3) Davet kodu: ${code}`;
+    `${t('Hisapo\'da "{name}" yakıt defterine {role} olarak katıl.', { name: cloud.workspaceName, role })}\n` +
+    `${t('1) {url} adresini aç', { url: window.location.origin + window.location.pathname })}\n` +
+    `${t('2) Bulut düğmesine bas, e-postanla giriş yap')}\n` +
+    `${t('3) Davet kodu: {code}', { code })}`;
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(code);
@@ -493,18 +503,18 @@ function InviteCode({ title, hint, code, role, cloud }) {
         <div className="flex-1 text-center font-mono font-black tracking-[0.3em] text-amber-300 bg-slate-800 border border-slate-700 rounded-xl py-2">
           {code}
         </div>
-        <button onClick={copy} className="p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-slate-200" title="Kodu kopyala">
+        <button onClick={copy} className="p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-slate-200" title={t('Kodu kopyala')}>
           <Copy className="w-4 h-4" />
         </button>
         <button
           onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(inviteText)}`, '_blank', 'noopener')}
           className="p-2.5 bg-emerald-600 rounded-xl text-white"
-          title="WhatsApp ile davet et"
+          title={t('WhatsApp ile davet et')}
         >
           <Share2 className="w-4 h-4" />
         </button>
       </div>
-      <p className="text-[10px] text-slate-500">{copied ? 'Kopyalandı. ' : ''}{hint}</p>
+      <p className="text-[10px] text-slate-500">{copied ? `${t('Kopyalandı.')} ` : ''}{hint}</p>
     </div>
   );
 }

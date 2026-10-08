@@ -1,0 +1,165 @@
+// Forms: purchase / top-up / edit / balance / station modals, odometer field, receipt photo
+export default {
+  // Stored values shown with t(value): fuel types and payment methods
+  Benzin: 'Petrol',
+  Motorin: 'Diesel',
+  LPG: 'LPG',
+  Elektrik: 'Electric',
+  Nakit: 'Cash',
+  'Kredi kartı': 'Credit card',
+  'Banka kartı': 'Debit card',
+  'Havale / EFT': 'Bank transfer',
+  Diğer: 'Other',
+
+  // Shared bits
+  '(Opsiyonel)': '(optional)',
+  Opsiyonel: 'Optional',
+  '(Zorunlu Alan)': '(required)',
+  '(Zorunlu)': '(required)',
+  'Örn: {v}': 'e.g. {v}',
+  'Örn: 34 ABC 123': 'e.g. MH 12 AB 1234',
+  'Hangi İstasyon?': 'Which station?',
+  'Seçili istasyon açıldı (Değiştirebilirsiniz)': 'Selected station opened (you can change it)',
+  'Tarih & Saat': 'Date & time',
+  'Şu An': 'Now',
+  'Şu Anki Sistem Saati': 'Current time',
+  'Sistem saati otomatik seçilidir, dokunup değiştirebilirsiniz.': 'The current time is filled in; tap to change it.',
+  Seçilmedi: 'Not selected',
+  'Yakıt Türü': 'Fuel type',
+  'Ödeme Yöntemi': 'Payment method',
+  'Fiş / Belge No': 'Receipt no.',
+  'Slip / Dekont No': 'Slip / payment slip no.',
+  'Benzer bir kayıt zaten var:': 'A similar entry already exists:',
+  'Benzer bir yükleme zaten var:': 'A similar top-up already exists:',
+  'Yine de kaydedilsin mi?': 'Save anyway?',
+  'Fiş {no}': 'Receipt {no}',
+  'Slip {no}': 'Slip {no}',
+  Litre: 'Litres (L)',
+  'Birim Fiyat ({cur}/L)': 'Unit price ({cur}/L)',
+  'Son: {v}': 'Last: {v}',
+  Not: 'Note',
+  İstasyon: 'Station',
+  KAYDET: 'SAVE',
+
+  // ManualExpenseModal
+  'Lütfen geçerli bir Toplam Tutar girin!': 'Please enter a valid total amount!',
+  'Girilen km ({km}) bu aracın son kaydından ({prev}) düşük.\n\nYine de kaydedilsin mi?':
+    'The odometer reading ({km}) is lower than this vehicle\'s last entry ({prev}).\n\nSave anyway?',
+  'Yakıt Harcaması Gir': 'Add fuel purchase',
+  'Litre × Fiyat girilirse tutar otomatik hesaplanır': 'Enter litres × price and the amount is calculated',
+  'Toplam Tutar ({cur})': 'Total amount ({cur})',
+  'Plaka / Araç': 'Vehicle no.',
+  'Açıklama / Not': 'Description / note',
+  'Örn: Depo fulleme': 'e.g. Full tank',
+  '- BAKİYEDEN DÜŞ VE KAYDET': '- DEDUCT FROM BALANCE AND SAVE',
+
+  // EditTransactionModal
+  'Lütfen geçerli bir tutar girin!': 'Please enter a valid amount!',
+  'İşlemi Düzenle': 'Edit transaction',
+  'eski değerler geçmişte saklanır': 'old values are kept in the history',
+  'Tutar ({cur})': 'Amount ({cur})',
+  'Plaka (opsiyonel)': 'Vehicle no. (optional)',
+  'Fiş fotoğrafı': 'Receipt photo',
+  'Dekont fotoğrafı': 'Payment slip photo',
+  'Kim, ne zaman değiştirdi': 'Who changed it and when',
+  'Bu kayıt henüz buluta gitmedi.': 'This entry has not reached the cloud yet.',
+  'Değişiklik geçmişi': 'Change history',
+  'önceki tutar {v}': 'previous amount {v}',
+  'DEĞİŞİKLİKLERİ KAYDET': 'SAVE CHANGES',
+
+  // TopupModal
+  'Lütfen geçerli bir yükleme tutarı girin!': 'Please enter a valid top-up amount!',
+  'Peşin Avans / Bakiye Yükle': 'Top up advance / balance',
+  'İstasyona Peşin Çektirilen Tutarı Hesaba Ekle': 'Add the amount paid in advance to the station',
+  'Yüklenen Tutar ({cur})': 'Top-up amount ({cur})',
+  'Not (kart, taksit vb.)': 'Note (card, instalments, etc.)',
+  'Örn: Bonus Kart 3 Taksit, Nakit Avans vb.': 'e.g. credit card in 3 instalments, cash advance',
+  '+ BAKİYE YÜKLE VE KAYDET': '+ TOP UP AND SAVE',
+
+  // AdjustBalanceModal
+  'Lütfen geçerli bir bakiye tutarı girin!': 'Please enter a valid balance!',
+  'Yeni bakiye mevcut bakiye ile aynı, herhangi bir değişiklik yapılmadı.':
+    'The new balance is the same as the current one; nothing was changed.',
+  'İstasyon Bakiyesini Düzelt': 'Correct station balance',
+  'Fiili Kalan Tutara Göre Bakiyeyi Eşitleyin': 'Match the balance to what is actually left',
+  'İstenirse değiştirilebilir': 'Can be changed',
+  'Sistemdeki Mevcut Bakiye:': 'Current balance in the app:',
+  'Gerçek / Yeni Bakiye Tutarı ({cur})': 'Actual / new balance ({cur})',
+  'İşareti Değiştir (Pozitif / Negatif)': 'Change sign (positive / negative)',
+  '± Eksi / Artı Yap': '± Make negative / positive',
+  'Örn: 1500 veya borç ise -500': 'e.g. 1500, or -500 if owed',
+  'İstasyon hesabınız ekside / borçtaysa eksi (-) tutar girebilirsiniz.':
+    'If you owe the station (negative balance), enter a minus (-) amount.',
+  'Fark Tutarı:': 'Difference:',
+  '+{v} (Avans eklenecek)': '+{v} (advance will be added)',
+  '-{v} (Harcama / borç yazılacak)': '-{v} (recorded as purchase / owed)',
+  'Düzeltme Tarih & Saati': 'Correction date & time',
+  'Düzeltme Nedeni / Not': 'Reason / note',
+  'Örn: İstasyon pompasıyla eşitlendi': 'e.g. Matched with the station\'s records',
+  'BAKİYEYİ GÜNCELLE & EŞİTLE': 'UPDATE & MATCH BALANCE',
+
+  // AddStationModal
+  'Yeni İstasyon Ekle': 'Add new station',
+  'Türkiye\'deki İstasyon Amblemini Seçin': 'Choose the station\'s brand',
+  'İstasyon Markası / Amblemi Seçin:': 'Choose station brand / logo:',
+  'İstasyon Tam Adı / Şubesi': 'Station name / branch',
+  'Örn: Opet Maslak, Shell Bostancı': 'e.g. Shell MG Road, BP High Street',
+  'Başlangıç Avans Bakiyesi ({cur})': 'Opening advance balance ({cur})',
+  'İşareti Değiştir (Eksi/Artı)': 'Change sign (negative/positive)',
+  '± Eksi / Artı': '± Negative / positive',
+  'Varsa mevcut bakiye (örn: 2000 veya borç ise -500)': 'Current balance, if any (e.g. 2000, or -500 if owed)',
+  'İstasyon hesabı {n} {cur} eksi / borç ile başlatılacak.': 'The station will start with {n} {cur} owed (negative balance).',
+  'İstasyon hesabı {n} {cur} avans ile başlatılacak.': 'The station will start with an advance of {n} {cur}.',
+  'İSTASYONU KAYDET': 'SAVE STATION',
+
+  // EditStationModal
+  'İstasyonu Düzenle': 'Edit station',
+  'İstasyon Adı': 'Station name',
+  'Düşük bakiye uyarısı ({cur})': 'Low balance warning ({cur})',
+  'Bakiye bu tutarın altına inince istasyon sarı görünür ve ana sayfada uyarı çıkar.':
+    'When the balance falls below this amount, the station turns yellow and a warning shows on the home screen.',
+
+  // KmField / FillNotice
+  'Km sayacı': 'Odometer (km)',
+  'Önce plaka': 'Vehicle no. first',
+  'Son kayıt: {v}': 'Last entry: {v}',
+  'Km, bu aracın son kaydından ({v}) düşük. Sayaç doğru mu?': 'Km is lower than this vehicle\'s last entry ({v}). Is the odometer right?',
+  'Son alıştan beri {v} yol.': '{v} driven since the last purchase.',
+  'Bu alış normalden': 'This purchase is',
+  '%{n} fazla': '{n}% above normal',
+  '{v} (bu aracın ortalaması {avg}). Litre ve km\'yi kontrol et.': '{v} (this vehicle\'s average is {avg}). Check the litres and km.',
+  '{v} yol': '{v} driven',
+  '(ortalama {v})': '(average {v})',
+
+  // ReceiptScan (shown only in Turkish, entries kept for completeness)
+  tutar: 'amount',
+  litre: 'litres',
+  'birim fiyat': 'unit price',
+  plaka: 'vehicle no.',
+  'yakıt türü': 'fuel type',
+  'fiş no': 'receipt no.',
+  tarih: 'date',
+  'Fiş okunamadı. Bilgileri elle gir.': 'Could not read the receipt. Enter the details by hand.',
+  'İlk okuma için internet gerekiyor.': 'The first scan needs an internet connection.',
+  'Fiş okunuyor…': 'Reading receipt…',
+  'Fişi okut (fotoğraftan doldur)': 'Scan receipt (fill from photo)',
+  'İlk seferde okuma aracı indirilir (yaklaşık 4 MB), sonra internetsiz de çalışır.':
+    'The reader is downloaded the first time (about 4 MB), then works offline.',
+  'Okunan: {list}. Lütfen kontrol et.': 'Read: {list}. Please check.',
+  'Fişte okunabilen bilgi bulunamadı. Fişi düz ve aydınlık çekip tekrar dene.':
+    'Nothing readable found. Take the photo flat and in good light, then try again.',
+
+  // PhotoPicker / PhotoViewer
+  Değiştir: 'Change',
+  Kaldır: 'Remove',
+  'Hazırlanıyor…': 'Preparing…',
+  '{label} ekle (opsiyonel)': '+ {label} (optional)',
+  'Fotoğraflar bu telefonda, ortak defter açıksa bulutta da saklanır. Yedek dosyasına girmez.':
+    'Photos are kept on this phone, and in the cloud if the shared ledger is on. They are not included in the backup file.',
+  Kapat: 'Close',
+  'Fotoğraf bulunamadı. Çeken telefon henüz eşitlememiş olabilir.': 'Photo not found. The phone that took it may not have synced yet.',
+  'Yükleniyor…': 'Loading…',
+  'Yakıt Alımı': 'Fuel purchase',
+  'Avans Çekildi': 'Advance added',
+  'Bakiye Eşitleme / Düzeltme': 'Balance correction'
+};

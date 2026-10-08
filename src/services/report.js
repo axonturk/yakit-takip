@@ -1,12 +1,14 @@
 import { roundMoney, formatTL, formatDay } from './storage';
+import { t, decimal, csvSeparator, getLang } from '../i18n';
 import { periodConsumption, highFills, formatKm, formatL100 } from './consumption';
 
 // Monthly fuel report for the fleet: purchases grouped by vehicle (plate) or by the person who entered them.
 
 export const REPORT_GROUPS = {
-  plate: { label: 'Araç', none: 'Plakasız', key: (t) => t.plate || '' },
-  person: { label: 'Kişi', none: 'Bilinmiyor', key: (t) => t.enteredBy || '' },
-  station: { label: 'İstasyon', none: 'İstasyonsuz', key: (t) => t.stationName || '' }
+  // Getters so labels follow the chosen language
+  plate: { get label() { return t('Araç'); }, get none() { return t('Plakasız'); }, key: (x) => x.plate || '' },
+  person: { get label() { return t('Kişi'); }, get none() { return t('Bilinmiyor'); }, key: (x) => x.enteredBy || '' },
+  station: { get label() { return t('İstasyon'); }, get none() { return t('İstasyonsuz'); }, key: (x) => x.stationName || '' }
 };
 
 const inPeriod = (t, from, to) => {
@@ -50,7 +52,7 @@ export function buildFleetReport(transactions, from, to, by = 'plate') {
       l100: usage.get(g.key)?.l100 ?? null,
       high: by === 'plate' ? purchases.filter((t) => t.plate === g.key && g.key && flagged.has(t.id)).length : 0
     }))
-    .sort((a, b) => b.amount - a.amount || a.label.localeCompare(b.label, 'tr'));
+    .sort((a, b) => b.amount - a.amount || a.label.localeCompare(b.label, getLang()));
   return {
     rows,
     purchases,
@@ -60,39 +62,39 @@ export function buildFleetReport(transactions, from, to, by = 'plate') {
   };
 }
 
-const num = (v) => (v === null || v === undefined || v === '' ? '' : String(v).replace('.', ','));
+const num = (v) => decimal(v);
 const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
 
-// Excel (Turkish locale) summary: one line per vehicle/person, then the total.
+// Excel summary (separator and decimals follow the language): one line per vehicle/person, then the total.
 export function reportCSV(report, by, from, to) {
   const g = REPORT_GROUPS[by];
   const veh = by === 'plate';
   const lines = [
-    [cell(`Hisapo yakıt raporu ${from} – ${to}`)],
+    [cell(t('Hisapo yakıt raporu {from} – {to}', { from, to }))],
     [],
-    [g.label, 'İşlem', 'Tutar (TL)', 'Litre', 'Ort. TL/L', 'Pay %', 'İstasyonlar', ...(veh ? ['Km', 'L/100 km', 'Yüksek alış'] : [])].map(cell),
+    [g.label, t('İşlem'), t('Tutar ({cur})'), t('Litre'), t('Ort. {cur}/L'), t('Pay %'), t('İstasyonlar'), ...(veh ? [t('Km'), t('L/100 km'), t('Yüksek alış')] : [])].map(cell),
     ...report.rows.map((r) =>
       [
         r.fullLabel, r.count, num(r.amount), num(r.liters || ''), num(r.avgPrice ?? ''), num(r.share), r.stations.join(', '),
         ...(veh ? [r.km ?? '', num(r.l100 ?? ''), r.high || ''] : [])
       ].map(cell)
     ),
-    ['Toplam', report.count, num(report.total), num(report.liters || ''), '', '100', ''].map(cell)
+    [t('Toplam'), report.count, num(report.total), num(report.liters || ''), '', '100', ''].map(cell)
   ];
-  return '﻿' + lines.map((l) => l.join(';')).join('\r\n');
+  return '﻿' + lines.map((l) => l.join(csvSeparator())).join('\r\n');
 }
 
 export function reportText(report, by, from, to) {
   const g = REPORT_GROUPS[by];
-  const head = `⛽ Yakıt raporu (${g.label.toLowerCase()} bazında)\n${formatDay(from)} – ${formatDay(to)}\n`;
+  const head = `⛽ ${t('Yakıt raporu ({group} bazında)', { group: g.label.toLocaleLowerCase(getLang()) })}\n${formatDay(from)} – ${formatDay(to)}\n`;
   const body = report.rows
     .slice(0, 30)
     .map(
       (r) =>
-        `• ${r.fullLabel}: ${formatTL(r.amount)}${r.liters ? ` · ${num(r.liters)} L` : ''} (${r.count} işlem)` +
+        `• ${r.fullLabel}: ${formatTL(r.amount)}${r.liters ? ` · ${num(r.liters)} L` : ''} (${t('{n} işlem', { n: r.count })})` +
         (r.km ? `\n   ${formatKm(r.km)} · ${formatL100(r.l100)}` : '') +
-        (r.high ? `\n   ⚠ ${r.high} yüksek tüketimli alış` : '')
+        (r.high ? `\n   ⚠ ${t('{n} yüksek tüketimli alış', { n: r.high })}` : '')
     )
     .join('\n');
-  return `${head}\n${body}\n\nToplam: ${formatTL(report.total)} · ${report.count} işlem`;
+  return `${head}\n${body}\n\n${t('Toplam:')} ${formatTL(report.total)} · ${t('{n} işlem', { n: report.count })}`;
 }

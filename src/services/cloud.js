@@ -1,3 +1,5 @@
+import { t } from '../i18n';
+
 // Public project URL and anon key: safe to ship; access is enforced by row-level security.
 export const SUPABASE_URL = 'https://pmymlyerxwxonmknrxgs.supabase.co';
 export const SUPABASE_ANON_KEY =
@@ -154,7 +156,7 @@ export async function createWorkspace(name) {
 export async function joinWorkspace(code) {
   const supabase = await getClient();
   const { data, error } = await supabase.rpc('join_workspace', { code });
-  if (error && /invalid invite code/i.test(error.message)) throw new Error('Davet kodu bulunamadı.');
+  if (error && /invalid invite code/i.test(error.message)) throw new Error(t('Davet kodu bulunamadı.'));
   fail(error);
   return data;
 }
@@ -209,7 +211,7 @@ export async function changeLog(workspaceId, { kind, id, limit = 50 } = {}) {
     .limit(limit);
   if (kind) q = q.eq('kind', kind).eq('id', id);
   const { data, error } = await q;
-  if (error && /record_log/.test(error.message)) throw new Error('Değişiklik geçmişi için Supabase kurulumu güncellenmeli.');
+  if (error && /record_log/.test(error.message)) throw new Error(t('Değişiklik geçmişi için Supabase kurulumu güncellenmeli.'));
   fail(error);
   return data;
 }

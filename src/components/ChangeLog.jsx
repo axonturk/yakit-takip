@@ -3,6 +3,7 @@ import { History } from 'lucide-react';
 import { changeLog } from '../services/cloud';
 import { describeChange, shortEmail } from '../services/changes';
 import { formatTL, formatTRDate } from '../services/storage';
+import { t } from '../i18n';
 
 const ACTION_TONE = {
   create: 'bg-emerald-400',
@@ -11,7 +12,7 @@ const ACTION_TONE = {
 };
 
 // Who changed what and when, from the cloud log. Whole workspace, or one record when kind/id are given.
-export default function ChangeLog({ workspaceId, kind, id, limit = 50, emptyText = 'Henüz değişiklik yok.' }) {
+export default function ChangeLog({ workspaceId, kind, id, limit = 50, emptyText }) {
   const [rows, setRows] = useState(null);
   const [err, setErr] = useState(null);
 
@@ -31,8 +32,8 @@ export default function ChangeLog({ workspaceId, kind, id, limit = 50, emptyText
   }, [workspaceId, kind, id, limit]);
 
   if (err) return <p className="text-[11px] text-red-300">{err}</p>;
-  if (!rows) return <p className="text-[11px] text-slate-400">Yükleniyor…</p>;
-  if (rows.length === 0) return <p className="text-[11px] text-slate-400">{emptyText}</p>;
+  if (!rows) return <p className="text-[11px] text-slate-400">{t('Yükleniyor…')}</p>;
+  if (rows.length === 0) return <p className="text-[11px] text-slate-400">{emptyText || t('Henüz değişiklik yok.')}</p>;
 
   return (
     <ul className="space-y-2">

@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'hisapo-app-v23';
+﻿const CACHE_NAME = 'hisapo-app-v25';
 
 const PRECACHE_ASSETS = [
   './',
@@ -80,4 +80,34 @@ self.addEventListener('fetch', (event) => {
       })
     );
   }
+});
+
+// Push notifications from the "notify" function (driver purchase, low balance, monthly limit)
+self.addEventListener('push', (event) => {
+  let msg = {};
+  try {
+    msg = event.data ? event.data.json() : {};
+  } catch {
+    msg = { title: 'Hisapo', body: event.data ? event.data.text() : '' };
+  }
+  event.waitUntil(
+    self.registration.showNotification(msg.title || 'Hisapo', {
+      body: msg.body || '',
+      tag: msg.tag,
+      icon: './icon-192.png',
+      badge: './icon-192.png',
+      data: { url: msg.url || './' }
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || './', self.registration.scope).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      const open = list.find((c) => c.url.startsWith(self.registration.scope));
+      return open ? open.focus() : self.clients.openWindow(target);
+    })
+  );
 });

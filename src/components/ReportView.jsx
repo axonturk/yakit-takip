@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Printer, Download } from 'lucide-react';
 import { monthRange, formatDay, formatTL, nowLocalISO, buildCSV } from '../services/storage';
 import WhatsAppShare from './WhatsAppShare';
+import { t, decimal } from '../i18n';
 import { formatKm, formatL100 } from '../services/consumption';
 import { buildFleetReport, reportCSV, reportText, REPORT_GROUPS } from '../services/report';
 
@@ -32,8 +33,8 @@ export default function ReportView({ transactions, hasTeam }) {
   return (
     <div className="space-y-3">
       <div className="px-1">
-        <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Aylık Yakıt Raporu</h2>
-        <p className="text-[10px] text-slate-400">Araç, kişi ya da istasyon bazında harcama; muhasebe için Excel</p>
+        <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">{t('Aylık Yakıt Raporu')}</h2>
+        <p className="text-[10px] text-slate-400">{t('Araç, kişi ya da istasyon bazında harcama; muhasebe için Excel')}</p>
       </div>
 
       <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className={inputClass} />
@@ -55,17 +56,17 @@ export default function ReportView({ transactions, hasTeam }) {
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex justify-between items-end">
         <div>
           <div className="text-[10px] text-slate-400">
-            {formatDay(from)} – {formatDay(to)} · {report.count} harcama
+            {formatDay(from)} – {formatDay(to)} · {t('{n} harcama', { n: report.count })}
           </div>
           <div className="text-lg font-extrabold text-red-400">{formatTL(report.total)}</div>
         </div>
-        {report.liters > 0 && <div className="text-xs text-slate-300">{String(report.liters).replace('.', ',')} L</div>}
+        {report.liters > 0 && <div className="text-xs text-slate-300">{decimal(report.liters)} L</div>}
       </div>
 
       <div className="grid grid-cols-3 gap-2">
         <WhatsAppShare
           text={reportText(report, by, from, to)}
-          file={{ content: reportCSV(report, by, from, to), name: `hisapo_rapor_${month}_${by}.csv` }}
+          file={{ content: reportCSV(report, by, from, to), name: `${t('hisapo_rapor')}_${month}_${by}.csv` }}
         />
         <button
           onClick={() => window.print()}
@@ -74,7 +75,7 @@ export default function ReportView({ transactions, hasTeam }) {
           <Printer className="w-3.5 h-3.5 text-amber-400" /> PDF
         </button>
         <button
-          onClick={() => download(reportCSV(report, by, from, to), `hisapo_rapor_${month}_${by}.csv`)}
+          onClick={() => download(reportCSV(report, by, from, to), `${t('hisapo_rapor')}_${month}_${by}.csv`)}
           className="py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-xs font-bold rounded-xl flex items-center justify-center gap-1 transition"
         >
           <Download className="w-3.5 h-3.5 text-amber-400" /> Excel
@@ -82,16 +83,16 @@ export default function ReportView({ transactions, hasTeam }) {
       </div>
       {report.count > 0 && (
         <button
-          onClick={() => download(buildCSV(report.purchases), `hisapo_harcamalar_${month}.csv`)}
+          onClick={() => download(buildCSV(report.purchases), `${t('hisapo_harcamalar')}_${month}.csv`)}
           className="w-full text-[11px] text-amber-400 hover:text-amber-300"
         >
-          Muhasebe için tüm harcama satırlarını indir (Excel)
+          {t('Muhasebe için tüm harcama satırlarını indir (Excel)')}
         </button>
       )}
 
       {report.rows.length === 0 ? (
         <div className="p-6 text-center text-xs text-slate-500 bg-slate-900 rounded-2xl border border-slate-800">
-          Bu ay harcama yok.
+          {t('Bu ay harcama yok.')}
         </div>
       ) : (
         <div className="space-y-1.5">
@@ -108,12 +109,12 @@ export default function ReportView({ transactions, hasTeam }) {
               </div>
               <div className="flex justify-between gap-2 text-[10px] text-slate-400">
                 <span className="truncate">
-                  {r.count} işlem
-                  {r.liters ? ` · ${String(r.liters).replace('.', ',')} L` : ''}
-                  {r.avgPrice ? ` · ort. ${formatTL(r.avgPrice)}/L` : ''}
+                  {t('{n} işlem', { n: r.count })}
+                  {r.liters ? ` · ${decimal(r.liters)} L` : ''}
+                  {r.avgPrice ? ` · ${t('ort. {v}/L', { v: formatTL(r.avgPrice) })}` : ''}
                   {by !== 'station' && r.stations.length ? ` · ${r.stations.join(', ')}` : ''}
                 </span>
-                <span className="shrink-0">%{String(r.share).replace('.', ',')}</span>
+                <span className="shrink-0">{t('%{n}', { n: decimal(r.share) })}</span>
               </div>
               {(r.km || r.high > 0) && (
                 <div className="flex flex-wrap gap-x-2 text-[10px]">
@@ -122,7 +123,7 @@ export default function ReportView({ transactions, hasTeam }) {
                       {formatKm(r.km)} · <b>{formatL100(r.l100)}</b>
                     </span>
                   )}
-                  {r.high > 0 && <span className="text-amber-300 font-semibold">⚠ {r.high} yüksek tüketimli alış</span>}
+                  {r.high > 0 && <span className="text-amber-300 font-semibold">⚠ {t('{n} yüksek tüketimli alış', { n: r.high })}</span>}
                 </div>
               )}
             </div>
@@ -141,14 +142,14 @@ function PrintableReport({ report, by, from, to }) {
   const g = REPORT_GROUPS[by];
   return (
     <div className="print-only" style={{ color: '#000', background: '#fff', fontSize: 11, padding: 16 }}>
-      <h1 style={{ fontSize: 18, margin: 0 }}>Hisapo · Aylık Yakıt Raporu ({g.label})</h1>
+      <h1 style={{ fontSize: 18, margin: 0 }}>Hisapo · {t('Aylık Yakıt Raporu')} ({g.label})</h1>
       <p style={{ margin: '4px 0 12px' }}>
-        {formatDay(from)} – {formatDay(to)} · Hazırlanma: {formatDay(nowLocalISO())}
+        {formatDay(from)} – {formatDay(to)} · {t('Hazırlanma: {d}', { d: formatDay(nowLocalISO()) })}
       </p>
       <table style={{ borderCollapse: 'collapse', width: '100%' }}>
         <thead>
           <tr>
-            {[g.label, 'İşlem', 'Litre', 'Ort. TL/L', 'Pay', 'İstasyonlar', ...(by === 'plate' ? ['Km', 'L/100 km'] : []), 'Tutar'].map((h) => (
+            {[g.label, t('İşlem'), t('Litre'), t('Ort. {cur}/L'), t('Pay'), t('İstasyonlar'), ...(by === 'plate' ? [t('Km'), t('L/100 km')] : []), t('Tutar')].map((h) => (
               <th key={h} style={{ ...cell, background: '#eee' }}>{h}</th>
             ))}
           </tr>
@@ -158,21 +159,21 @@ function PrintableReport({ report, by, from, to }) {
             <tr key={r.key || '_none'}>
               <td style={cell}>{r.fullLabel}</td>
               <td style={num}>{r.count}</td>
-              <td style={num}>{r.liters ? String(r.liters).replace('.', ',') : ''}</td>
+              <td style={num}>{r.liters ? decimal(r.liters) : ''}</td>
               <td style={num}>{r.avgPrice ? formatTL(r.avgPrice) : ''}</td>
-              <td style={num}>%{String(r.share).replace('.', ',')}</td>
+              <td style={num}>{t('%{n}', { n: decimal(r.share) })}</td>
               <td style={cell}>{r.stations.join(', ')}</td>
               {by === 'plate' && <td style={num}>{r.km ? formatKm(r.km) : ''}</td>}
-              {by === 'plate' && <td style={num}>{r.l100 ? `${String(r.l100).replace('.', ',')}${r.high ? ' ⚠' : ''}` : ''}</td>}
+              {by === 'plate' && <td style={num}>{r.l100 ? `${decimal(r.l100)}${r.high ? ' ⚠' : ''}` : ''}</td>}
               <td style={num}>{formatTL(r.amount)}</td>
             </tr>
           ))}
           <tr>
-            <td style={{ ...cell, fontWeight: 700 }}>Toplam</td>
+            <td style={{ ...cell, fontWeight: 700 }}>{t('Toplam')}</td>
             <td style={{ ...num, fontWeight: 700 }}>{report.count}</td>
-            <td style={{ ...num, fontWeight: 700 }}>{report.liters ? String(report.liters).replace('.', ',') : ''}</td>
+            <td style={{ ...num, fontWeight: 700 }}>{report.liters ? decimal(report.liters) : ''}</td>
             <td style={cell} />
-            <td style={num}>%100</td>
+            <td style={num}>{t('%{n}', { n: 100 })}</td>
             <td style={cell} />
             {by === 'plate' && <td style={cell} />}
             {by === 'plate' && <td style={cell} />}

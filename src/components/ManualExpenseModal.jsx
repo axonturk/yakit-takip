@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import PhotoPicker from './PhotoPicker';
 import { Edit3, X, AlertCircle, MinusCircle, Clock } from 'lucide-react';
-import StationLogo from './StationLogo';
+import StationLogo, { brandLabel } from './StationLogo';
 import { FUEL_TYPES, lastExpenseAt, findDuplicate, formatTL, formatTRDate } from '../services/storage';
 import { checkFill, lastOdometer } from '../services/consumption';
 import KmField, { FillNotice } from './KmField';
 import ReceiptScan from './ReceiptScan';
+import { t } from '../i18n';
 
 
 export default function ManualExpenseModal({
@@ -91,7 +92,7 @@ export default function ManualExpenseModal({
     e.preventDefault();
     const parsedAmount = parseFloat(amount);
     if (!parsedAmount || isNaN(parsedAmount) || parsedAmount <= 0) {
-      setErrorMsg('Lütfen geçerli bir Toplam Tutar girin!');
+      setErrorMsg(t('Lütfen geçerli bir Toplam Tutar girin!'));
       return;
     }
 
@@ -103,7 +104,7 @@ export default function ManualExpenseModal({
     const fill = checkFill(transactions, { plate: plate.trim().toUpperCase(), odometer: km, liters: lv, date: datetime });
     if (
       fill?.lower &&
-      !window.confirm(`Girilen km (${km}) bu aracın son kaydından (${fill.prevKm}) düşük.\n\nYine de kaydedilsin mi?`)
+      !window.confirm(t('Girilen km ({km}) bu aracın son kaydından ({prev}) düşük.\n\nYine de kaydedilsin mi?', { km, prev: fill.prevKm }))
     ) {
       return;
     }
@@ -119,16 +120,18 @@ export default function ManualExpenseModal({
       plate: plate.trim().toUpperCase() || null,
       odometer: km,
       date: datetime,
-      note: note || 'Yakıt Alımı'
+      note: note || t('Yakıt Alımı')
     };
 
     const dup = findDuplicate(transactions, candidate);
     if (
       dup &&
       !window.confirm(
-        `Benzer bir kayıt zaten var:\n${dup.stationName} · ${formatTL(dup.amount)} · ${formatTRDate(dup.date)}` +
-          (dup.receiptNo ? ` · Fiş ${dup.receiptNo}` : '') +
-          '\n\nYine de kaydedilsin mi?'
+        t('Benzer bir kayıt zaten var:') +
+          `\n${dup.stationName} · ${formatTL(dup.amount)} · ${formatTRDate(dup.date)}` +
+          (dup.receiptNo ? ' · ' + t('Fiş {no}', { no: dup.receiptNo }) : '') +
+          '\n\n' +
+          t('Yine de kaydedilsin mi?')
       )
     ) {
       return;
@@ -158,8 +161,8 @@ export default function ManualExpenseModal({
               <Edit3 className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">Yakıt Harcaması Gir</h2>
-              <p className="text-[10px] text-slate-400">Litre × Fiyat girilirse tutar otomatik hesaplanır</p>
+              <h2 className="text-sm font-bold text-white">{t('Yakıt Harcaması Gir')}</h2>
+              <p className="text-[10px] text-slate-400">{t('Litre × Fiyat girilirse tutar otomatik hesaplanır')}</p>
             </div>
           </div>
           <button
@@ -193,10 +196,10 @@ export default function ManualExpenseModal({
           />
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-[11px] text-slate-400 font-medium">Hangi İstasyon?</label>
+              <label className="text-[11px] text-slate-400 font-medium">{t('Hangi İstasyon?')}</label>
               {defaultStationId && stationId === defaultStationId && (
                 <span className="text-[10px] text-amber-400 font-semibold bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full">
-                  Seçili istasyon açıldı (Değiştirebilirsiniz)
+                  {t('Seçili istasyon açıldı (Değiştirebilirsiniz)')}
                 </span>
               )}
             </div>
@@ -213,7 +216,7 @@ export default function ManualExpenseModal({
               >
                 {stations.map(st => (
                   <option key={st.id} value={st.id}>
-                    {st.name} {st.brand ? `(${st.brand})` : ''}
+                    {st.name} {st.brand ? `(${brandLabel(st.brand)})` : ''}
                   </option>
                 ))}
               </select>
@@ -223,7 +226,7 @@ export default function ManualExpenseModal({
 
           <div>
             <label className="block text-xs font-bold text-amber-400 mb-1">
-              Toplam Tutar (TL) * <span className="text-[10px] font-normal text-slate-400">(Zorunlu Alan)</span>
+              {t('Toplam Tutar ({cur})')} * <span className="text-[10px] font-normal text-slate-400">{t('(Zorunlu Alan)')}</span>
             </label>
             <input
               type="number"
@@ -231,7 +234,7 @@ export default function ManualExpenseModal({
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder="Örn: 1500"
+              placeholder={t('Örn: {v}', { v: 1500 })}
               autoFocus
               className="w-full bg-slate-900 border-2 border-amber-500/80 rounded-xl p-3 text-lg font-extrabold text-white focus:outline-none focus:border-amber-400"
             />
@@ -243,7 +246,7 @@ export default function ManualExpenseModal({
                   onClick={() => handleQuickAmount(v)}
                   className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-[11px] font-semibold text-slate-200 transition"
                 >
-                  {i === 0 && last?.amount === v ? `Son: ${formatTL(v)}` : formatTL(v)}
+                  {i === 0 && last?.amount === v ? t('Son: {v}', { v: formatTL(v) }) : formatTL(v)}
                 </button>
               ))}
             </div>
@@ -252,7 +255,7 @@ export default function ManualExpenseModal({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block text-[11px] text-slate-400 mb-1">
-                Litre <span className="text-[10px] text-slate-500">(Opsiyonel)</span>
+                {t('Litre')} <span className="text-[10px] text-slate-500">{t('(Opsiyonel)')}</span>
               </label>
               <input
                 type="number"
@@ -260,13 +263,13 @@ export default function ManualExpenseModal({
                 step="0.01"
                 value={liters}
                 onChange={(e) => handleLitersChange(e.target.value)}
-                placeholder="Örn: 34.00"
+                placeholder={t('Örn: {v}', { v: '34.00' })}
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
               />
             </div>
             <div>
               <label className="block text-[11px] text-slate-400 mb-1">
-                Birim Fiyat (TL/L) <span className="text-[10px] text-slate-500">(Opsiyonel)</span>
+                {t('Birim Fiyat ({cur}/L)')} <span className="text-[10px] text-slate-500">{t('(Opsiyonel)')}</span>
               </label>
               <input
                 type="number"
@@ -274,7 +277,7 @@ export default function ManualExpenseModal({
                 step="0.01"
                 value={unitPrice}
                 onChange={(e) => handleUnitPriceChange(e.target.value)}
-                placeholder="Örn: 44.10"
+                placeholder={t('Örn: {v}', { v: '44.10' })}
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
               />
             </div>
@@ -282,25 +285,25 @@ export default function ManualExpenseModal({
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Yakıt Türü</label>
+              <label className="block text-[11px] text-slate-400 mb-1">{t('Yakıt Türü')}</label>
               <select
                 value={fuelType}
                 onChange={(e) => setFuelType(e.target.value)}
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
               >
-                <option value="">Seçilmedi</option>
+                <option value="">{t('Seçilmedi')}</option>
                 {FUEL_TYPES.map((f) => (
-                  <option key={f} value={f}>{f}</option>
+                  <option key={f} value={f}>{t(f)}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Fiş / Belge No</label>
+              <label className="block text-[11px] text-slate-400 mb-1">{t('Fiş / Belge No')}</label>
               <input
                 type="text"
                 value={receiptNo}
                 onChange={(e) => setReceiptNo(e.target.value)}
-                placeholder="Opsiyonel"
+                placeholder={t('Opsiyonel')}
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
               />
             </div>
@@ -311,14 +314,14 @@ export default function ManualExpenseModal({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block text-[11px] text-slate-400 mb-1">
-                Plaka / Araç <span className="text-[10px] text-slate-500">(Opsiyonel)</span>
+                {t('Plaka / Araç')} <span className="text-[10px] text-slate-500">{t('(Opsiyonel)')}</span>
               </label>
               <input
                 type="text"
                 list="expense-plates"
                 value={plate}
                 onChange={(e) => setPlate(e.target.value)}
-                placeholder="Örn: 34 ABC 123"
+                placeholder={t('Örn: 34 ABC 123')}
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 uppercase focus:outline-none focus:border-slate-500"
               />
               <datalist id="expense-plates">
@@ -346,7 +349,7 @@ export default function ManualExpenseModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-[11px] text-slate-400 font-medium">Tarih & Saat</label>
+                <label className="text-[11px] text-slate-400 font-medium">{t('Tarih & Saat')}</label>
                 <button
                   type="button"
                   onClick={() => {
@@ -357,7 +360,7 @@ export default function ManualExpenseModal({
                   className="text-[10px] text-amber-400 hover:text-amber-300 font-medium flex items-center gap-0.5"
                 >
                   <Clock className="w-3 h-3" />
-                  <span>Şu An</span>
+                  <span>{t('Şu An')}</span>
                 </button>
               </div>
               <input
@@ -368,12 +371,12 @@ export default function ManualExpenseModal({
               />
             </div>
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Açıklama / Not</label>
+              <label className="block text-[11px] text-slate-400 mb-1">{t('Açıklama / Not')}</label>
               <input
                 type="text"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="Örn: Depo fulleme"
+                placeholder={t('Örn: Depo fulleme')}
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
               />
             </div>
@@ -384,7 +387,7 @@ export default function ManualExpenseModal({
             className="w-full py-3.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-red-950/40 transition active:scale-[0.98] mt-2 flex items-center justify-center gap-1.5"
           >
             <MinusCircle className="w-4 h-4" />
-            <span>- BAKİYEDEN DÜŞ VE KAYDET</span>
+            <span>{t('- BAKİYEDEN DÜŞ VE KAYDET')}</span>
           </button>
         </form>
 

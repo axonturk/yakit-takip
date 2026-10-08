@@ -271,3 +271,59 @@ drop policy if exists "members add receipts" on storage.objects;
 create policy "members add receipts" on storage.objects
   for insert to authenticated
   with check (bucket_id = 'receipts' and public.is_member_folder(name));
+
+-- Phone notifications: each phone that turned them on, in its own language and currency.
+-- The "notify" Edge Function (supabase/functions/notify) sends them; its key pair lives in push_keys,
+-- which has no policies, so only that function can read it.
+create table if not exists public.push_subscriptions (
+  endpoint text primary key,
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  workspace_id uuid not null references public.workspaces (id) on delete cascade,
+  p256dh text not null,
+  auth text not null,
+  lang text not null default 'tr',
+  currency text not null default 'TRY',
+  created_at timestamptz not null default now()
+);
+create index if not exists push_subscriptions_workspace on public.push_subscriptions (workspace_id);
+
+alter table public.push_subscriptions enable row level security;
+drop policy if exists "own push subscriptions" on public.push_subscriptions;
+create policy "own push subscriptions" on public.push_subscriptions
+  for all to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid() and public.is_member(workspace_id));
+
+create table if not exists public.push_keys (
+  id int primary key default 1 check (id = 1),
+  public_key text not null,
+  private_key text not null
+);
+alter table public.push_keys enable row level security;
+
+-- Every new transaction asks the notify function whether someone should hear about it.
+create extension if not exists pg_net;
+
+create or replace function public.notify_record() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.kind = 'tx' and not new.deleted then
+    -- A notification must never stop a record from saving
+    begin
+    perform net.http_post(
+      url := 'https://pmymlyerxwxonmknrxgs.supabase.co/functions/v1/notify',
+      body := jsonb_build_object('workspace_id', new.workspace_id, 'id', new.id),
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBteW1seWVyeHd4b25ta25yeGdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzOTAyNDQsImV4cCI6MjEwNjk2NjI0NH0.liuuVjiNfaQ4icjl782_OwOx_XvzVEMnvDWb128rDr0'
+      )
+    );
+    exception when others then null;
+    end;
+  end if;
+  return null;
+end $$;
+
+drop trigger if exists records_notify on public.records;
+create trigger records_notify after insert on public.records
+for each row execute function public.notify_record();
