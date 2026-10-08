@@ -1,0 +1,63 @@
+import React, { useRef, useState } from 'react';
+import { ScanLine, Loader2 } from 'lucide-react';
+import { compressImage } from '../services/photos';
+
+const LABELS = {
+  amount: 'tutar',
+  liters: 'litre',
+  unitPrice: 'birim fiyat',
+  plate: 'plaka',
+  fuelType: 'yakıt türü',
+  receiptNo: 'fiş no',
+  date: 'tarih'
+};
+
+// "Fişi okut": photograph the receipt, read it on the phone and fill the form.
+export default function ReceiptScan({ onRead }) {
+  const inputRef = useRef(null);
+  const [state, setState] = useState(null); // null | 'busy' | { found: [] } | { error }
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setState('busy');
+    try {
+      // A larger copy reads better; the smaller one is what gets saved as the receipt photo
+      const [forOcr, photo] = await Promise.all([compressImage(file, 2000, 0.9), compressImage(file)]);
+      const { readReceipt } = await import('../services/ocr');
+      const { fields } = await readReceipt(forOcr);
+      onRead(fields, photo);
+      setState({ found: Object.keys(fields).filter((k) => LABELS[k]) });
+    } catch (err) {
+      setState({ error: navigator.onLine ? 'Fiş okunamadı. Bilgileri elle gir.' : 'İlk okuma için internet gerekiyor.' });
+      console.warn('Receipt OCR failed', err);
+    }
+  };
+
+  return (
+    <div>
+      <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handleFile} className="hidden" />
+      <button
+        type="button"
+        disabled={state === 'busy'}
+        onClick={() => inputRef.current?.click()}
+        className="w-full py-2.5 bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-sky-200 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition disabled:opacity-60"
+      >
+        {state === 'busy' ? <Loader2 className="w-4 h-4 animate-spin" /> : <ScanLine className="w-4 h-4" />}
+        {state === 'busy' ? 'Fiş okunuyor…' : 'Fişi okut (fotoğraftan doldur)'}
+      </button>
+      {state === 'busy' && (
+        <p className="text-[10px] text-slate-400 mt-1">İlk seferde okuma aracı indirilir (yaklaşık 4 MB), sonra internetsiz de çalışır.</p>
+      )}
+      {state?.found && (
+        <p className={`text-[11px] mt-1 ${state.found.length ? 'text-emerald-300' : 'text-amber-300'}`}>
+          {state.found.length
+            ? `Okunan: ${state.found.map((k) => LABELS[k]).join(', ')}. Lütfen kontrol et.`
+            : 'Fişte okunabilen bilgi bulunamadı. Fişi düz ve aydınlık çekip tekrar dene.'}
+        </p>
+      )}
+      {state?.error && <p className="text-[11px] text-red-300 mt-1">{state.error}</p>}
+    </div>
+  );
+}

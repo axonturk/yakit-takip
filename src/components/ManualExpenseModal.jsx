@@ -5,6 +5,7 @@ import StationLogo from './StationLogo';
 import { FUEL_TYPES, lastExpenseAt, findDuplicate, formatTL, formatTRDate } from '../services/storage';
 import { checkFill, lastOdometer } from '../services/consumption';
 import KmField, { FillNotice } from './KmField';
+import ReceiptScan from './ReceiptScan';
 
 
 export default function ManualExpenseModal({
@@ -177,6 +178,19 @@ export default function ManualExpenseModal({
         )}
 
         <form onSubmit={handleSubmit} className="mt-3 space-y-3">
+          <ReceiptScan
+            onRead={(f, receiptPhoto) => {
+              if (f.amount) setAmount(String(f.amount));
+              if (f.liters) setLiters(String(f.liters));
+              if (f.unitPrice) setUnitPrice(String(f.unitPrice));
+              if (f.plate) setPlate(f.plate);
+              if (f.fuelType) setFuelType(f.fuelType);
+              if (f.receiptNo) setReceiptNo(f.receiptNo);
+              if (f.date) setDatetime(f.date);
+              setPhoto(receiptPhoto);
+              setErrorMsg(null);
+            }}
+          />
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-[11px] text-slate-400 font-medium">Hangi İstasyon?</label>

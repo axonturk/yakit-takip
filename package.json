@@ -1,11 +1,12 @@
 {
   "name": "yakit-takip-app",
   "private": true,
-  "version": "0.12.0",
+  "version": "0.13.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "rm -rf dist && vite build && cp -r landing/. dist/",
+    "build": "rm -rf dist && vite build && node scripts/copy-ocr.mjs dist/app/ocr && cp -r landing/. dist/",
+    "predev": "node scripts/copy-ocr.mjs public/ocr",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run"
@@ -13,10 +14,12 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",
     "@tailwindcss/vite": "^4.3.3",
+    "@tesseract.js-data/tur": "^1.0.0",
     "lucide-react": "^1.49.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.3",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.18",
