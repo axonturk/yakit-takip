@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   formatTL,
   formatTRDate,
@@ -11,6 +11,7 @@ import {
 } from '../services/storage';
 import { Trash2, Download, Pencil, Search, Camera } from 'lucide-react';
 import StationLogo from './StationLogo';
+import { highFills, formatKm, formatL100 } from '../services/consumption';
 
 export default function TransactionHistory({
   transactions,
@@ -27,6 +28,7 @@ export default function TransactionHistory({
   const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const flagged = useMemo(() => highFills(transactions), [transactions]);
 
   // Filter transactions
   const filtered = transactions.filter((tx) => {
@@ -245,6 +247,15 @@ export default function TransactionHistory({
                       {tx.receiptNo && <span className="text-slate-300">Fiş {tx.receiptNo}</span>}
                       {tx.plate && (
                         <span className="font-mono text-[10px] text-slate-200 bg-slate-700/70 px-1 rounded">{tx.plate}</span>
+                      )}
+                      {tx.odometer && <span>{formatKm(tx.odometer)}</span>}
+                      {flagged.has(tx.id) && (
+                        <span
+                          className="text-[10px] font-semibold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1 rounded"
+                          title={`${formatL100(flagged.get(tx.id).l100)} · ortalama ${formatL100(flagged.get(tx.id).avg)}`}
+                        >
+                          ⚠ tüketim %{flagged.get(tx.id).pct} fazla
+                        </span>
                       )}
                       {tx.note && <span className="italic text-slate-400">“{tx.note}”</span>}
                       {tx.enteredBy && <span className="text-[10px] text-slate-500">· {tx.enteredBy.split('@')[0]}</span>}

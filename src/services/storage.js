@@ -261,7 +261,7 @@ export function buildCSV(transactions) {
   const num = (v) => (v === null || v === undefined || v === '' ? '' : String(v).replace('.', ','));
   const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const header = [
-    'Tarih', 'Tür', 'İstasyon', 'Plaka', 'Tutar', 'Litre', 'Birim Fiyat',
+    'Tarih', 'Tür', 'İstasyon', 'Plaka', 'Km', 'Tutar', 'Litre', 'Birim Fiyat',
     'Yakıt', 'Ödeme', 'Fiş No', 'Not', 'Giren', 'Kayıt No'
   ];
   const rows = transactions.map((t) =>
@@ -270,6 +270,7 @@ export function buildCSV(transactions) {
       cell(transactionLabel(t)),
       cell(t.stationName),
       cell(t.plate || ''),
+      cell(t.odometer || ''),
       cell(num(t.type === 'expense' ? -roundMoney(t.amount) : roundMoney(t.amount))),
       cell(num(t.liters)),
       cell(num(t.unitPrice)),

@@ -1,4 +1,5 @@
 import { roundMoney, formatTL, formatDay } from './storage';
+import { periodConsumption, highFills, formatKm, formatL100 } from './consumption';
 
 // Monthly fuel report for the fleet: purchases grouped by vehicle (plate) or by the person who entered them.
 
@@ -30,6 +31,9 @@ export function buildFleetReport(transactions, from, to, by = 'plate') {
     map.set(key, g);
   });
   const total = purchases.reduce((s, t) => s + Number(t.amount || 0), 0);
+  // Vehicles only: km driven, L/100 km and purchases flagged as unusually high
+  const usage = by === 'plate' ? periodConsumption(transactions, from, to) : new Map();
+  const flagged = by === 'plate' ? highFills(transactions) : new Map();
   const rows = [...map.values()]
     .map((g) => ({
       key: g.key,
@@ -41,7 +45,10 @@ export function buildFleetReport(transactions, from, to, by = 'plate') {
       // Average price only over purchases where litres were recorded
       avgPrice: g.liters > 0 ? roundMoney(g.pricedAmount / g.liters) : null,
       share: total > 0 ? Math.round((g.amount / total) * 1000) / 10 : 0,
-      stations: [...g.stations].sort()
+      stations: [...g.stations].sort(),
+      km: usage.get(g.key)?.km ?? null,
+      l100: usage.get(g.key)?.l100 ?? null,
+      high: by === 'plate' ? purchases.filter((t) => t.plate === g.key && g.key && flagged.has(t.id)).length : 0
     }))
     .sort((a, b) => b.amount - a.amount || a.label.localeCompare(b.label, 'tr'));
   return {
@@ -59,12 +66,16 @@ const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
 // Excel (Turkish locale) summary: one line per vehicle/person, then the total.
 export function reportCSV(report, by, from, to) {
   const g = REPORT_GROUPS[by];
+  const veh = by === 'plate';
   const lines = [
     [cell(`Hisapo yakıt raporu ${from} – ${to}`)],
     [],
-    [g.label, 'İşlem', 'Tutar (TL)', 'Litre', 'Ort. TL/L', 'Pay %', 'İstasyonlar'].map(cell),
+    [g.label, 'İşlem', 'Tutar (TL)', 'Litre', 'Ort. TL/L', 'Pay %', 'İstasyonlar', ...(veh ? ['Km', 'L/100 km', 'Yüksek alış'] : [])].map(cell),
     ...report.rows.map((r) =>
-      [r.fullLabel, r.count, num(r.amount), num(r.liters || ''), num(r.avgPrice ?? ''), num(r.share), r.stations.join(', ')].map(cell)
+      [
+        r.fullLabel, r.count, num(r.amount), num(r.liters || ''), num(r.avgPrice ?? ''), num(r.share), r.stations.join(', '),
+        ...(veh ? [r.km ?? '', num(r.l100 ?? ''), r.high || ''] : [])
+      ].map(cell)
     ),
     ['Toplam', report.count, num(report.total), num(report.liters || ''), '', '100', ''].map(cell)
   ];
@@ -76,7 +87,12 @@ export function reportText(report, by, from, to) {
   const head = `⛽ Yakıt raporu (${g.label.toLowerCase()} bazında)\n${formatDay(from)} – ${formatDay(to)}\n`;
   const body = report.rows
     .slice(0, 30)
-    .map((r) => `• ${r.fullLabel}: ${formatTL(r.amount)}${r.liters ? ` · ${num(r.liters)} L` : ''} (${r.count} işlem)`)
+    .map(
+      (r) =>
+        `• ${r.fullLabel}: ${formatTL(r.amount)}${r.liters ? ` · ${num(r.liters)} L` : ''} (${r.count} işlem)` +
+        (r.km ? `\n   ${formatKm(r.km)} · ${formatL100(r.l100)}` : '') +
+        (r.high ? `\n   ⚠ ${r.high} yüksek tüketimli alış` : '')
+    )
     .join('\n');
   return `${head}\n${body}\n\nToplam: ${formatTL(report.total)} · ${report.count} işlem`;
 }

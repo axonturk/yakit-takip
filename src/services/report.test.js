@@ -44,3 +44,25 @@ describe('fleet report', () => {
     expect(reportText(r, 'plate', '2026-10-01', '2026-10-31')).toContain('Toplam:');
   });
 });
+
+describe('vehicle consumption in the report', () => {
+  const f = (id, day, odometer, liters) => ({
+    id, type: 'expense', plate: '34 ABC 12', stationName: 'Opet', odometer, liters, amount: liters * 45, date: `2026-10-${day}T10:00`
+  });
+  const txs = [f('a', '01', 10000, 40), f('b', '03', 10400, 40), f('c', '05', 10800, 40), f('d', '07', 11200, 40), f('e', '09', 11400, 30)];
+
+  it('adds km, L/100 km and high fills per vehicle', () => {
+    const r = buildFleetReport(txs, '2026-10-01', '2026-10-31', 'plate');
+    expect(r.rows[0]).toMatchObject({ km: 1400, l100: 10.7, high: 1 });
+    const csv = reportCSV(r, 'plate', '2026-10-01', '2026-10-31');
+    expect(csv).toContain('"Km";"L/100 km";"Yüksek alış"');
+    expect(csv).toContain('"1400";"10,7";"1"');
+    expect(reportText(r, 'plate', '2026-10-01', '2026-10-31')).toContain('1.400 km · 10,7 L/100 km');
+  });
+
+  it('leaves vehicle columns out of other groupings', () => {
+    const r = buildFleetReport(txs, '2026-10-01', '2026-10-31', 'station');
+    expect(r.rows[0]).toMatchObject({ km: null, l100: null, high: 0 });
+    expect(reportCSV(r, 'station', '2026-10-01', '2026-10-31')).not.toContain('L/100');
+  });
+});
