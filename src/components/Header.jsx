@@ -1,10 +1,13 @@
 import React from 'react';
-import { PlusCircle, Download, Upload, Smartphone, Sun, Moon, Cloud, CloudOff, Lock, MoreVertical } from 'lucide-react';
+import { PlusCircle, Download, Upload, Smartphone, Sun, Moon, Cloud, CloudOff, Lock, MoreVertical, Languages } from 'lucide-react';
+import LocaleModal from './LocaleModal';
+import { t } from '../i18n';
 import logo from '../assets/logo.png';
 
 export default function Header({ onOpenAddStation, onExport, onImport, onOpenInstall, isInstalled, theme, onToggleTheme, cloudStatus = 'off', onOpenCloud, isLockOn = false, onOpenLock }) {
   const fileInputRef = React.useRef(null);
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const [localeOpen, setLocaleOpen] = React.useState(false);
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -24,7 +27,7 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
             <h1 className="text-sm font-bold text-white tracking-tight flex items-center gap-1.5">
               Hisapo
             </h1>
-            <p className="text-[11px] text-slate-400 whitespace-nowrap truncate">Yakıt avans defteri</p>
+            <p className="text-[11px] text-slate-400 whitespace-nowrap truncate">{t('Yakıt avans defteri')}</p>
           </div>
         </div>
 
@@ -32,17 +35,17 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
           {!isInstalled && (
             <button
               onClick={onOpenInstall}
-              title="Telefona Yükle"
+              title={t('Telefona Yükle')}
               className="p-1.5 px-2 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-semibold flex items-center gap-1 transition animate-pulse"
             >
               <Smartphone className="w-4 h-4 text-amber-400" />
-              <span className="text-[11px]">Yükle</span>
+              <span className="text-[11px]">{t('Yükle')}</span>
             </button>
           )}
 
           <button
             onClick={onOpenCloud}
-            title="Bulut yedek ve ortak defter"
+            title={t('Bulut yedek ve ortak defter')}
             className="relative p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition"
           >
             {cloudStatus === 'off' ? <CloudOff className="w-4 h-4" /> : <Cloud className="w-4 h-4" />}
@@ -64,7 +67,7 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
           {onOpenAddStation && (
           <button
             onClick={onOpenAddStation}
-            title="Yeni İstasyon Ekle"
+            title={t('Yeni İstasyon Ekle')}
             className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition"
           >
             <PlusCircle className="w-5 h-5" />
@@ -81,7 +84,7 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
           <div className="relative">
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              title="Diğer"
+              title={t('Diğer')}
               className="relative p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition"
             >
               <MoreVertical className="w-4 h-4" />
@@ -92,18 +95,21 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
                 <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
                 <div className="absolute right-0 top-full mt-2 z-50 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-1">
                   <MenuItem icon={Download} onClick={() => { setMenuOpen(false); onExport(); }}>
-                    Verileri yedekle (dosya)
+                    {t('Verileri yedekle (dosya)')}
                   </MenuItem>
                   {onImport && (
                     <MenuItem icon={Upload} onClick={() => { setMenuOpen(false); fileInputRef.current?.click(); }}>
-                      Yedekten geri yükle
+                      {t('Yedekten geri yükle')}
                     </MenuItem>
                   )}
                   <MenuItem icon={Lock} onClick={() => { setMenuOpen(false); onOpenLock(); }}>
-                    Uygulama kilidi{isLockOn ? ' (açık)' : ''}
+                    {isLockOn ? t('Uygulama kilidi (açık)') : t('Uygulama kilidi')}
                   </MenuItem>
                   <MenuItem icon={theme === 'light' ? Moon : Sun} onClick={() => { setMenuOpen(false); onToggleTheme(); }}>
-                    {theme === 'light' ? 'Koyu temaya geç' : 'Açık temaya geç'}
+                    {theme === 'light' ? t('Koyu temaya geç') : t('Açık temaya geç')}
+                  </MenuItem>
+                  <MenuItem icon={Languages} onClick={() => { setMenuOpen(false); setLocaleOpen(true); }}>
+                    {t('Dil ve para birimi')}
                   </MenuItem>
                 </div>
               </>
@@ -111,6 +117,7 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
           </div>
         </div>
       </div>
+      {localeOpen && <LocaleModal onClose={() => setLocaleOpen(false)} />}
     </header>
   );
 }

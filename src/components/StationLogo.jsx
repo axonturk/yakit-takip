@@ -1,4 +1,5 @@
 import React from 'react';
+import { t } from '../i18n';
 
 import opetLogo from '../assets/logos/opet.svg';
 import shellLogo from '../assets/logos/shell.svg';
@@ -77,6 +78,11 @@ export const BRAND_OPTIONS = Object.entries(BRAND_CONFIG).map(([key, cfg]) => ({
   logoSrc: cfg.logoSrc
 }));
 
+// Brand names stay as stored; only the "other" choice is shown in the app's language
+export function brandLabel(name) {
+  return name === BRAND_CONFIG[BRAND_KEYS.OTHER].name ? t('Diğer / Bağımsız') : name;
+}
+
 // Helper to deduce brand from station name or explicit brand field
 export function detectBrand(stationName, explicitBrand) {
   const brandVal = (explicitBrand || '').toLowerCase().trim();
@@ -112,7 +118,7 @@ export default function StationLogo({
       className={`${className} ${rounded} shrink-0 overflow-hidden flex items-center justify-center p-1.5 shadow-sm transition-transform ${
         showBackground ? `${config.bgClass} border ${config.borderClass || 'border-slate-200/90'} shadow-slate-950/20` : ''
       }`}
-      title={name || config.name}
+      title={name || brandLabel(config.name)}
     >
       <img
         src={config.logoSrc}

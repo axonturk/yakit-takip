@@ -15,6 +15,7 @@ import {
   daysSince,
   SAMPLE_DATA
 } from './services/storage';
+import { t, getLang } from './i18n';
 
 import Header from './components/Header';
 import BalanceCard from './components/BalanceCard';
@@ -139,6 +140,10 @@ export default function App() {
     setLocked(false);
   };
 
+  useEffect(() => {
+    document.documentElement.lang = getLang();
+  }, []);
+
   // Anonymous daily usage ping: record counts only, never amounts or names
   useEffect(() => {
     reportOpen({
@@ -156,8 +161,8 @@ export default function App() {
 
   // Drop receipt photos left behind by deleted or edited transactions, once per launch
   useEffect(() => {
-    const t = setTimeout(() => cleanupPhotos(data.transactions).catch(() => {}), 3000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => cleanupPhotos(data.transactions).catch(() => {}), 3000);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -226,11 +231,11 @@ export default function App() {
   const sortedTransactions = useMemo(() => sortTransactions(data.transactions), [data.transactions]);
   const activeStations = useMemo(() => data.stations.filter((s) => !s.archived), [data.stations]);
   const plates = useMemo(
-    () => [...new Set(sortedTransactions.map((t) => t.plate).filter(Boolean))],
+    () => [...new Set(sortedTransactions.map((x) => x.plate).filter(Boolean))],
     [sortedTransactions]
   );
   const recentTransactions = sortedTransactions
-    .filter((t) => !selectedStationFilter || t.stationId === selectedStationFilter)
+    .filter((x) => !selectedStationFilter || x.stationId === selectedStationFilter)
     .slice(0, 5);
 
   // Transaction being edited, and the last deleted one (for "Geri al")
@@ -242,7 +247,7 @@ export default function App() {
   const [editingStation, setEditingStation] = useState(null);
 
   // Station of the most recently entered expense, preselected at the pump
-  const lastStationId = data.transactions.find((t) => t.type === 'expense' && !t.kind)?.stationId || null;
+  const lastStationId = data.transactions.find((x) => x.type === 'expense' && !x.kind)?.stationId || null;
 
   const lowStations = Object.values(stationBalances).filter(
     (s) => s.balance >= 0 && s.balance < lowBalanceLimit(s.station)
@@ -250,7 +255,7 @@ export default function App() {
   const driverSpend = can.driver ? memberMonthSpend(data.transactions, cloud.userId) : 0;
   const unseenTx = useMemo(() => {
     const ids = new Set(cloud.unseen);
-    return data.transactions.filter((t) => ids.has(t.id));
+    return data.transactions.filter((x) => ids.has(x.id));
   }, [cloud.unseen, data.transactions]);
   const backupAge = daysSince(data.settings?.lastBackupAt);
   const needsBackup =
@@ -261,7 +266,7 @@ export default function App() {
   const storePhoto = (blob) => {
     if (!blob) return null;
     const id = newPhotoId();
-    savePhoto(id, blob).catch(() => alert('Fotoğraf kaydedilemedi; kayıt fotoğrafsız saklandı.'));
+    savePhoto(id, blob).catch(() => alert(t('Fotoğraf kaydedilemedi; kayıt fotoğrafsız saklandı.')));
     return id;
   };
 
@@ -272,7 +277,7 @@ export default function App() {
       ...cloud.stamp(),
       type: 'expense',
       stationId: newExpense.stationId,
-      stationName: st ? st.name : 'Bilinmeyen İstasyon',
+      stationName: st ? st.name : t('Bilinmeyen İstasyon'),
       amount: roundMoney(newExpense.amount),
       liters: newExpense.liters,
       unitPrice: newExpense.unitPrice,
@@ -295,7 +300,7 @@ export default function App() {
       const before = memberMonthSpend(data.transactions, cloud.userId);
       const after = memberMonthSpend([tx, ...data.transactions], cloud.userId);
       if (before <= cloud.monthlyLimit && after > cloud.monthlyLimit) {
-        setTimeout(() => alert(`Bu ayki harcama limitini aştın: ${formatTL(after)} / ${formatTL(cloud.monthlyLimit)}`), 300);
+        setTimeout(() => alert(t('Bu ayki harcama limitini aştın: {spent} / {limit}', { spent: formatTL(after), limit: formatTL(cloud.monthlyLimit) })), 300);
       }
     }
   };
@@ -307,7 +312,7 @@ export default function App() {
       ...cloud.stamp(),
       type: 'topup',
       stationId: newTopup.stationId,
-      stationName: st ? st.name : 'Bilinmeyen İstasyon',
+      stationName: st ? st.name : t('Bilinmeyen İstasyon'),
       amount: roundMoney(newTopup.amount),
       liters: null,
       unitPrice: null,
@@ -340,7 +345,7 @@ export default function App() {
       stations: prev.stations.map((s) => (s.id === stationId ? { ...s, ...changes } : s)),
       // Keep the name shown on past records in step with the station
       transactions: changes.name
-        ? prev.transactions.map((t) => (t.stationId === stationId ? { ...t, stationName: changes.name } : t))
+        ? prev.transactions.map((x) => (x.stationId === stationId ? { ...x, stationName: changes.name } : x))
         : prev.transactions
     }));
   };
@@ -370,7 +375,7 @@ export default function App() {
         liters: null,
         unitPrice: null,
         date: nowLocalISO(),
-        note: 'Başlangıç Avans Bakiyesi'
+        note: t('Başlangıç Avans Bakiyesi')
       };
       updatedTx = [topupTx, ...updatedTx];
     } else if (initialBal < 0) {
@@ -385,7 +390,7 @@ export default function App() {
         liters: null,
         unitPrice: null,
         date: nowLocalISO(),
-        note: 'Başlangıç Borç / Eksi Bakiye'
+        note: t('Başlangıç Borç / Eksi Bakiye')
       };
       updatedTx = [debtTx, ...updatedTx];
     }
@@ -399,12 +404,12 @@ export default function App() {
   };
 
   const handleDeleteTransaction = (id) => {
-    const index = data.transactions.findIndex((t) => t.id === id);
+    const index = data.transactions.findIndex((x) => x.id === id);
     if (index === -1) return;
     const tx = data.transactions[index];
     setData((prev) => ({
       ...prev,
-      transactions: prev.transactions.filter((t) => t.id !== id)
+      transactions: prev.transactions.filter((x) => x.id !== id)
     }));
     clearTimeout(undoTimer.current);
     setUndoState({ tx, index });
@@ -429,19 +434,19 @@ export default function App() {
     const changes = photo === undefined ? fieldChanges : { ...fieldChanges, photoId: storePhoto(photo) };
     setData((prev) => ({
       ...prev,
-      transactions: prev.transactions.map((t) => {
-        if (t.id !== id) return t;
+      transactions: prev.transactions.map((x) => {
+        if (x.id !== id) return x;
         const before = {};
         Object.keys(changes).forEach((k) => {
-          before[k] = t[k] ?? null;
+          before[k] = x[k] ?? null;
         });
-        const st = prev.stations.find((s) => s.id === (changes.stationId || t.stationId));
+        const st = prev.stations.find((s) => s.id === (changes.stationId || x.stationId));
         return {
-          ...t,
+          ...x,
           ...changes,
-          amount: roundMoney(changes.amount ?? t.amount),
-          stationName: st ? st.name : t.stationName,
-          edits: [...(t.edits || []), { at: nowLocalISO(), before }]
+          amount: roundMoney(changes.amount ?? x.amount),
+          stationName: st ? st.name : x.stationName,
+          edits: [...(x.edits || []), { at: nowLocalISO(), before }]
         };
       })
     }));
@@ -453,7 +458,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `hisapo_yedek_${nowLocalISO().slice(0, 10)}${suffix}.json`;
+    a.download = `${t('hisapo_yedek')}_${nowLocalISO().slice(0, 10)}${suffix}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
@@ -483,24 +488,28 @@ export default function App() {
       try {
         const result = validateBackup(JSON.parse(e.target.result));
         if (!result.ok) {
-          alert(`❌ Yedek yüklenemedi: ${result.error}`);
+          alert(t('❌ Yedek yüklenemedi: {error}', { error: result.error }));
           return;
         }
         const incoming = result.data;
         const hasCurrent = data.transactions.length > 0 || data.stations.length > 0;
         const summary =
-          `Yedekte ${incoming.stations.length} istasyon ve ${incoming.transactions.length} işlem var.` +
+          t('Yedekte {s} istasyon ve {n} işlem var.', { s: incoming.stations.length, n: incoming.transactions.length }) +
           (hasCurrent
-            ? `\n\nMevcut ${data.stations.length} istasyon ve ${data.transactions.length} işlem bunlarla DEĞİŞTİRİLECEK. ` +
-              'Güvenlik için mevcut verinin yedeği önce indirilecek.'
+            ? '\n\n' +
+              t('Mevcut {s} istasyon ve {n} işlem bunlarla DEĞİŞTİRİLECEK. Güvenlik için mevcut verinin yedeği önce indirilecek.', {
+                s: data.stations.length,
+                n: data.transactions.length
+              })
             : '') +
-          '\n\nDevam edilsin mi?';
+          '\n\n' +
+          t('Devam edilsin mi?');
         if (!window.confirm(summary)) return;
-        if (hasCurrent) downloadBackup(data, '_geri_yukleme_oncesi');
+        if (hasCurrent) downloadBackup(data, t('_geri_yukleme_oncesi'));
         setData(incoming);
-        alert('✅ Yedek başarıyla geri yüklendi!');
+        alert(t('✅ Yedek başarıyla geri yüklendi!'));
       } catch {
-        alert('❌ Dosya okunamadı, geçerli bir JSON yedeği değil.');
+        alert(t('❌ Dosya okunamadı, geçerli bir JSON yedeği değil.'));
       }
     };
     reader.readAsText(file);
@@ -535,9 +544,14 @@ export default function App() {
 
   const handleDeleteStation = (stationId) => {
     const st = data.stations.find((s) => s.id === stationId);
-    const stationName = st ? st.name : 'bu istasyonu';
-    const txCount = data.transactions.filter((t) => t.stationId === stationId).length;
-    if (!window.confirm(`"${stationName}" istasyonu listeden kaldırılsın mı?${txCount > 0 ? `\n(${txCount} işlem kaydı geçmişte ve yedekte korunur, bakiyesi toplamdan çıkar)` : ''}`)) {
+    const stationName = st ? st.name : t('bu istasyonu');
+    const txCount = data.transactions.filter((x) => x.stationId === stationId).length;
+    const question =
+      t('"{name}" istasyonu listeden kaldırılsın mı?', { name: stationName }) +
+      (txCount > 0
+        ? '\n' + t('({n} işlem kaydı geçmişte ve yedekte korunur, bakiyesi toplamdan çıkar)', { n: txCount })
+        : '');
+    if (!window.confirm(question)) {
       return;
     }
 
@@ -554,7 +568,7 @@ export default function App() {
 
   const handleAdjustBalance = ({ stationId, diff, date, note }) => {
     const st = data.stations.find((s) => s.id === stationId);
-    const stationName = st ? st.name : 'İstasyon';
+    const stationName = st ? st.name : t('İstasyon');
 
     const tx = {
       id: newId('tx'),
@@ -567,7 +581,7 @@ export default function App() {
       liters: null,
       unitPrice: null,
       date: date || nowLocalISO(),
-      note: note || `Bakiye Düzeltme (${diff > 0 ? '+' : '-'}${formatTL(Math.abs(diff))})`
+      note: note || `${t('Bakiye Düzeltme')} (${diff > 0 ? '+' : '-'}${formatTL(Math.abs(diff))})`
     };
 
     setData((prev) => ({
@@ -623,10 +637,10 @@ export default function App() {
                 <span className="text-2xl animate-bounce">📲</span>
                 <div>
                   <h3 className="text-xs font-black uppercase tracking-wider">
-                    Uygulamayı Telefona Yükle
+                    {t('Uygulamayı Telefona Yükle')}
                   </h3>
                   <p className="text-[11px] font-semibold text-slate-800">
-                    Masaüstünden tek tıkla doğrudan açın
+                    {t('Masaüstünden tek tıkla doğrudan açın')}
                   </p>
                 </div>
               </div>
@@ -645,7 +659,7 @@ export default function App() {
                 onClick={handleInstallClick}
                 className="flex-1 py-2.5 bg-slate-950 hover:bg-slate-900 text-amber-400 font-black rounded-xl text-xs shadow-md transition flex items-center justify-center gap-1.5 active:scale-95"
               >
-                <span>ŞİMDİ YÜKLE</span>
+                <span>{t('ŞİMDİ YÜKLE')}</span>
               </button>
               <button
                 onClick={() => {
@@ -653,7 +667,7 @@ export default function App() {
                 }}
                 className="py-2.5 px-3 bg-white/20 hover:bg-white/30 text-slate-900 font-bold rounded-xl text-xs transition"
               >
-                Daha Sonra
+                {t('Daha Sonra')}
               </button>
             </div>
           </div>
@@ -665,12 +679,12 @@ export default function App() {
 
         {data.isSample && (
           <div className="p-3 bg-sky-500/10 border border-sky-500/30 rounded-xl text-[11px] text-sky-200 flex items-center justify-between gap-2">
-            <span>Örnek verileri görüyorsunuz. Kendi kayıtlarınıza başlamak için temizleyin.</span>
+            <span>{t('Örnek verileri görüyorsunuz. Kendi kayıtlarınıza başlamak için temizleyin.')}</span>
             <button
               onClick={handleClearSample}
               className="shrink-0 py-1 px-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-lg transition"
             >
-              Temizle ve başla
+              {t('Temizle ve başla')}
             </button>
           </div>
         )}
@@ -684,10 +698,10 @@ export default function App() {
             }`}
           >
             <span>
-              Şoför olarak giriş yaptın{cloud.plate ? ` · ${cloud.plate}` : ''}
+              {t('Şoför olarak giriş yaptın')}{cloud.plate ? ` · ${cloud.plate}` : ''}
             </span>
             <span className="font-semibold shrink-0">
-              Bu ay {formatTL(driverSpend)}
+              {t('Bu ay {amount}', { amount: formatTL(driverSpend) })}
               {cloud.monthlyLimit !== null ? ` / ${formatTL(cloud.monthlyLimit)}` : ''}
             </span>
           </div>
@@ -696,44 +710,44 @@ export default function App() {
         {activeTab === 'home' && unseenTx.length > 0 && (
           <div className="p-3 bg-sky-500/10 border border-sky-500/30 rounded-xl text-[11px] text-sky-100 space-y-1.5">
             <div className="flex justify-between items-center gap-2">
-              <span className="font-bold">Ekipten {unseenTx.length} yeni harcama</span>
+              <span className="font-bold">{t('Ekipten {n} yeni harcama', { n: unseenTx.length })}</span>
               <button
                 onClick={cloud.markSeen}
                 className="shrink-0 py-1 px-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-lg transition"
               >
-                Tamam
+                {t('Tamam')}
               </button>
             </div>
-            {unseenTx.slice(0, 3).map((t) => (
-              <div key={t.id} className="flex justify-between gap-2 text-sky-200">
+            {unseenTx.slice(0, 3).map((x) => (
+              <div key={x.id} className="flex justify-between gap-2 text-sky-200">
                 <span className="truncate">
-                  {(t.enteredBy || '').split('@')[0]} · {t.stationName}
-                  {t.plate ? ` · ${t.plate}` : ''}
+                  {(x.enteredBy || '').split('@')[0]} · {x.stationName}
+                  {x.plate ? ` · ${x.plate}` : ''}
                 </span>
-                <span className="font-semibold shrink-0">{formatTL(t.amount)}</span>
+                <span className="font-semibold shrink-0">{formatTL(x.amount)}</span>
               </div>
             ))}
-            {unseenTx.length > 3 && <div className="text-sky-300">ve {unseenTx.length - 3} tane daha (Geçmiş sekmesinde)</div>}
+            {unseenTx.length > 3 && <div className="text-sky-300">{t('ve {n} tane daha (Geçmiş sekmesinde)', { n: unseenTx.length - 3 })}</div>}
           </div>
         )}
 
         {activeTab === 'home' && lowStations.length > 0 && (
           <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-[11px] text-amber-200">
-            Bakiyesi azalan istasyon: {lowStations.map((s) => `${s.station.name} (${formatTL(s.balance)})`).join(', ')}
+            {t('Bakiyesi azalan istasyon:')} {lowStations.map((s) => `${s.station.name} (${formatTL(s.balance)})`).join(', ')}
           </div>
         )}
 
         {activeTab === 'home' && needsBackup && (
           <div className="p-3 bg-slate-800/80 border border-slate-700 rounded-xl text-[11px] text-slate-300 flex items-center justify-between gap-2">
             <span>
-              {backupAge === null ? 'Henüz yedek almadınız.' : `Son yedek ${backupAge} gün önce.`} Veriler yalnızca bu
-              telefonda duruyor.
+              {backupAge === null ? t('Henüz yedek almadınız.') : t('Son yedek {n} gün önce.', { n: backupAge })}{' '}
+              {t('Veriler yalnızca bu telefonda duruyor.')}
             </span>
             <button
               onClick={handleExportBackup}
               className="shrink-0 py-1 px-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition"
             >
-              Yedek al
+              {t('Yedek al')}
             </button>
           </div>
         )}
@@ -741,31 +755,30 @@ export default function App() {
         {activeTab === 'home' && activeStations.length === 0 && can.driver ? (
           <div className="p-6 text-center bg-slate-900 border border-slate-800 rounded-2xl space-y-2">
             <div className="text-3xl">⛽</div>
-            <h2 className="text-sm font-bold text-white">{cloud.workspaceName} defteri</h2>
+            <h2 className="text-sm font-bold text-white">{t('{name} defteri', { name: cloud.workspaceName })}</h2>
             <p className="text-xs text-slate-400">
-              Henüz istasyon yok. Yöneticin istasyon ekleyince burada görünür, sen de harcama girebilirsin.
+              {t('Henüz istasyon yok. Yöneticin istasyon ekleyince burada görünür, sen de harcama girebilirsin.')}
             </p>
           </div>
         ) : activeTab === 'home' && activeStations.length === 0 ? (
           <div className="p-6 text-center bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
             <div className="text-3xl">⛽</div>
-            <h2 className="text-sm font-bold text-white">Hisapo'ya hoş geldiniz</h2>
+            <h2 className="text-sm font-bold text-white">{t('Hisapo\'ya hoş geldiniz')}</h2>
             <p className="text-xs text-slate-400">
-              Avans yatırdığınız veya veresiye yakıt aldığınız ilk istasyonu ekleyin. Varsa mevcut bakiyesini de
-              yazabilirsiniz.
+              {t('Avans yatırdığınız veya veresiye yakıt aldığınız ilk istasyonu ekleyin. Varsa mevcut bakiyesini de yazabilirsiniz.')}
             </p>
             <button
               onClick={() => setIsAddStationOpen(true)}
               className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl transition"
             >
-              İlk istasyonu ekle
+              {t('İlk istasyonu ekle')}
             </button>
             {data.transactions.length === 0 && (
               <button
                 onClick={handleLoadSample}
                 className="w-full py-2 text-xs text-slate-300 hover:text-white bg-slate-800 border border-slate-700 rounded-xl transition"
               >
-                Önce örnek verilerle dene
+                {t('Önce örnek verilerle dene')}
               </button>
             )}
           </div>
@@ -812,7 +825,7 @@ export default function App() {
                 onClick={() => setActiveTab('history')}
                 className="w-full py-2.5 text-center text-xs font-semibold text-amber-400 hover:text-amber-300 bg-slate-900 border border-slate-800 rounded-xl transition"
               >
-                Tüm Geçmiş Hareketleri Gör ({data.transactions.length}) →
+                {t('Tüm Geçmiş Hareketleri Gör ({n}) →', { n: data.transactions.length })}
               </button>
             )}
           </>
@@ -821,9 +834,9 @@ export default function App() {
           <div className="space-y-3">
             <div className="flex gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
               {[
-                ['list', 'Hareketler'],
-                ['statement', 'Ekstre'],
-                ['report', 'Rapor']
+                ['list', t('Hareketler')],
+                ['statement', t('Ekstre')],
+                ['report', t('Rapor')]
               ].map(([key, label]) => (
                 <button
                   key={key}
@@ -868,14 +881,14 @@ export default function App() {
           <div className="max-w-md mx-auto px-3">
             <div className="bg-amber-500 text-slate-950 text-[10px] font-bold py-1 px-3 rounded-t-xl shadow-lg shadow-amber-950/30 flex items-center justify-between">
               <span className="truncate flex items-center gap-1">
-                <span>🎯 Düğmeler Seçili İstasyon İçin:</span>
+                <span>{t('🎯 Düğmeler Seçili İstasyon İçin:')}</span>
                 <span className="underline font-black">{activeStation.name}</span>
               </span>
               <button
                 onClick={() => setSelectedStationFilter(null)}
                 className="text-[9px] bg-slate-950/20 hover:bg-slate-950/40 text-slate-950 px-1.5 py-0.5 rounded transition shrink-0 ml-2"
               >
-                Filtreyi Temizle ✕
+                {t('Filtreyi Temizle')} ✕
               </button>
             </div>
           </div>
@@ -893,7 +906,7 @@ export default function App() {
             }`}
           >
             <Home className="w-5 h-5 mb-0.5" />
-            <span>Ana Sayfa</span>
+            <span>{t('Ana Sayfa')}</span>
           </button>
 
 {can.manage ? (
@@ -902,7 +915,7 @@ export default function App() {
             className="flex flex-col items-center justify-center text-slate-400 hover:text-amber-400 text-[10px] font-medium transition"
           >
             <CreditCard className="w-5 h-5 mb-0.5" />
-            <span>+ Bakiye</span>
+            <span>{t('+ Bakiye')}</span>
           </button>
           ) : <span />}
 
@@ -913,7 +926,7 @@ export default function App() {
             <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-red-600 to-rose-500 text-white flex items-center justify-center shadow-lg shadow-red-950/60 border-2 border-slate-900 active:scale-95 transition">
               <Fuel className="w-5 h-5" />
             </div>
-            <span className="mt-1">Harcama</span>
+            <span className="mt-1">{t('Harcama')}</span>
           </button>
 
 {can.manage ? (
@@ -922,7 +935,7 @@ export default function App() {
             className="flex flex-col items-center justify-center text-slate-400 hover:text-amber-300 text-[10px] font-medium transition"
           >
             <Sliders className="w-5 h-5 mb-0.5" />
-            <span>Düzelt</span>
+            <span>{t('Düzelt')}</span>
           </button>
           ) : <span />}
 
@@ -933,7 +946,7 @@ export default function App() {
             }`}
           >
             <Clock className="w-5 h-5 mb-0.5" />
-            <span>Geçmiş</span>
+            <span>{t('Geçmiş')}</span>
           </button>
 
         </div>
@@ -996,7 +1009,7 @@ export default function App() {
           <div className="bg-emerald-600 text-white rounded-xl shadow-2xl px-4 py-3 flex items-center justify-between gap-3">
             <span className="text-xs font-semibold truncate">✓ {savedToast.stationName}</span>
             <span className="text-sm font-black shrink-0">
-              {savedToast.balance < 0 ? 'Borç ' : 'Kalan '}
+              {savedToast.balance < 0 ? t('Borç') : t('Kalan')}{' '}
               {formatTL(savedToast.balance)}
             </span>
           </div>
@@ -1007,13 +1020,13 @@ export default function App() {
         <div className="fixed inset-x-3 bottom-24 z-50 max-w-md mx-auto">
           <div className="bg-slate-800 border border-slate-700 text-slate-100 text-xs rounded-xl shadow-2xl px-3 py-2.5 flex items-center justify-between gap-3">
             <span className="truncate">
-              {undoState.tx.stationName} · {formatTL(undoState.tx.amount)} silindi
+              {t('{name} · {amount} silindi', { name: undoState.tx.stationName, amount: formatTL(undoState.tx.amount) })}
             </span>
             <button
               onClick={handleUndoDelete}
               className="shrink-0 font-bold text-amber-400 hover:text-amber-300"
             >
-              Geri al
+              {t('Geri al')}
             </button>
           </div>
         </div>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Sliders, X, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
-import StationLogo from './StationLogo';
+import StationLogo, { brandLabel } from './StationLogo';
 import { formatTL } from '../services/storage';
+import { t } from '../i18n';
 
 const getNowISOString = () => {
   const now = new Date();
@@ -20,7 +21,7 @@ export default function AdjustBalanceModal({
   const [stationId, setStationId] = useState(defaultStationId || stations[0]?.id || '');
   const [newBalance, setNewBalance] = useState('');
   const [datetime, setDatetime] = useState(getNowISOString());
-  const [note, setNote] = useState('Bakiye Eşitleme / Düzeltme');
+  const [note, setNote] = useState(t('Bakiye Eşitleme / Düzeltme'));
   const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
@@ -57,12 +58,12 @@ export default function AdjustBalanceModal({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!isValidNum) {
-      setErrorMsg('Lütfen geçerli bir bakiye tutarı girin!');
+      setErrorMsg(t('Lütfen geçerli bir bakiye tutarı girin!'));
       return;
     }
 
     if (Math.abs(diff) < 0.001) {
-      setErrorMsg('Yeni bakiye mevcut bakiye ile aynı, herhangi bir değişiklik yapılmadı.');
+      setErrorMsg(t('Yeni bakiye mevcut bakiye ile aynı, herhangi bir değişiklik yapılmadı.'));
       return;
     }
 
@@ -71,7 +72,7 @@ export default function AdjustBalanceModal({
       newBalance: parsedNewBal,
       diff,
       date: datetime || getNowISOString(),
-      note: note.trim() || 'Bakiye Eşitleme / Düzeltme'
+      note: note.trim() || t('Bakiye Eşitleme / Düzeltme')
     });
 
     onClose();
@@ -92,8 +93,8 @@ export default function AdjustBalanceModal({
               <Sliders className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">İstasyon Bakiyesini Düzelt</h2>
-              <p className="text-[10px] text-slate-400">Fiili Kalan Tutara Göre Bakiyeyi Eşitleyin</p>
+              <h2 className="text-sm font-bold text-white">{t('İstasyon Bakiyesini Düzelt')}</h2>
+              <p className="text-[10px] text-slate-400">{t('Fiili Kalan Tutara Göre Bakiyeyi Eşitleyin')}</p>
             </div>
           </div>
           <button
@@ -115,8 +116,8 @@ export default function AdjustBalanceModal({
           {/* Station Selector */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-[11px] text-slate-400 font-medium">Hangi İstasyon?</label>
-              <span className="text-[10px] text-slate-500">İstenirse değiştirilebilir</span>
+              <label className="text-[11px] text-slate-400 font-medium">{t('Hangi İstasyon?')}</label>
+              <span className="text-[10px] text-slate-500">{t('İstenirse değiştirilebilir')}</span>
             </div>
             <div className="flex items-center gap-2.5">
               <StationLogo
@@ -131,7 +132,7 @@ export default function AdjustBalanceModal({
               >
                 {stations.map(st => (
                   <option key={st.id} value={st.id}>
-                    {st.name} {st.brand ? `(${st.brand})` : ''}
+                    {st.name} {st.brand ? `(${brandLabel(st.brand)})` : ''}
                   </option>
                 ))}
               </select>
@@ -141,14 +142,14 @@ export default function AdjustBalanceModal({
           {/* Current vs New Balance Comparison */}
           <div className="p-3 bg-slate-800/60 border border-slate-700/80 rounded-2xl space-y-2">
             <div className="flex justify-between items-center text-xs">
-              <span className="text-slate-400">Sistemdeki Mevcut Bakiye:</span>
+              <span className="text-slate-400">{t('Sistemdeki Mevcut Bakiye:')}</span>
               <span className="font-bold text-slate-200">{formatTL(currentBal)}</span>
             </div>
 
             <div className="pt-2 border-t border-slate-700/60">
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-xs font-bold text-amber-400">
-                  Gerçek / Yeni Bakiye Tutarı (TL) *
+                  {t('Gerçek / Yeni Bakiye Tutarı ({cur})')} *
                 </label>
                 <button
                   type="button"
@@ -160,9 +161,9 @@ export default function AdjustBalanceModal({
                     }
                   }}
                   className="text-[10px] px-2 py-0.5 bg-slate-700 hover:bg-slate-600 text-amber-300 rounded-md font-mono font-bold transition"
-                  title="İşareti Değiştir (Pozitif / Negatif)"
+                  title={t('İşareti Değiştir (Pozitif / Negatif)')}
                 >
-                  ± Eksi / Artı Yap
+                  {t('± Eksi / Artı Yap')}
                 </button>
               </div>
               <input
@@ -170,7 +171,7 @@ export default function AdjustBalanceModal({
                 step="0.01"
                 value={newBalance}
                 onChange={(e) => setNewBalance(e.target.value)}
-                placeholder="Örn: 1500 veya borç ise -500"
+                placeholder={t('Örn: 1500 veya borç ise -500')}
                 className={`w-full bg-slate-900 border-2 rounded-xl p-3 text-lg font-extrabold text-white focus:outline-none ${
                   isValidNum && parsedNewBal < 0
                     ? 'border-rose-500 text-rose-300 focus:border-rose-400'
@@ -178,7 +179,7 @@ export default function AdjustBalanceModal({
                 }`}
                 autoFocus
               />
-              <p className="text-[10px] text-slate-500 mt-1">İstasyon hesabınız ekside / borçtaysa eksi (-) tutar girebilirsiniz.</p>
+              <p className="text-[10px] text-slate-500 mt-1">{t('İstasyon hesabınız ekside / borçtaysa eksi (-) tutar girebilirsiniz.')}</p>
             </div>
 
             {isValidNum && Math.abs(diff) > 0.001 && (
@@ -187,11 +188,11 @@ export default function AdjustBalanceModal({
                   ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
                   : 'bg-red-500/15 text-red-300 border border-red-500/30'
               }`}>
-                <span>Fark Tutarı:</span>
+                <span>{t('Fark Tutarı:')}</span>
                 <span>
                   {diff > 0
-                    ? `+${formatTL(diff)} (Avans eklenecek)`
-                    : `-${formatTL(Math.abs(diff))} (Harcama / borç yazılacak)`}
+                    ? t('+{v} (Avans eklenecek)', { v: formatTL(diff) })
+                    : t('-{v} (Harcama / borç yazılacak)', { v: formatTL(Math.abs(diff)) })}
                 </span>
               </div>
             )}
@@ -200,14 +201,14 @@ export default function AdjustBalanceModal({
           {/* Datetime with current time quick reset */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-[11px] text-slate-400 font-medium">Düzeltme Tarih & Saati</label>
+              <label className="text-[11px] text-slate-400 font-medium">{t('Düzeltme Tarih & Saati')}</label>
               <button
                 type="button"
                 onClick={() => setDatetime(getNowISOString())}
                 className="text-[10px] text-amber-400 hover:text-amber-300 font-medium flex items-center gap-0.5"
               >
                 <Clock className="w-3 h-3" />
-                <span>Şu Anki Sistem Saati</span>
+                <span>{t('Şu Anki Sistem Saati')}</span>
               </button>
             </div>
             <input
@@ -216,17 +217,17 @@ export default function AdjustBalanceModal({
               onChange={(e) => setDatetime(e.target.value)}
               className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
             />
-            <p className="text-[10px] text-slate-500 mt-0.5">Sistem saati otomatik seçilidir, dokunup değiştirebilirsiniz.</p>
+            <p className="text-[10px] text-slate-500 mt-0.5">{t('Sistem saati otomatik seçilidir, dokunup değiştirebilirsiniz.')}</p>
           </div>
 
           {/* Note */}
           <div>
-            <label className="block text-[11px] text-slate-400 mb-1">Düzeltme Nedeni / Not</label>
+            <label className="block text-[11px] text-slate-400 mb-1">{t('Düzeltme Nedeni / Not')}</label>
             <input
               type="text"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Örn: İstasyon pompasıyla eşitlendi"
+              placeholder={t('Örn: İstasyon pompasıyla eşitlendi')}
               className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
             />
           </div>
@@ -236,7 +237,7 @@ export default function AdjustBalanceModal({
             className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-950/40 transition active:scale-[0.98] mt-2 flex items-center justify-center gap-1.5"
           >
             <CheckCircle2 className="w-4 h-4" />
-            <span>BAKİYEYİ GÜNCELLE & EŞİTLE</span>
+            <span>{t('BAKİYEYİ GÜNCELLE & EŞİTLE')}</span>
           </button>
         </form>
 

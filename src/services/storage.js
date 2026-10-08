@@ -1,3 +1,4 @@
+import { intlLocale, getCurrency, t, decimal, csvSeparator, getLang } from '../i18n';
 // LocalStorage key
 const STORAGE_KEY = 'yakit_takip_data_v1';
 
@@ -135,26 +136,26 @@ export function migrateData(raw) {
 // Checks an imported backup; returns { ok, data, error }.
 export function validateBackup(parsed) {
   if (!parsed || typeof parsed !== 'object') {
-    return { ok: false, error: 'Dosya bir Hisapo yedeği değil.' };
+    return { ok: false, error: t('Dosya bir Hisapo yedeği değil.') };
   }
   if (!Array.isArray(parsed.stations) || !Array.isArray(parsed.transactions)) {
-    return { ok: false, error: 'Yedekte istasyon veya işlem listesi yok.' };
+    return { ok: false, error: t('Yedekte istasyon veya işlem listesi yok.') };
   }
   const badStation = parsed.stations.find((s) => !s || !s.id || !s.name);
   if (badStation) {
-    return { ok: false, error: 'Yedekte adı veya kimliği eksik bir istasyon var.' };
+    return { ok: false, error: t('Yedekte adı veya kimliği eksik bir istasyon var.') };
   }
   const badTx = parsed.transactions.find(
-    (t) =>
-      !t ||
-      !t.id ||
-      !t.stationId ||
-      (t.type !== 'topup' && t.type !== 'expense') ||
-      !Number.isFinite(Number(t.amount)) ||
-      Number(t.amount) < 0
+    (x) =>
+      !x ||
+      !x.id ||
+      !x.stationId ||
+      (x.type !== 'topup' && x.type !== 'expense') ||
+      !Number.isFinite(Number(x.amount)) ||
+      Number(x.amount) < 0
   );
   if (badTx) {
-    return { ok: false, error: 'Yedekte hatalı bir işlem kaydı var (tür, istasyon veya tutar).' };
+    return { ok: false, error: t('Yedekte hatalı bir işlem kaydı var (tür, istasyon veya tutar).') };
   }
   return { ok: true, data: migrateData(parsed) };
 }
@@ -251,45 +252,49 @@ export function calculateBalances(stations, transactions) {
 
 // Human label for a transaction's type in lists and exports.
 export function transactionLabel(tx) {
-  if (tx.kind === 'opening') return 'Açılış Bakiyesi';
-  if (tx.kind === 'adjustment') return 'Bakiye Düzeltme';
-  return tx.type === 'expense' ? 'Depo Dolumu' : 'Avans Yüklendi';
+  if (tx.kind === 'opening') return t('Açılış Bakiyesi');
+  if (tx.kind === 'adjustment') return t('Bakiye Düzeltme');
+  return tx.type === 'expense' ? t('Depo Dolumu') : t('Avans Yüklendi');
 }
 
-// Turkish Excel opens ";" separated files with comma decimals; the BOM keeps ş, ğ, ı intact.
+// Turkish Excel opens ";" separated files with comma decimals, English Excel "," with dots; the BOM keeps ş, ğ, ı intact.
 export function buildCSV(transactions) {
-  const num = (v) => (v === null || v === undefined || v === '' ? '' : String(v).replace('.', ','));
+  const num = decimal;
+  const sep = csvSeparator();
+  // Stored Turkish values (fuel type, payment method) shown in the chosen language
+  const known = (v) => (v && (FUEL_TYPES.includes(v) || PAYMENT_METHODS.includes(v)) ? t(v) : v || '');
   const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const header = [
-    'Tarih', 'Tür', 'İstasyon', 'Plaka', 'Km', 'Tutar', 'Litre', 'Birim Fiyat',
-    'Yakıt', 'Ödeme', 'Fiş No', 'Not', 'Giren', 'Kayıt No'
+    t('Tarih'), t('Tür'), t('İstasyon'), t('Plaka'), t('Km'), t('Tutar'), t('Litre'), t('Birim Fiyat'),
+    t('Yakıt'), t('Ödeme'), t('Fiş No'), t('Not'), t('Giren'), t('Kayıt No')
   ];
-  const rows = transactions.map((t) =>
+  const rows = transactions.map((x) =>
     [
-      cell(t.date ? t.date.replace('T', ' ') : ''),
-      cell(transactionLabel(t)),
-      cell(t.stationName),
-      cell(t.plate || ''),
-      cell(t.odometer || ''),
-      cell(num(t.type === 'expense' ? -roundMoney(t.amount) : roundMoney(t.amount))),
-      cell(num(t.liters)),
-      cell(num(t.unitPrice)),
-      cell(t.fuelType || ''),
-      cell(t.paymentMethod || ''),
-      cell(t.receiptNo || ''),
-      cell(t.note || ''),
-      cell(t.enteredBy || ''),
-      cell(t.id)
-    ].join(';')
+      cell(x.date ? x.date.replace('T', ' ') : ''),
+      cell(transactionLabel(x)),
+      cell(x.stationName),
+      cell(x.plate || ''),
+      cell(x.odometer || ''),
+      cell(num(x.type === 'expense' ? -roundMoney(x.amount) : roundMoney(x.amount))),
+      cell(num(x.liters)),
+      cell(num(x.unitPrice)),
+      cell(known(x.fuelType)),
+      cell(known(x.paymentMethod)),
+      cell(x.receiptNo || ''),
+      cell(x.note || ''),
+      cell(x.enteredBy || ''),
+      cell(x.id)
+    ].join(sep)
   );
-  return '\uFEFF' + [header.map(cell).join(';'), ...rows].join('\r\n');
+  return '\uFEFF' + [header.map(cell).join(sep), ...rows].join('\r\n');
 }
 
 // Format currency
+// Format money in the device's currency (Settings → Dil ve para birimi)
 export function formatTL(amount) {
-  return new Intl.NumberFormat('tr-TR', {
+  return new Intl.NumberFormat(intlLocale(), {
     style: 'currency',
-    currency: 'TRY',
+    currency: getCurrency(),
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(amount || 0);
@@ -300,7 +305,7 @@ export function formatTRDate(isoString) {
   if (!isoString) return '-';
   try {
     const d = new Date(isoString);
-    return new Intl.DateTimeFormat('tr-TR', {
+    return new Intl.DateTimeFormat(intlLocale(), {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',
@@ -367,6 +372,7 @@ export function monthRange(ym) {
 export function formatDay(day) {
   if (!day) return '';
   const [y, m, d] = day.slice(0, 10).split('-');
+  if (getLang() !== 'tr') return new Intl.DateTimeFormat(intlLocale(), { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(Number(y), Number(m) - 1, Number(d)));
   return `${d}.${m}.${y}`;
 }
 
@@ -429,20 +435,24 @@ export function buildStatement(transactions, stationId, from, to) {
 // Plain-text statement for WhatsApp; *bold* is WhatsApp markup.
 export function statementText(stationName, from, to, s, maxRows = 40) {
   const lines = [
-    '*Hisapo · Dönem Ekstresi*',
-    `İstasyon: ${stationName}`,
-    `Dönem: ${formatDay(from)} – ${formatDay(to)}`,
+    `*Hisapo · ${t('Dönem Ekstresi')}*`,
+    t('İstasyon: {v}', { v: stationName }),
+    t('Dönem: {from} – {to}', { from: formatDay(from), to: formatDay(to) }),
     '',
-    `Devir: ${formatTL(s.opening)}`,
-    `+ Yüklenen: ${formatTL(s.topups)} (${s.topupCount} işlem)`,
-    `− Tüketim: ${formatTL(s.expenses)} (${s.expenseCount} işlem${s.liters ? `, ${String(s.liters).replace('.', ',')} L` : ''})`,
-    `*= Kapanış: ${formatTL(s.closing)}*`
+    t('Devir: {v}', { v: formatTL(s.opening) }),
+    `+ ${t('Yüklenen: {v} ({n} işlem)', { v: formatTL(s.topups), n: s.topupCount })}`,
+    `− ${
+      s.liters
+        ? t('Tüketim: {v} ({n} işlem, {l} L)', { v: formatTL(s.expenses), n: s.expenseCount, l: decimal(s.liters) })
+        : t('Tüketim: {v} ({n} işlem)', { v: formatTL(s.expenses), n: s.expenseCount })
+    }`,
+    `*= ${t('Kapanış: {v}', { v: formatTL(s.closing) })}*`
   ];
   if (s.rows.length > 0 && s.rows.length <= maxRows) {
-    lines.push('', 'Hareketler:');
+    lines.push('', t('Hareketler:'));
     s.rows.forEach(({ tx, balance }) => {
       const sign = tx.type === 'topup' ? '+' : '−';
-      const extra = [tx.plate, tx.receiptNo && `Fiş ${tx.receiptNo}`].filter(Boolean).join(' · ');
+      const extra = [tx.plate, tx.receiptNo && t('Fiş {n}', { n: tx.receiptNo })].filter(Boolean).join(' · ');
       lines.push(
         `${formatDay(tx.date)} ${tx.date.slice(11, 16)}  ${sign}${formatTL(tx.amount)}${extra ? `  ${extra}` : ''}  → ${formatTL(balance)}`
       );

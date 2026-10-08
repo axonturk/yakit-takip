@@ -11,6 +11,7 @@ import {
 } from '../services/storage';
 import { Trash2, Download, Pencil, Search, Camera } from 'lucide-react';
 import StationLogo from './StationLogo';
+import { t } from '../i18n';
 import { highFills, formatKm, formatL100 } from '../services/consumption';
 
 export default function TransactionHistory({
@@ -44,19 +45,19 @@ export default function TransactionHistory({
 
   // Calculate filtered totals
   const filteredExpenses = filtered
-    .filter(t => t.type === 'expense')
-    .reduce((acc, t) => acc + Number(t.amount), 0);
+    .filter((x) => x.type === 'expense')
+    .reduce((acc, x) => acc + Number(x.amount), 0);
 
   const filteredTopups = filtered
-    .filter(t => t.type === 'topup')
-    .reduce((acc, t) => acc + Number(t.amount), 0);
+    .filter((x) => x.type === 'topup')
+    .reduce((acc, x) => acc + Number(x.amount), 0);
 
   const handleExportCSV = () => {
     const blob = new Blob([buildCSV(filtered)], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `hisapo_ekstre_${nowLocalISO().slice(0, 10)}.csv`;
+    a.download = `${t('hisapo_ekstre')}_${nowLocalISO().slice(0, 10)}.csv`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
@@ -67,10 +68,10 @@ export default function TransactionHistory({
       <div className="flex justify-between items-center px-1">
         <div>
           <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-            {compact ? 'Son İşlemler' : 'İşlem Geçmişi & Hareketler'}
+            {compact ? t('Son İşlemler') : t('İşlem Geçmişi & Hareketler')}
           </h2>
           <p className="text-[10px] text-slate-400">
-            {filtered.length} kayıt listeleniyor
+            {t('{n} kayıt listeleniyor', { n: filtered.length })}
           </p>
         </div>
 
@@ -96,7 +97,7 @@ export default function TransactionHistory({
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          Tümü ({transactions.length})
+          {t('Tümü ({n})', { n: transactions.length })}
         </button>
         <button
           onClick={() => setTypeFilter('expense')}
@@ -106,7 +107,7 @@ export default function TransactionHistory({
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          Harcamalar
+          {t('Harcamalar')}
         </button>
         <button
           onClick={() => setTypeFilter('topup')}
@@ -116,13 +117,13 @@ export default function TransactionHistory({
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          Avanslar (+)
+          {t('Avanslar (+)')}
         </button>
       </div>
 
       {/* Filter summary strip */}
       <div className="flex justify-between items-center px-3 py-2 bg-slate-800/40 border border-slate-800 rounded-xl text-[11px]">
-        <span className="text-slate-400">Bu filtrenin toplamı:</span>
+        <span className="text-slate-400">{t('Bu filtrenin toplamı:')}</span>
         <div className="flex gap-3">
           <span className="text-emerald-400 font-bold">+{formatTL(filteredTopups)}</span>
           <span className="text-red-400 font-bold">-{formatTL(filteredExpenses)}</span>
@@ -135,7 +136,7 @@ export default function TransactionHistory({
           onChange={(e) => setPlateFilter(e.target.value)}
           className="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400"
         >
-          <option value="">Tüm araçlar</option>
+          <option value="">{t('Tüm araçlar')}</option>
           {plates.map((p) => (
             <option key={p} value={p}>{p}</option>
           ))}
@@ -148,7 +149,7 @@ export default function TransactionHistory({
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Ara: plaka, fiş no, not, tutar…"
+          placeholder={t('Ara: plaka, fiş no, not, tutar…')}
           className="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl p-2 pl-8 text-xs text-slate-200 focus:outline-none focus:border-amber-400"
         />
       </div>
@@ -157,14 +158,14 @@ export default function TransactionHistory({
           type="date"
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
-          aria-label="Başlangıç tarihi"
+          aria-label={t('Başlangıç tarihi')}
           className="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400"
         />
         <input
           type="date"
           value={dateTo}
           onChange={(e) => setDateTo(e.target.value)}
-          aria-label="Bitiş tarihi"
+          aria-label={t('Bitiş tarihi')}
           className="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400"
         />
       </div>
@@ -178,7 +179,7 @@ export default function TransactionHistory({
           }}
           className="text-[11px] text-amber-400 hover:text-amber-300 px-1"
         >
-          Filtreleri temizle ✕
+          {t('Filtreleri temizle ✕')}
         </button>
       )}
       </>)}
@@ -187,7 +188,7 @@ export default function TransactionHistory({
       <div className="space-y-2">
         {filtered.length === 0 ? (
           <div className="p-8 text-center text-xs text-slate-500 bg-slate-850/50 rounded-2xl border border-slate-800">
-            Henüz bu kritere uygun işlem bulunmuyor.
+            {t('Henüz bu kritere uygun işlem bulunmuyor.')}
           </div>
         ) : (
           (compact ? [{ day: null, items: filtered }] : groupByDay(filtered)).map((group) => (
@@ -239,12 +240,12 @@ export default function TransactionHistory({
                       {isExpense && tx.liters && (
                         <span>
                           ⛽ <strong className="text-slate-200">{tx.liters} L</strong>
-                          {tx.unitPrice ? ` @ ₺${tx.unitPrice}/L` : ''}
+                          {tx.unitPrice ? ` @ ${t('{cur}{n}/L', { n: tx.unitPrice })}` : ''}
                         </span>
                       )}
-                      {tx.fuelType && <span>{tx.fuelType}</span>}
-                      {tx.paymentMethod && <span>{tx.paymentMethod}</span>}
-                      {tx.receiptNo && <span className="text-slate-300">Fiş {tx.receiptNo}</span>}
+                      {tx.fuelType && <span>{t(tx.fuelType)}</span>}
+                      {tx.paymentMethod && <span>{t(tx.paymentMethod)}</span>}
+                      {tx.receiptNo && <span className="text-slate-300">{t('Fiş {n}', { n: tx.receiptNo })}</span>}
                       {tx.plate && (
                         <span className="font-mono text-[10px] text-slate-200 bg-slate-700/70 px-1 rounded">{tx.plate}</span>
                       )}
@@ -252,16 +253,16 @@ export default function TransactionHistory({
                       {flagged.has(tx.id) && (
                         <span
                           className="text-[10px] font-semibold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1 rounded"
-                          title={`${formatL100(flagged.get(tx.id).l100)} · ortalama ${formatL100(flagged.get(tx.id).avg)}`}
+                          title={`${formatL100(flagged.get(tx.id).l100)} · ${t('ortalama {v}', { v: formatL100(flagged.get(tx.id).avg) })}`}
                         >
-                          ⚠ tüketim %{flagged.get(tx.id).pct} fazla
+                          ⚠ {t('tüketim %{pct} fazla', { pct: flagged.get(tx.id).pct })}
                         </span>
                       )}
                       {tx.note && <span className="italic text-slate-400">“{tx.note}”</span>}
                       {tx.enteredBy && <span className="text-[10px] text-slate-500">· {tx.enteredBy.split('@')[0]}</span>}
                       {tx.edits?.length > 0 && (
-                        <span className="text-[10px] text-sky-300" title={`Önceki tutar: ${formatTL(tx.edits[0].before.amount ?? tx.amount)}`}>
-                          düzenlendi
+                        <span className="text-[10px] text-sky-300" title={t('Önceki tutar: {v}', { v: formatTL(tx.edits[0].before.amount ?? tx.amount) })}>
+                          {t('düzenlendi')}
                         </span>
                       )}
                     </div>
@@ -287,7 +288,7 @@ export default function TransactionHistory({
                   {tx.photoId && onViewPhoto && (
                     <button
                       onClick={() => onViewPhoto(tx)}
-                      title="Fotoğrafı Gör"
+                      title={t('Fotoğrafı Gör')}
                       className="p-1.5 text-sky-400 hover:text-sky-300 transition rounded-lg hover:bg-slate-700/50"
                     >
                       <Camera className="w-3.5 h-3.5" />
@@ -296,7 +297,7 @@ export default function TransactionHistory({
                   {onEditTransaction && canChange(tx) && (
                     <button
                       onClick={() => onEditTransaction(tx)}
-                      title="İşlemi Düzenle"
+                      title={t('İşlemi Düzenle')}
                       className="p-1.5 text-slate-500 hover:text-amber-300 opacity-70 group-hover:opacity-100 transition rounded-lg hover:bg-slate-700/50"
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -305,7 +306,7 @@ export default function TransactionHistory({
 {canChange(tx) && (
                   <button
                     onClick={() => onDeleteTransaction(tx.id)}
-                    title="İşlemi Sil"
+                    title={t('İşlemi Sil')}
                     className="p-1.5 text-slate-600 hover:text-red-400 opacity-60 group-hover:opacity-100 transition rounded-lg hover:bg-slate-700/50"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { loadPhoto } from '../services/photos';
 import { formatTL, formatTRDate, transactionLabel } from '../services/storage';
+import { t } from '../i18n';
 
 export default function PhotoViewer({ transaction, onClose }) {
   const [url, setUrl] = useState(null);
@@ -30,16 +31,16 @@ export default function PhotoViewer({ transaction, onClose }) {
           <div className="font-bold">{transaction.stationName} · {formatTL(transaction.amount)}</div>
           <div className="text-white/60">{transactionLabel(transaction)} · {formatTRDate(transaction.date)}</div>
         </div>
-        <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10" aria-label="Kapat">
+        <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10" aria-label={t('Kapat')}>
           <X className="w-5 h-5" />
         </button>
       </div>
       <div className="flex-1 flex items-center justify-center p-3 min-h-0">
         {url ? (
-          <img src={url} alt="Fiş fotoğrafı" className="max-w-full max-h-full object-contain rounded-lg" />
+          <img src={url} alt={t('Fiş fotoğrafı')} className="max-w-full max-h-full object-contain rounded-lg" />
         ) : (
           <p className="text-xs text-white/60">
-            {missing ? 'Fotoğraf bulunamadı. Çeken telefon henüz eşitlememiş olabilir.' : 'Yükleniyor…'}
+            {missing ? t('Fotoğraf bulunamadı. Çeken telefon henüz eşitlememiş olabilir.') : t('Yükleniyor…')}
           </p>
         )}
       </div>

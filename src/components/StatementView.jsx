@@ -12,6 +12,7 @@ import {
   buildCSV,
   nowLocalISO
 } from '../services/storage';
+import { t, decimal } from '../i18n';
 
 const inputClass =
   'w-full bg-slate-800/80 border border-slate-700/60 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400';
@@ -38,12 +39,12 @@ export default function StatementView({ stations, transactions, defaultStationId
   if (stations.length === 0) {
     return (
       <div className="p-8 text-center text-xs text-slate-500 bg-slate-900 rounded-2xl border border-slate-800">
-        Ekstre için önce bir istasyon ekleyin.
+        {t('Ekstre için önce bir istasyon ekleyin.')}
       </div>
     );
   }
 
-  const csvName = `hisapo_ekstre_${stationName.replace(/\s+/g, '_')}_${from}_${to}.csv`;
+  const csvName = `${t('hisapo_ekstre')}_${stationName.replace(/\s+/g, '_')}_${from}_${to}.csv`;
 
   const handleCSV = () => {
     const blob = new Blob([buildCSV(s.rows.map((r) => r.tx))], { type: 'text/csv;charset=utf-8;' });
@@ -56,32 +57,32 @@ export default function StatementView({ stations, transactions, defaultStationId
   };
 
   const summary = [
-    { label: 'Devir', value: s.opening, cls: 'text-slate-200' },
-    { label: `+ Yüklenen (${s.topupCount})`, value: s.topups, cls: 'text-emerald-400' },
-    { label: `− Tüketim (${s.expenseCount})`, value: s.expenses, cls: 'text-red-400' },
-    { label: '= Kapanış', value: s.closing, cls: s.closing < 0 ? 'text-red-300' : 'text-amber-300' }
+    { label: t('Devir'), value: s.opening, cls: 'text-slate-200' },
+    { label: `+ ${t('Yüklenen ({n})', { n: s.topupCount })}`, value: s.topups, cls: 'text-emerald-400' },
+    { label: `− ${t('Tüketim ({n})', { n: s.expenseCount })}`, value: s.expenses, cls: 'text-red-400' },
+    { label: `= ${t('Kapanış')}`, value: s.closing, cls: s.closing < 0 ? 'text-red-300' : 'text-amber-300' }
   ];
 
   return (
     <div className="space-y-3">
       <div className="px-1">
-        <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Dönem Ekstresi</h2>
-        <p className="text-[10px] text-slate-400">İstasyonla ay sonu mutabakatı için</p>
+        <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">{t('Dönem Ekstresi')}</h2>
+        <p className="text-[10px] text-slate-400">{t('İstasyonla ay sonu mutabakatı için')}</p>
       </div>
 
       <select value={stationId} onChange={(e) => setStationId(e.target.value)} className={inputClass}>
         {stations.map((st) => (
           <option key={st.id} value={st.id}>
             {st.name}
-            {st.archived ? ' (arşiv)' : ''}
+            {st.archived ? ` (${t('arşiv')})` : ''}
           </option>
         ))}
       </select>
 
       <div className="flex gap-1.5 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 text-xs">
         {[
-          ['month', 'Ay'],
-          ['range', 'Tarih aralığı']
+          ['month', t('Ay')],
+          ['range', t('Tarih aralığı')]
         ].map(([key, label]) => (
           <button
             key={key}
@@ -116,8 +117,8 @@ export default function StatementView({ stations, transactions, defaultStationId
         ))}
         {s.liters > 0 && (
           <div className="flex justify-between text-[11px] pt-1 border-t border-slate-800">
-            <span className="text-slate-500">Toplam yakıt</span>
-            <span className="text-slate-300">{String(s.liters).replace('.', ',')} L</span>
+            <span className="text-slate-500">{t('Toplam yakıt')}</span>
+            <span className="text-slate-300">{decimal(s.liters)} L</span>
           </div>
         )}
       </div>
@@ -144,7 +145,7 @@ export default function StatementView({ stations, transactions, defaultStationId
       <div className="space-y-1.5">
         {s.rows.length === 0 ? (
           <div className="p-6 text-center text-xs text-slate-500 bg-slate-900 rounded-2xl border border-slate-800">
-            Bu dönemde hareket yok.
+            {t('Bu dönemde hareket yok.')}
           </div>
         ) : (
           s.rows.map(({ tx, balance }) => {
@@ -159,7 +160,7 @@ export default function StatementView({ stations, transactions, defaultStationId
                     {formatDay(tx.date)} {tx.date.slice(11, 16)} · {transactionLabel(tx)}
                   </div>
                   <div className="text-[10px] text-slate-400 truncate">
-                    {[tx.plate, tx.liters && `${tx.liters} L`, tx.receiptNo && `Fiş ${tx.receiptNo}`, tx.note]
+                    {[tx.plate, tx.liters && `${decimal(tx.liters)} L`, tx.receiptNo && t('Fiş {n}', { n: tx.receiptNo }), tx.note]
                       .filter(Boolean)
                       .join(' · ')}
                   </div>
@@ -169,7 +170,7 @@ export default function StatementView({ stations, transactions, defaultStationId
                     {isExpense ? '−' : '+'}
                     {formatTL(tx.amount)}
                   </div>
-                  <div className="text-[10px] text-slate-400">Bakiye {formatTL(balance)}</div>
+                  <div className="text-[10px] text-slate-400">{t('Bakiye {v}', { v: formatTL(balance) })}</div>
                 </div>
               </div>
             );
@@ -188,22 +189,22 @@ function PrintableStatement({ stationName, from, to, s }) {
   const num = { ...cell, textAlign: 'right', whiteSpace: 'nowrap' };
   return (
     <div className="print-only" style={{ color: '#000', background: '#fff', fontSize: 11, padding: 16 }}>
-      <h1 style={{ fontSize: 18, margin: 0 }}>Hisapo · Dönem Ekstresi</h1>
+      <h1 style={{ fontSize: 18, margin: 0 }}>Hisapo · {t('Dönem Ekstresi')}</h1>
       <p style={{ margin: '4px 0 12px' }}>
-        <strong>{stationName}</strong> · {formatDay(from)} – {formatDay(to)} · Hazırlanma: {formatDay(nowLocalISO())}
+        <strong>{stationName}</strong> · {formatDay(from)} – {formatDay(to)} · {t('Hazırlanma: {d}', { d: formatDay(nowLocalISO()) })}
       </p>
       <table style={{ borderCollapse: 'collapse', marginBottom: 12 }}>
         <tbody>
-          <tr><td style={cell}>Devir</td><td style={num}>{formatTL(s.opening)}</td></tr>
-          <tr><td style={cell}>+ Yüklenen ({s.topupCount} işlem)</td><td style={num}>{formatTL(s.topups)}</td></tr>
-          <tr><td style={cell}>− Tüketim ({s.expenseCount} işlem{s.liters ? `, ${String(s.liters).replace('.', ',')} L` : ''})</td><td style={num}>{formatTL(s.expenses)}</td></tr>
-          <tr><td style={{ ...cell, fontWeight: 700 }}>= Kapanış</td><td style={{ ...num, fontWeight: 700 }}>{formatTL(s.closing)}</td></tr>
+          <tr><td style={cell}>{t('Devir')}</td><td style={num}>{formatTL(s.opening)}</td></tr>
+          <tr><td style={cell}>+ {t('Yüklenen ({n} işlem)', { n: s.topupCount })}</td><td style={num}>{formatTL(s.topups)}</td></tr>
+          <tr><td style={cell}>− {s.liters ? t('Tüketim ({n} işlem, {l} L)', { n: s.expenseCount, l: decimal(s.liters) }) : t('Tüketim ({n} işlem)', { n: s.expenseCount })}</td><td style={num}>{formatTL(s.expenses)}</td></tr>
+          <tr><td style={{ ...cell, fontWeight: 700 }}>= {t('Kapanış')}</td><td style={{ ...num, fontWeight: 700 }}>{formatTL(s.closing)}</td></tr>
         </tbody>
       </table>
       <table style={{ borderCollapse: 'collapse', width: '100%' }}>
         <thead>
           <tr>
-            {['Tarih', 'İşlem', 'Plaka', 'Litre', 'Fiş No', 'Not', 'Tutar', 'Bakiye'].map((h) => (
+            {[t('Tarih'), t('İşlem'), t('Plaka'), t('Litre'), t('Fiş No'), t('Not'), t('Tutar'), t('Bakiye')].map((h) => (
               <th key={h} style={{ ...cell, background: '#eee' }}>{h}</th>
             ))}
           </tr>
@@ -214,7 +215,7 @@ function PrintableStatement({ stationName, from, to, s }) {
               <td style={cell}>{formatDay(tx.date)} {tx.date.slice(11, 16)}</td>
               <td style={cell}>{transactionLabel(tx)}</td>
               <td style={cell}>{tx.plate || ''}</td>
-              <td style={num}>{tx.liters ?? ''}</td>
+              <td style={num}>{decimal(tx.liters)}</td>
               <td style={cell}>{tx.receiptNo || ''}</td>
               <td style={cell}>{tx.note || ''}</td>
               <td style={num}>{tx.type === 'expense' ? '−' : '+'}{formatTL(tx.amount)}</td>
@@ -224,9 +225,9 @@ function PrintableStatement({ stationName, from, to, s }) {
         </tbody>
       </table>
       <p style={{ marginTop: 16, color: '#555' }}>
-        İstasyon kayıtlarıyla karşılaştırınız. Farklılık varsa fiş numarası üzerinden kontrol edebilirsiniz.
+        {t('İstasyon kayıtlarıyla karşılaştırınız. Farklılık varsa fiş numarası üzerinden kontrol edebilirsiniz.')}
       </p>
-      <p style={{ marginTop: 32 }}>İşletme: ______________________ &nbsp;&nbsp;&nbsp; İstasyon: ______________________</p>
+      <p style={{ marginTop: 32 }}>{t('İşletme:')} ______________________ &nbsp;&nbsp;&nbsp; {t('İstasyon:')} ______________________</p>
     </div>
   );
 }

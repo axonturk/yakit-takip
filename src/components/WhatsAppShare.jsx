@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Share2, X, UserPlus, Users, FileSpreadsheet, Send, Trash2 } from 'lucide-react';
 import { loadContacts, saveContacts, normalizePhone, formatPhone, whatsappUrl, canShareFile } from '../services/share';
+import { t } from '../i18n';
 
 const inputClass =
   'w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-emerald-400';
@@ -31,7 +32,7 @@ function Sheet({ text, file, onClose }) {
   const [phone, setPhone] = useState('');
   const [err, setErr] = useState(null);
 
-  const csvFile = file ? new File(['﻿' + file.content], file.name, { type: 'text/csv' }) : null;
+  const csvFile = file ? new File([file.content.startsWith('\uFEFF') ? file.content : '\uFEFF' + file.content], file.name, { type: 'text/csv' }) : null;
   const fileOk = csvFile && canShareFile(csvFile);
 
   const send = (to) => {
@@ -47,7 +48,7 @@ function Sheet({ text, file, onClose }) {
   const add = (e) => {
     e.preventDefault();
     const p = normalizePhone(phone);
-    if (!p) return setErr('Numara geçersiz. Örn: 0532 123 45 67');
+    if (!p) return setErr(t('Numara geçersiz. Örn: 0532 123 45 67'));
     update([...contacts.filter((c) => c.phone !== p), { name: name.trim() || formatPhone(p), phone: p }]);
     setName('');
     setPhone('');
@@ -60,7 +61,7 @@ function Sheet({ text, file, onClose }) {
       await navigator.share({ files: [csvFile], text: text.split('\n')[0] });
       onClose();
     } catch (e) {
-      if (e?.name !== 'AbortError') setErr('Dosya paylaşılamadı. Excel düğmesiyle indirip gönderebilirsin.');
+      if (e?.name !== 'AbortError') setErr(t('Dosya paylaşılamadı. Excel düğmesiyle indirip gönderebilirsin.'));
     }
   };
 
@@ -74,8 +75,8 @@ function Sheet({ text, file, onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center pb-3 border-b border-slate-800">
-          <h2 className="text-sm font-bold text-white">WhatsApp ile gönder</h2>
-          <button onClick={onClose} aria-label="Kapat" className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition">
+          <h2 className="text-sm font-bold text-white">{t('WhatsApp ile gönder')}</h2>
+          <button onClick={onClose} aria-label={t('Kapat')} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -91,7 +92,7 @@ function Sheet({ text, file, onClose }) {
             </button>
             <button
               onClick={() => update(contacts.filter((x) => x.phone !== c.phone))}
-              aria-label={`${c.name} sil`}
+              aria-label={t('{name} sil', { name: c.name })}
               className="px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-400 hover:text-red-300 transition"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -101,38 +102,38 @@ function Sheet({ text, file, onClose }) {
 
         <button onClick={() => send()} className={rowClass}>
           <Users className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span className="text-xs font-semibold text-slate-100">Kişi ya da grup seç</span>
+          <span className="text-xs font-semibold text-slate-100">{t('Kişi ya da grup seç')}</span>
         </button>
 
         {fileOk && (
           <button onClick={shareFile} className={rowClass}>
             <FileSpreadsheet className="w-4 h-4 text-amber-400 shrink-0" />
             <span className="min-w-0">
-              <span className="block text-xs font-semibold text-slate-100">Excel dosyası olarak gönder</span>
-              <span className="block text-[10px] text-slate-400">Paylaş ekranında WhatsApp'ı seç</span>
+              <span className="block text-xs font-semibold text-slate-100">{t('Excel dosyası olarak gönder')}</span>
+              <span className="block text-[10px] text-slate-400">{t('Paylaş ekranında WhatsApp\'ı seç')}</span>
             </span>
           </button>
         )}
 
         {adding ? (
           <form onSubmit={add} className="space-y-2 pt-2 border-t border-slate-800">
-            <div className="text-[11px] text-slate-300 font-semibold">Sık gönderdiğin kişiyi kaydet</div>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ad (örn: Muhasebeci Ahmet)" className={inputClass} />
+            <div className="text-[11px] text-slate-300 font-semibold">{t('Sık gönderdiğin kişiyi kaydet')}</div>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('Ad (örn: Muhasebeci Ahmet)')} className={inputClass} />
             <input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               type="tel"
               inputMode="tel"
-              placeholder="Telefon (örn: 0532 123 45 67)"
+              placeholder={t('Telefon (örn: 0532 123 45 67)')}
               className={inputClass}
             />
             <button type="submit" className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition">
-              Kaydet
+              {t('Kaydet')}
             </button>
           </form>
         ) : (
           <button onClick={() => setAdding(true)} className="w-full flex items-center justify-center gap-1 text-[11px] text-emerald-400 hover:text-emerald-300 pt-1">
-            <UserPlus className="w-3.5 h-3.5" /> Kişi kaydet
+            <UserPlus className="w-3.5 h-3.5" /> {t('Kişi kaydet')}
           </button>
         )}
         {err && <p className="text-[11px] text-red-300">{err}</p>}

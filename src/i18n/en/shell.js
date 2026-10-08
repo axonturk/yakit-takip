@@ -1,0 +1,146 @@
+// App shell: App.jsx, Header, BalanceCard, StationList, StationLogo, InstallAppModal
+export default {
+  // App.jsx: alerts, confirms and stored notes
+  'Fotoğraf kaydedilemedi; kayıt fotoğrafsız saklandı.': 'Could not save the photo; the record was saved without it.',
+  'Bilinmeyen İstasyon': 'Unknown station',
+  'Bu ayki harcama limitini aştın: {spent} / {limit}': 'You have gone over this month\'s spending limit: {spent} / {limit}',
+  'Başlangıç Avans Bakiyesi': 'Opening advance balance',
+  'Başlangıç Borç / Eksi Bakiye': 'Opening amount owed / negative balance',
+  hisapo_yedek: 'hisapo_backup',
+  _geri_yukleme_oncesi: '_before_restore',
+  '❌ Yedek yüklenemedi: {error}': '❌ Could not restore the backup: {error}',
+  'Yedekte {s} istasyon ve {n} işlem var.': 'The backup contains stations: {s}, transactions: {n}.',
+  'Mevcut {s} istasyon ve {n} işlem bunlarla DEĞİŞTİRİLECEK. Güvenlik için mevcut verinin yedeği önce indirilecek.':
+    'Your current data (stations: {s}, transactions: {n}) will be REPLACED by it. A backup of the current data will be downloaded first, to be safe.',
+  'Devam edilsin mi?': 'Continue?',
+  '✅ Yedek başarıyla geri yüklendi!': '✅ Backup restored successfully!',
+  '❌ Dosya okunamadı, geçerli bir JSON yedeği değil.': '❌ Could not read the file; it is not a valid JSON backup.',
+  'bu istasyonu': 'this station',
+  '"{name}" istasyonu listeden kaldırılsın mı?': 'Remove "{name}" from the station list?',
+  '({n} işlem kaydı geçmişte ve yedekte korunur, bakiyesi toplamdan çıkar)':
+    '(Its transactions ({n}) stay in the history and backups; its balance is removed from the total)',
+  İstasyon: 'Station',
+  'Bakiye Düzeltme': 'Balance adjustment',
+
+  // App.jsx: screens
+  'Uygulamayı Telefona Yükle': 'Install the app on your phone',
+  'Masaüstünden tek tıkla doğrudan açın': 'Open it with one tap from your home screen',
+  'ŞİMDİ YÜKLE': 'INSTALL NOW',
+  'Daha Sonra': 'Later',
+  'Örnek verileri görüyorsunuz. Kendi kayıtlarınıza başlamak için temizleyin.':
+    'You are looking at sample data. Clear it to start your own records.',
+  'Temizle ve başla': 'Clear and start',
+  'Şoför olarak giriş yaptın': 'Signed in as a driver',
+  'Bu ay {amount}': 'This month {amount}',
+  'Ekipten {n} yeni harcama': 'New purchases from the team: {n}',
+  Tamam: 'OK',
+  've {n} tane daha (Geçmiş sekmesinde)': '+{n} more (in History)',
+  'Bakiyesi azalan istasyon:': 'Low balance:',
+  'Henüz yedek almadınız.': 'You have not made a backup yet.',
+  'Son yedek {n} gün önce.': 'Last backup {n} days ago.',
+  'Veriler yalnızca bu telefonda duruyor.': 'Your data is only on this phone.',
+  'Yedek al': 'Back up',
+  '{name} defteri': '{name} ledger',
+  'Henüz istasyon yok. Yöneticin istasyon ekleyince burada görünür, sen de harcama girebilirsin.':
+    'No stations yet. Once your manager adds one it shows up here and you can enter purchases.',
+  'Hisapo\'ya hoş geldiniz': 'Welcome to Hisapo',
+  'Avans yatırdığınız veya veresiye yakıt aldığınız ilk istasyonu ekleyin. Varsa mevcut bakiyesini de yazabilirsiniz.':
+    'Add the first station where you pay an advance or buy fuel on credit. You can also enter its current balance.',
+  'İlk istasyonu ekle': 'Add the first station',
+  'Önce örnek verilerle dene': 'Try it with sample data first',
+  'Tüm Geçmiş Hareketleri Gör ({n}) →': 'See all transactions ({n}) →',
+  Hareketler: 'Transactions',
+  Ekstre: 'Statement',
+  Rapor: 'Report',
+  '🎯 Düğmeler Seçili İstasyon İçin:': '🎯 Buttons apply to:',
+  'Filtreyi Temizle': 'Clear filter',
+  'Ana Sayfa': 'Home',
+  '+ Bakiye': '+ Top-up',
+  Harcama: 'Purchase',
+  Düzelt: 'Adjust',
+  Geçmiş: 'History',
+  Borç: 'Owed',
+  Kalan: 'Balance',
+  '{name} · {amount} silindi': '{name} · {amount} deleted',
+  'Geri al': 'Undo',
+
+  // Header
+  'Yakıt avans defteri': 'Fuel advance ledger',
+  'Telefona Yükle': 'Install on phone',
+  Yükle: 'Install',
+  'Bulut yedek ve ortak defter': 'Cloud backup and shared ledger',
+  'Yeni İstasyon Ekle': 'Add new station',
+  Diğer: 'More',
+  'Verileri yedekle (dosya)': 'Back up data (file)',
+  'Yedekten geri yükle': 'Restore from backup',
+  'Uygulama kilidi': 'App lock',
+  'Uygulama kilidi (açık)': 'App lock (on)',
+  'Koyu temaya geç': 'Switch to dark theme',
+  'Açık temaya geç': 'Switch to light theme',
+
+  // BalanceCard
+  'Toplam Borç / Eksi Bakiye': 'Total owed / negative balance',
+  'Toplam Kalan Avans Bakiyesi': 'Total remaining advance balance',
+  'İstasyon: {n}': 'Stations: {n}',
+  'İstasyonlara olan toplam kapatılması gereken borç / eksi bakiye tutarı':
+    'Total you owe the stations (negative balance to be paid off)',
+  'İstasyonlara önceden ödenmiş ve depoya aktarılmayı bekleyen toplam bakiye':
+    'Total paid to stations in advance and not yet used for fuel',
+  'Toplam Yüklenen': 'Total topped up',
+  'Toplam Harcanan': 'Total spent',
+  '- HARCAMA GİR': '- ADD PURCHASE',
+  '+ BAKİYE YÜKLE': '+ ADD ADVANCE',
+
+  // StationList / StationLogo
+  'İstasyon Bakiyeleri': 'Station balances',
+  'İstasyon Ekle': 'Add station',
+  'Aktif: {name}': 'Active: {name}',
+  'Pompa / Bakiye buna işler': 'Purchases / top-ups go here',
+  'Borç / Eksi:': 'Owed:',
+  'Kalan Bakiye:': 'Balance:',
+  EKSİDE: 'OWED',
+  AZALDI: 'LOW',
+  'Son: {date}': 'Last: {date}',
+  'Bakiye Yükle': 'Top up',
+  'Harcama Düş': 'Add purchase',
+  '- Harca': '- Purchase',
+  'Bakiyeyi Düzelt / Eşitle': 'Adjust / match balance',
+  'Bakiyeyi Düzelt': 'Adjust balance',
+  'İstasyonu Düzenle': 'Edit station',
+  'İstasyonu Sil': 'Delete station',
+  Sil: 'Delete',
+  'Diğer / Bağımsız': 'Other / Independent',
+
+  // InstallAppModal
+  'Telefona Uygulama Olarak Yükle': 'Install as an app on your phone',
+  'Tam ekran ve internet olmadan kullanım': 'Full screen, works without internet',
+  'Doğrudan Tek Tıkla Yükle': 'One-tap install',
+  'Tarayıcınız otomatik yüklemeyi destekliyor. Aşağıdaki butona basarak doğrudan telefonunuza ekleyebilirsiniz.':
+    'Your browser supports direct install. Tap the button below to add it to your phone.',
+  'UYGULAMAYI ŞİMDİ YÜKLE': 'INSTALL THE APP NOW',
+  'Uygulama zaten telefonunuzda kurulu modda çalışıyor!': 'The app is already running installed on your phone!',
+  'Yükleme Adımları (Chrome / Android)': 'Install steps (Chrome / Android)',
+  'Chrome Menüsünü Açın': 'Open the Chrome menu',
+  'Chrome tarayıcınızın sağ alt veya sağ üst köşesindeki': 'In Chrome, tap the',
+  '3 Nokta': '3 dots',
+  'simgesine dokunun.': 'icon in the bottom-right or top-right corner.',
+  '"Uygulamayı Yükle" veya "Ana Ekrana Ekle"': '"Install app" or "Add to Home screen"',
+  Menüden: 'In the menu, choose',
+  '"Uygulamayı yükle"': '"Install app"',
+  veya: 'or',
+  '"Ana ekrana ekle"': '"Add to Home screen"',
+  'seçeneğini seçip onaylayın.': 'and confirm.',
+  'Xiaomi / Redmi / POCO Kullanıcıları İçin Çözüm:': 'Fix for Xiaomi / Redmi / POCO phones:',
+  'Xiaomi telefonların güvenlik sistemi bazen Chrome\'un ana ekrana simge koymasını engeller. Eğer "yükle" dedikten sonra ana ekrana simge gelmiyorsa:':
+    'Xiaomi\'s security system sometimes stops Chrome from adding icons to the home screen. If no icon appears after you tap "install":',
+  'Telefonunuzun <b>Ayarlar</b> bölümüne gidin.': 'Open your phone\'s <b>Settings</b>.',
+  '<b>Uygulamalar > İzinler > Diğer İzinler</b> (veya Uygulama Yönetimi > Chrome > İzinler) sekmesini açın.':
+    'Go to <b>Apps > Permissions > Other permissions</b> (or Manage apps > Chrome > Permissions).',
+  '<b>Chrome</b>\'u seçin ve <b>"Ana ekran kısayolları"</b> iznini <b>İzin Ver (Yeşil Onay)</b> yapın.':
+    'Select <b>Chrome</b> and set the <b>"Home screen shortcuts"</b> permission to <b>Allow (green tick)</b>.',
+  'Ardından tekrar Chrome\'a dönüp <b>"Ana ekrana ekle"</b> deyin. Simge hemen masaüstünüze gelecektir!':
+    'Then go back to Chrome and tap <b>"Add to Home screen"</b>. The icon will appear on your home screen right away!',
+  '<b>iPhone (Safari) Kullanıcıları:</b> Alttaki Paylaş butonuna basıp <b>"Ana Ekrana Ekle"</b>yi seçebilirsiniz.':
+    '<b>iPhone (Safari):</b> tap the Share button at the bottom and choose <b>"Add to Home Screen"</b>.',
+  'Anladım, Kapat': 'Got it, close'
+};

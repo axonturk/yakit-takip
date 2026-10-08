@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Settings2, X } from 'lucide-react';
 import { lowBalanceLimit } from '../services/storage';
+import { t } from '../i18n';
 
 const inputClass =
   'w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-400';
@@ -17,10 +18,10 @@ function EditStationForm({ station, onClose, onSave }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name.trim()) return;
-    const t = parseFloat(threshold);
+    const limit = parseFloat(threshold);
     onSave(station.id, {
       name: name.trim(),
-      lowBalanceThreshold: Number.isFinite(t) && t >= 0 ? t : lowBalanceLimit(station)
+      lowBalanceThreshold: Number.isFinite(limit) && limit >= 0 ? limit : lowBalanceLimit(station)
     });
     onClose();
   };
@@ -33,7 +34,7 @@ function EditStationForm({ station, onClose, onSave }) {
             <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
               <Settings2 className="w-4 h-4" />
             </div>
-            <h2 className="text-sm font-bold text-white">İstasyonu Düzenle</h2>
+            <h2 className="text-sm font-bold text-white">{t('İstasyonu Düzenle')}</h2>
           </div>
           <button
             onClick={onClose}
@@ -45,11 +46,11 @@ function EditStationForm({ station, onClose, onSave }) {
 
         <form onSubmit={handleSubmit} className="mt-3 space-y-3">
           <div>
-            <label className="block text-[11px] text-slate-400 mb-1">İstasyon Adı</label>
+            <label className="block text-[11px] text-slate-400 mb-1">{t('İstasyon Adı')}</label>
             <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
           </div>
           <div>
-            <label className="block text-[11px] text-slate-400 mb-1">Düşük bakiye uyarısı (TL)</label>
+            <label className="block text-[11px] text-slate-400 mb-1">{t('Düşük bakiye uyarısı ({cur})')}</label>
             <input
               type="number"
               inputMode="decimal"
@@ -60,14 +61,14 @@ function EditStationForm({ station, onClose, onSave }) {
               className={inputClass}
             />
             <p className="text-[10px] text-slate-500 mt-1">
-              Bakiye bu tutarın altına inince istasyon sarı görünür ve ana sayfada uyarı çıkar.
+              {t('Bakiye bu tutarın altına inince istasyon sarı görünür ve ana sayfada uyarı çıkar.')}
             </p>
           </div>
           <button
             type="submit"
             className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition active:scale-[0.98]"
           >
-            KAYDET
+            {t('KAYDET')}
           </button>
         </form>
       </div>

@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Camera, X } from 'lucide-react';
 import { compressImage, loadPhoto } from '../services/photos';
+import { t } from '../i18n';
 
 // value: a new Blob, null (no photo) or undefined (keep existingId).
-export default function PhotoPicker({ value, onChange, existingId = null, label = 'Fiş fotoğrafı' }) {
+export default function PhotoPicker({ value, onChange, existingId = null, label }) {
+  label = label || t('Fiş fotoğrafı');
   const inputRef = useRef(null);
   const [preview, setPreview] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -45,14 +47,14 @@ export default function PhotoPicker({ value, onChange, existingId = null, label 
             onClick={() => inputRef.current?.click()}
             className="text-[11px] text-amber-400 hover:text-amber-300"
           >
-            Değiştir
+            {t('Değiştir')}
           </button>
           <button
             type="button"
             onClick={() => onChange(null)}
             className="text-[11px] text-slate-400 hover:text-red-400 flex items-center gap-0.5"
           >
-            <X className="w-3 h-3" /> Kaldır
+            <X className="w-3 h-3" /> {t('Kaldır')}
           </button>
         </div>
       ) : (
@@ -63,10 +65,10 @@ export default function PhotoPicker({ value, onChange, existingId = null, label 
           className="w-full py-2.5 border border-dashed border-slate-600 hover:border-amber-400 text-slate-300 hover:text-amber-300 rounded-xl text-xs flex items-center justify-center gap-1.5 transition"
         >
           <Camera className="w-4 h-4" />
-          {busy ? 'Hazırlanıyor…' : `${label} ekle (opsiyonel)`}
+          {busy ? t('Hazırlanıyor…') : t('{label} ekle (opsiyonel)', { label })}
         </button>
       )}
-      <p className="text-[10px] text-slate-500 mt-1">Fotoğraflar bu telefonda, ortak defter açıksa bulutta da saklanır. Yedek dosyasına girmez.</p>
+      <p className="text-[10px] text-slate-500 mt-1">{t('Fotoğraflar bu telefonda, ortak defter açıksa bulutta da saklanır. Yedek dosyasına girmez.')}</p>
     </div>
   );
 }

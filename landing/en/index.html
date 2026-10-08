@@ -1,16 +1,16 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Hisapo · Yakıt avans ve veresiye defteri</title>
-  <meta name="description" content="İstasyonlardaki yakıt avansınızı, veresiyenizi ve araç bazında harcamanızı telefondan takip edin. Ekip, şoför, fiş fotoğrafı, aylık rapor." />
+  <title>Hisapo · Fuel advance and credit ledger</title>
+  <meta name="description" content="Track your prepaid fuel advances, credit at fuel stations and spending per vehicle from your phone. Team, drivers, receipt photos, monthly reports." />
   <meta name="theme-color" content="#090d16" />
-  <meta property="og:title" content="Hisapo · Yakıt avans ve veresiye defteri" />
-  <meta property="og:description" content="İstasyon bakiyesi, şoför harcamaları ve aylık yakıt raporu tek uygulamada." />
+  <meta property="og:title" content="Hisapo · Fuel advance and credit ledger" />
+  <meta property="og:description" content="Station balances, driver purchases and monthly fuel reports in one app." />
   <meta property="og:image" content="https://hisapo.com/icon-192.png" />
-  <link rel="icon" type="image/png" href="icon-192.png" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" type="image/png" href="/icon-192.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <script>
     // Home-screen icons added before the app moved to /app/ open here; send them straight to the app.
     if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
@@ -62,61 +62,61 @@
     ol.steps b { color: var(--text); }
     footer { border-top: 1px solid var(--line); padding: 26px 0 40px; color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; }
   </style>
-  <link rel="alternate" hreflang="en" href="https://hisapo.com/en/" />
+  <link rel="alternate" hreflang="tr" href="https://hisapo.com/" />
 </head>
 <body>
   <div class="wrap">
     <header>
-      <a class="brand" href="/"><img src="icon-192.png" alt="" />Hisapo</a>
-      <span><a href="/en/" style="color:var(--muted);font-size:14px;margin-right:12px">English</a><a class="btn btn-gold btn-sm" href="/app/">Uygulamayı aç</a></span>
+      <a class="brand" href="/en/"><img src="/icon-192.png" alt="" />Hisapo</a>
+      <span><a href="/" style="color:var(--muted);font-size:14px;margin-right:12px">Türkçe</a><a class="btn btn-gold btn-sm" href="/app/?lang=en">Open the app</a></span>
     </header>
 
     <div class="hero">
       <div>
-        <h1>İstasyondaki yakıt hesabınız <em>cebinizde</em></h1>
-        <p class="lead">Avans yatırdığınız ya da veresiye aldığınız istasyonların bakiyesini, şoförlerin harcamalarını ve araç başına aylık yakıt masrafını tek yerden takip edin.</p>
+        <h1>Your fuel station account, <em>in your pocket</em></h1>
+        <p class="lead">Track the balance at every station where you prepay or buy fuel on credit, what your drivers spend, and the monthly fuel cost of each vehicle, all in one place.</p>
         <div class="cta">
-          <a class="btn btn-gold" href="/app/">Ücretsiz başla</a>
-          <a class="btn btn-ghost" href="#kurulum">Telefona kur</a>
+          <a class="btn btn-gold" href="/app/?lang=en">Start free</a>
+          <a class="btn btn-ghost" href="#install">Install on your phone</a>
         </div>
-        <p class="note">Kayıt gerekmez, hemen kullanmaya başlarsınız. İnternet yokken de çalışır.</p>
+        <p class="note">No sign-up needed, start right away. Works without internet too.</p>
       </div>
       <div class="phone" aria-hidden="true">
-        <div class="bal"><small>Opet Maslak · kalan avans</small><b>12.450,00 ₺</b></div>
-        <div class="row"><span>34 ABC 12 · 52 L</span><span>−2.400 ₺</span></div>
-        <div class="row"><span>06 XYZ 99 · 67 L</span><span>−3.100 ₺</span></div>
-        <div class="row up"><span>Avans yüklendi</span><span>+10.000 ₺</span></div>
-        <div class="row"><span>35 KLM 07 · 20,5 L</span><span>−950 ₺</span></div>
+        <div class="bal"><small>Indian Oil, Ring Road · advance left</small><b>₹45,200.00</b></div>
+        <div class="row"><span>DL 01 AB 1234 · 52 L</span><span>−₹4,950</span></div>
+        <div class="row"><span>HR 26 CD 9988 · 67 L</span><span>−₹6,380</span></div>
+        <div class="row up"><span>Advance added</span><span>+₹25,000</span></div>
+        <div class="row"><span>DL 03 EF 0707 · 20.5 L</span><span>−₹1,950</span></div>
       </div>
     </div>
 
     <section>
-      <h2>Neler yapar?</h2>
+      <h2>What it does</h2>
       <div class="grid three">
-        <div class="card"><span class="ico">⛽</span><h3>İstasyon bakiyesi</h3><p>Her istasyon için avans, harcama ve kalan bakiye. Borçtaysanız eksi bakiye olarak görünür, limit yaklaşınca uyarır.</p></div>
-        <div class="card"><span class="ico">🚚</span><h3>Şoför ve ekip</h3><p>Şoförler sadece kendi harcamasını girer. Yönetici her şeyi görür, kim ne zaman neyi değiştirdi kayıtlıdır.</p></div>
-        <div class="card"><span class="ico">🧾</span><h3>Fiş fotoğrafı</h3><p>Fişi ya da dekontu kayda ekleyin. Ekipteki herkes aynı fotoğrafı görür, kâğıt kaybolsa da kanıt durur.</p></div>
-        <div class="card"><span class="ico">📊</span><h3>Aylık rapor</h3><p>Araç, şoför ya da istasyon bazında aylık yakıt masrafı, litre ve ortalama fiyat. Muhasebeye Excel ve PDF.</p></div>
-        <div class="card"><span class="ico">💬</span><h3>WhatsApp'tan gönder</h3><p>Ekstreyi ve raporu muhasebeciye, ortağa ya da istasyona tek dokunuşla gönderin.</p></div>
-        <div class="card"><span class="ico">☁️</span><h3>Bulut yedek</h3><p>Telefon kaybolsa da kayıtlar kaybolmaz. Birden çok telefon aynı defteri kullanır, PIN kilidiyle korunur.</p></div>
+        <div class="card"><span class="ico">⛽</span><h3>Station balance</h3><p>Advances, purchases and the remaining balance for each station. If you owe money it shows as a negative balance, and it warns you when the balance runs low.</p></div>
+        <div class="card"><span class="ico">🚚</span><h3>Drivers and team</h3><p>Drivers enter only their own purchases. Managers see everything, and every change is recorded: who changed what, and when.</p></div>
+        <div class="card"><span class="ico">🧾</span><h3>Receipt photos</h3><p>Attach the receipt or payment slip to the entry. Everyone in the team sees the same photo, so the proof stays even if the paper is lost.</p></div>
+        <div class="card"><span class="ico">📊</span><h3>Monthly report</h3><p>Monthly fuel cost, litres and average price per vehicle, driver or station. Excel and PDF for your accountant.</p></div>
+        <div class="card"><span class="ico">💬</span><h3>Send on WhatsApp</h3><p>Send the statement and report to your accountant, partner or the station with one tap.</p></div>
+        <div class="card"><span class="ico">☁️</span><h3>Cloud backup</h3><p>Your records are safe even if the phone is lost. Several phones can share one ledger, protected with a PIN lock.</p></div>
       </div>
     </section>
 
-    <section id="kurulum">
-      <h2>Telefona kurulum</h2>
+    <section id="install">
+      <h2>Install on your phone</h2>
       <div class="grid">
         <div class="card"><h3>Android (Chrome)</h3>
-          <ol class="steps"><li><a href="/app/"><b>hisapo.com/app</b></a> adresini açın.</li><li>Sağ üstteki <b>⋮</b> menüsüne dokunun.</li><li><b>Uygulamayı yükle</b> ya da <b>Ana ekrana ekle</b>'yi seçin.</li></ol>
+          <ol class="steps"><li>Open <a href="/app/?lang=en"><b>hisapo.com/app</b></a>.</li><li>Tap the <b>⋮</b> menu at the top right.</li><li>Choose <b>Install app</b> or <b>Add to Home screen</b>.</li></ol>
         </div>
         <div class="card"><h3>iPhone (Safari)</h3>
-          <ol class="steps"><li><a href="/app/"><b>hisapo.com/app</b></a> adresini Safari'de açın.</li><li>Alttaki <b>Paylaş</b> simgesine dokunun.</li><li><b>Ana Ekrana Ekle</b>'yi seçin.</li></ol>
+          <ol class="steps"><li>Open <a href="/app/?lang=en"><b>hisapo.com/app</b></a> in Safari.</li><li>Tap the <b>Share</b> icon at the bottom.</li><li>Choose <b>Add to Home Screen</b>.</li></ol>
         </div>
       </div>
     </section>
 
     <footer>
       <span>© 2026 Hisapo</span>
-      <span><a href="/gizlilik.html">Gizlilik</a> · <a href="/app/">Uygulama</a> · <a href="/en/">English</a></span>
+      <span><a href="/en/privacy.html">Privacy</a> · <a href="/app/?lang=en">App</a> · <a href="/">Türkçe</a></span>
     </footer>
   </div>
 </body>

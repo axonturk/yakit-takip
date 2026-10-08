@@ -1,13 +1,14 @@
 import React from 'react';
 import { AlertTriangle, Gauge } from 'lucide-react';
 import { formatKm, formatL100 } from '../services/consumption';
+import { t } from '../i18n';
 
 // Odometer input shown next to the plate; the vehicle's last km is the hint.
 export default function KmField({ value, onChange, lastKm, disabled }) {
   return (
     <div>
       <label className="block text-[11px] text-slate-400 mb-1">
-        Km sayacı <span className="text-[10px] text-slate-500">(Opsiyonel)</span>
+        {t('Km sayacı')} <span className="text-[10px] text-slate-500">{t('(Opsiyonel)')}</span>
       </label>
       <input
         type="number"
@@ -16,11 +17,11 @@ export default function KmField({ value, onChange, lastKm, disabled }) {
         min="0"
         value={value}
         onChange={(e) => onChange(e.target.value.replace(/\D/g, ''))}
-        placeholder={disabled ? 'Önce plaka' : lastKm ? `Son: ${lastKm}` : 'Örn: 125400'}
+        placeholder={disabled ? t('Önce plaka') : lastKm ? t('Son: {v}', { v: lastKm }) : t('Örn: {v}', { v: 125400 })}
         disabled={disabled}
         className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-slate-500 disabled:opacity-50"
       />
-      {lastKm && !disabled && <div className="text-[10px] text-slate-500 mt-0.5">Son kayıt: {formatKm(lastKm)}</div>}
+      {lastKm && !disabled && <div className="text-[10px] text-slate-500 mt-0.5">{t('Son kayıt: {v}', { v: formatKm(lastKm) })}</div>}
     </div>
   );
 }
@@ -31,25 +32,25 @@ export function FillNotice({ check }) {
   if (check.lower) {
     return (
       <Box tone="red">
-        Km, bu aracın son kaydından ({formatKm(check.prevKm)}) düşük. Sayaç doğru mu?
+        {t('Km, bu aracın son kaydından ({v}) düşük. Sayaç doğru mu?', { v: formatKm(check.prevKm) })}
       </Box>
     );
   }
   if (!check.l100) {
-    return <Box tone="slate">Son alıştan beri {formatKm(check.distance)} yol.</Box>;
+    return <Box tone="slate">{t('Son alıştan beri {v} yol.', { v: formatKm(check.distance) })}</Box>;
   }
   if (check.high) {
     return (
       <Box tone="amber">
-        Bu alış normalden <b>%{check.high} fazla</b>: {formatL100(check.l100)} (bu aracın ortalaması{' '}
-        {formatL100(check.avg)}). Litre ve km'yi kontrol et.
+        {t('Bu alış normalden')} <b>{t('%{n} fazla', { n: check.high })}</b>:{' '}
+        {t('{v} (bu aracın ortalaması {avg}). Litre ve km\'yi kontrol et.', { v: formatL100(check.l100), avg: formatL100(check.avg) })}
       </Box>
     );
   }
   return (
     <Box tone="slate">
-      {formatKm(check.distance)} yol · {formatL100(check.l100)}
-      {check.avg ? ` (ortalama ${formatL100(check.avg)})` : ''}
+      {t('{v} yol', { v: formatKm(check.distance) })} · {formatL100(check.l100)}
+      {check.avg ? ' ' + t('(ortalama {v})', { v: formatL100(check.avg) }) : ''}
     </Box>
   );
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatTL } from '../services/storage';
+import { t } from '../i18n';
 import { CreditCard, Fuel, TrendingUp, TrendingDown } from 'lucide-react';
 
 export default function BalanceCard({
@@ -24,10 +25,10 @@ export default function BalanceCard({
             <span className={`w-2 h-2 rounded-full ${
               totalBalance < 0 ? 'bg-rose-400' : 'bg-amber-400'
             } animate-pulse`} />
-            {totalBalance < 0 ? 'Toplam Borç / Eksi Bakiye' : 'Toplam Kalan Avans Bakiyesi'}
+            {totalBalance < 0 ? t('Toplam Borç / Eksi Bakiye') : t('Toplam Kalan Avans Bakiyesi')}
           </span>
           <span className="text-[11px] bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded-full font-medium">
-            {stationCount} İstasyon
+            {t('İstasyon: {n}', { n: stationCount })}
           </span>
         </div>
 
@@ -39,8 +40,8 @@ export default function BalanceCard({
 
         <p className="text-[11px] text-slate-400">
           {totalBalance < 0
-            ? 'İstasyonlara olan toplam kapatılması gereken borç / eksi bakiye tutarı'
-            : 'İstasyonlara önceden ödenmiş ve depoya aktarılmayı bekleyen toplam bakiye'}
+            ? t('İstasyonlara olan toplam kapatılması gereken borç / eksi bakiye tutarı')
+            : t('İstasyonlara önceden ödenmiş ve depoya aktarılmayı bekleyen toplam bakiye')}
         </p>
 
         {/* Small stats row */}
@@ -50,7 +51,7 @@ export default function BalanceCard({
               <TrendingUp className="w-3.5 h-3.5" />
             </div>
             <div>
-              <div className="text-[10px] text-slate-400">Toplam Yüklenen</div>
+              <div className="text-[10px] text-slate-400">{t('Toplam Yüklenen')}</div>
               <div className="font-bold text-emerald-400">{formatTL(totalTopup)}</div>
             </div>
           </div>
@@ -60,7 +61,7 @@ export default function BalanceCard({
               <TrendingDown className="w-3.5 h-3.5" />
             </div>
             <div>
-              <div className="text-[10px] text-slate-400">Toplam Harcanan</div>
+              <div className="text-[10px] text-slate-400">{t('Toplam Harcanan')}</div>
               <div className="font-bold text-red-400">{formatTL(totalExpense)}</div>
             </div>
           </div>
@@ -74,7 +75,7 @@ export default function BalanceCard({
           className="py-3 px-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-red-950/40 flex items-center justify-center gap-2 transition active:scale-[0.98]"
         >
           <Fuel className="w-4 h-4 stroke-[2.2]" />
-          <span>- HARCAMA GİR</span>
+          <span>{t('- HARCAMA GİR')}</span>
         </button>
 
         {onOpenTopup && (
@@ -83,7 +84,7 @@ export default function BalanceCard({
           className="py-3 px-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-950/40 flex items-center justify-center gap-2 transition active:scale-[0.98]"
         >
           <CreditCard className="w-4 h-4 stroke-[2.2]" />
-          <span>+ BAKİYE YÜKLE</span>
+          <span>{t('+ BAKİYE YÜKLE')}</span>
         </button>
         )}
       </div>

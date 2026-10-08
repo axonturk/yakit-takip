@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import PhotoPicker from './PhotoPicker';
 import { CreditCard, X, Plus, AlertCircle, Clock } from 'lucide-react';
-import StationLogo from './StationLogo';
+import StationLogo, { brandLabel } from './StationLogo';
 import { PAYMENT_METHODS, findDuplicate, formatTL, formatTRDate } from '../services/storage';
+import { t } from '../i18n';
 
 
 export default function TopupModal({
@@ -41,7 +42,7 @@ export default function TopupModal({
     e.preventDefault();
     const parsedAmount = parseFloat(amount);
     if (!parsedAmount || isNaN(parsedAmount) || parsedAmount <= 0) {
-      setErrorMsg('Lütfen geçerli bir yükleme tutarı girin!');
+      setErrorMsg(t('Lütfen geçerli bir yükleme tutarı girin!'));
       return;
     }
 
@@ -52,16 +53,18 @@ export default function TopupModal({
       paymentMethod: paymentMethod || null,
       receiptNo: receiptNo.trim() || null,
       date: datetime,
-      note: note || 'Avans Çekildi'
+      note: note || t('Avans Çekildi')
     };
 
     const dup = findDuplicate(transactions, candidate);
     if (
       dup &&
       !window.confirm(
-        `Benzer bir yükleme zaten var:\n${dup.stationName} · ${formatTL(dup.amount)} · ${formatTRDate(dup.date)}` +
-          (dup.receiptNo ? ` · Slip ${dup.receiptNo}` : '') +
-          '\n\nYine de kaydedilsin mi?'
+        t('Benzer bir yükleme zaten var:') +
+          `\n${dup.stationName} · ${formatTL(dup.amount)} · ${formatTRDate(dup.date)}` +
+          (dup.receiptNo ? ' · ' + t('Slip {no}', { no: dup.receiptNo }) : '') +
+          '\n\n' +
+          t('Yine de kaydedilsin mi?')
       )
     ) {
       return;
@@ -89,8 +92,8 @@ export default function TopupModal({
               <CreditCard className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">Peşin Avans / Bakiye Yükle</h2>
-              <p className="text-[10px] text-slate-400">İstasyona Peşin Çektirilen Tutarı Hesaba Ekle</p>
+              <h2 className="text-sm font-bold text-white">{t('Peşin Avans / Bakiye Yükle')}</h2>
+              <p className="text-[10px] text-slate-400">{t('İstasyona Peşin Çektirilen Tutarı Hesaba Ekle')}</p>
             </div>
           </div>
           <button
@@ -113,10 +116,10 @@ export default function TopupModal({
         <form onSubmit={handleSubmit} className="mt-3 space-y-3">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-[11px] text-slate-400 font-medium">Hangi İstasyon?</label>
+              <label className="text-[11px] text-slate-400 font-medium">{t('Hangi İstasyon?')}</label>
               {defaultStationId && stationId === defaultStationId && (
                 <span className="text-[10px] text-amber-400 font-semibold bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full">
-                  Seçili istasyon açıldı (Değiştirebilirsiniz)
+                  {t('Seçili istasyon açıldı (Değiştirebilirsiniz)')}
                 </span>
               )}
             </div>
@@ -133,7 +136,7 @@ export default function TopupModal({
               >
                 {stations.map(st => (
                   <option key={st.id} value={st.id}>
-                    {st.name} {st.brand ? `(${st.brand})` : ''}
+                    {st.name} {st.brand ? `(${brandLabel(st.brand)})` : ''}
                   </option>
                 ))}
               </select>
@@ -143,7 +146,7 @@ export default function TopupModal({
 
           <div>
             <label className="block text-xs font-bold text-amber-400 mb-1">
-              Yüklenen Tutar (TL) * <span className="text-[10px] font-normal text-slate-400">(Zorunlu)</span>
+              {t('Yüklenen Tutar ({cur})')} * <span className="text-[10px] font-normal text-slate-400">{t('(Zorunlu)')}</span>
             </label>
             <input
               type="number"
@@ -152,53 +155,53 @@ export default function TopupModal({
               autoFocus
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder="Örn: 3000"
+              placeholder={t('Örn: {v}', { v: 3000 })}
               className="w-full bg-slate-900 border-2 border-amber-500/80 rounded-xl p-3 text-lg font-extrabold text-white focus:outline-none focus:border-amber-400"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Ödeme Yöntemi</label>
+              <label className="block text-[11px] text-slate-400 mb-1">{t('Ödeme Yöntemi')}</label>
               <select
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
               >
-                <option value="">Seçilmedi</option>
+                <option value="">{t('Seçilmedi')}</option>
                 {PAYMENT_METHODS.map((m) => (
-                  <option key={m} value={m}>{m}</option>
+                  <option key={m} value={m}>{t(m)}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Slip / Dekont No</label>
+              <label className="block text-[11px] text-slate-400 mb-1">{t('Slip / Dekont No')}</label>
               <input
                 type="text"
                 value={receiptNo}
                 onChange={(e) => setReceiptNo(e.target.value)}
-                placeholder="Opsiyonel"
+                placeholder={t('Opsiyonel')}
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
               />
             </div>
           </div>
 
-          <PhotoPicker value={photo} onChange={setPhoto} label="Dekont fotoğrafı" />
+          <PhotoPicker value={photo} onChange={setPhoto} label={t('Dekont fotoğrafı')} />
 
           <div>
-            <label className="block text-[11px] text-slate-400 mb-1">Not (kart, taksit vb.)</label>
+            <label className="block text-[11px] text-slate-400 mb-1">{t('Not (kart, taksit vb.)')}</label>
             <input
               type="text"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Örn: Bonus Kart 3 Taksit, Nakit Avans vb."
+              placeholder={t('Örn: Bonus Kart 3 Taksit, Nakit Avans vb.')}
               className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-[11px] text-slate-400 font-medium">Tarih & Saat</label>
+              <label className="text-[11px] text-slate-400 font-medium">{t('Tarih & Saat')}</label>
               <button
                 type="button"
                 onClick={() => {
@@ -209,7 +212,7 @@ export default function TopupModal({
                 className="text-[10px] text-amber-400 hover:text-amber-300 font-medium flex items-center gap-0.5"
               >
                 <Clock className="w-3 h-3" />
-                <span>Şu Anki Sistem Saati</span>
+                <span>{t('Şu Anki Sistem Saati')}</span>
               </button>
             </div>
             <input
@@ -218,7 +221,7 @@ export default function TopupModal({
               onChange={(e) => setDatetime(e.target.value)}
               className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-slate-500"
             />
-            <p className="text-[10px] text-slate-500 mt-0.5">Sistem saati otomatik seçilidir, dokunup değiştirebilirsiniz.</p>
+            <p className="text-[10px] text-slate-500 mt-0.5">{t('Sistem saati otomatik seçilidir, dokunup değiştirebilirsiniz.')}</p>
           </div>
 
           <button
@@ -226,7 +229,7 @@ export default function TopupModal({
             className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-950/40 transition active:scale-[0.98] mt-2 flex items-center justify-center gap-1.5"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>+ BAKİYE YÜKLE VE KAYDET</span>
+            <span>{t('+ BAKİYE YÜKLE VE KAYDET')}</span>
           </button>
         </form>
 
