@@ -1,6 +1,7 @@
 import React from 'react';
-import { PlusCircle, Download, Upload, Smartphone, Sun, Moon, Cloud, CloudOff, Lock, MoreVertical, Languages } from 'lucide-react';
+import { PlusCircle, Download, Upload, Smartphone, Sun, Moon, Cloud, CloudOff, Lock, MoreVertical, Languages, HelpCircle, Info } from 'lucide-react';
 import LocaleModal from './LocaleModal';
+import InfoModal from './InfoModal';
 import { t } from '../i18n';
 import logo from '../assets/logo.png';
 
@@ -8,6 +9,7 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
   const fileInputRef = React.useRef(null);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [localeOpen, setLocaleOpen] = React.useState(false);
+  const [info, setInfo] = React.useState(null);
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -111,6 +113,13 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
                   <MenuItem icon={Languages} onClick={() => { setMenuOpen(false); setLocaleOpen(true); }}>
                     {t('Dil ve birimler')}
                   </MenuItem>
+                  <div className="my-1 border-t border-slate-800" />
+                  <MenuItem icon={HelpCircle} onClick={() => { setMenuOpen(false); setInfo('help'); }}>
+                    {t('Yardım')}
+                  </MenuItem>
+                  <MenuItem icon={Info} onClick={() => { setMenuOpen(false); setInfo('about'); }}>
+                    {t('Hakkında')}
+                  </MenuItem>
                 </div>
               </>
             )}
@@ -118,6 +127,7 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
         </div>
       </div>
       {localeOpen && <LocaleModal onClose={() => setLocaleOpen(false)} />}
+      <InfoModal mode={info} onClose={() => setInfo(null)} />
     </header>
   );
 }

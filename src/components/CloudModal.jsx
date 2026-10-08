@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Cloud, X, RefreshCw, Copy, Share2, LogOut, Users } from 'lucide-react';
+import { Cloud, X, RefreshCw, Copy, Share2, LogOut, Users, Trash2 } from 'lucide-react';
 import {
   sendCode,
   verifyCode,
@@ -11,7 +11,8 @@ import {
   leaveWorkspace,
   workspaceMembers,
   updateMember,
-  removeMember
+  removeMember,
+  deleteAccount
 } from '../services/cloud';
 import { formatTRDate, formatTL } from '../services/storage';
 import { memberMonthSpend, ROLE_LABEL } from '../services/team';
@@ -244,6 +245,7 @@ function PickWorkspace({ cloud, localCount }) {
       >
         <LogOut className="w-3 h-3" /> {t('Çıkış yap')}
       </button>
+      <DeleteAccount />
     </div>
   );
 }
@@ -375,6 +377,74 @@ function Connected({ cloud, isSample, transactions }) {
       >
         <LogOut className="w-3 h-3" /> {t('Çıkış yap')}
       </button>
+      <DeleteAccount isOwner={isOwner} onDeleted={() => cloud.leave()} />
+    </div>
+  );
+}
+
+// Google Play asks apps with accounts to offer deletion inside the app
+function DeleteAccount({ isOwner, onDeleted }) {
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const word = t('SİL');
+  const [before, after] = t('Onaylamak için {word} yaz', { word: '\u0000' }).split('\u0000');
+  const confirmed = /^s[iıİI]l$/i.test(typed.trim()) || typed.trim().toLowerCase() === word.toLowerCase();
+
+  if (!open) {
+    return (
+      <button
+        className="w-full text-[10px] text-slate-500 hover:text-red-300 flex items-center justify-center gap-1"
+        onClick={() => setOpen(true)}
+      >
+        <Trash2 className="w-3 h-3" /> {t('Hesabımı sil')}
+      </button>
+    );
+  }
+  return (
+    <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 space-y-2">
+      <div className="text-xs font-bold text-red-200">{t('Hesabımı sil')}</div>
+      <p className="text-[11px] text-slate-300">
+        {isOwner
+          ? t('Bulut hesabın silinir. Sahibi olduğun defter, içindeki tüm kayıtlar ve fiş fotoğrafları ekipteki herkes için kalıcı olarak silinir.')
+          : isOwner === false
+            ? t('Bulut hesabın silinir ve defterden çıkarsın. Girdiğin kayıtlar işletmenin defterinde kalır, e-posta adresin kayıtlardan kaldırılır.')
+            : t('Bulut hesabın silinir. Sahibi olduğun defterler tüm kayıtları ve fotoğraflarıyla herkes için silinir; başkasının defterine girdiğin kayıtlar orada kalır, e-posta adresin kaldırılır.')}{' '}
+        {t('Bu telefondaki kayıtlar silinmez.')}
+      </p>
+      <label className="block text-[11px] text-slate-400">
+        {before}
+        <b className="text-slate-200">{word}</b>
+        {after}
+      </label>
+      <input value={typed} onChange={(e) => setTyped(e.target.value)} className={inputClass} />
+      <ErrorLine text={err} />
+      <div className="grid grid-cols-2 gap-2">
+        <button className={secondary} onClick={() => setOpen(false)} disabled={busy}>
+          {t('Vazgeç')}
+        </button>
+        <button
+          className="w-full py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl transition disabled:opacity-50"
+          disabled={!confirmed || busy}
+          onClick={async () => {
+            setBusy(true);
+            setErr('');
+            try {
+              await disablePush().catch(() => {});
+              await deleteAccount();
+              onDeleted?.();
+              window.alert(t('Hesabın silindi.'));
+            } catch (e) {
+              setErr(e?.message || String(e));
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {busy ? '…' : t('Kalıcı olarak sil')}
+        </button>
+      </div>
     </div>
   );
 }

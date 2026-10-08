@@ -48,3 +48,11 @@ describe('i18n', () => {
     expect(bad).toEqual([]);
   });
 });
+
+describe('help texts', () => {
+  it('has English for every question and answer', async () => {
+    const { HELP } = await import('../components/InfoModal.jsx');
+    const missing = HELP.flatMap((h) => [h.q, ...h.a]).filter((k) => !(k in EN));
+    expect(missing).toEqual([]);
+  });
+});
