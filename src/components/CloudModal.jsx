@@ -16,6 +16,8 @@ import {
 import { formatTRDate, formatTL } from '../services/storage';
 import { memberMonthSpend, ROLE_LABEL } from '../services/team';
 import ChangeLog, { ChangeLogTitle } from './ChangeLog';
+import PushToggle from './PushToggle';
+import { disablePush } from '../services/push';
 import { t } from '../i18n';
 
 const inputClass =
@@ -290,6 +292,8 @@ function Connected({ cloud, isSample, transactions }) {
         </span>
       </button>
 
+      {canInvite && !isSample && <PushToggle workspaceId={cloud.workspaceId} />}
+
       <div className="space-y-2">
         <div className="text-[11px] font-bold text-slate-300 flex items-center gap-1">
           <Users className="w-3.5 h-3.5" /> {t('Ekip ({n})', { n: members.length })}
@@ -364,6 +368,7 @@ function Connected({ cloud, isSample, transactions }) {
         className="w-full text-[11px] text-slate-400 hover:text-red-300 flex items-center justify-center gap-1"
         onClick={async () => {
           if (!window.confirm(t('Bu cihaz buluttan çıkarılsın mı? Telefondaki kayıtlar silinmez.'))) return;
+          await disablePush().catch(() => {});
           cloud.leave();
           await signOut();
         }}

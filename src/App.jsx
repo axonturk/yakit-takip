@@ -30,6 +30,7 @@ import EditTransactionModal from './components/EditTransactionModal';
 import EditStationModal from './components/EditStationModal';
 import StatementView from './components/StatementView';
 import ReportView from './components/ReportView';
+import { disablePush } from './services/push';
 import PhotoViewer from './components/PhotoViewer';
 import CloudModal from './components/CloudModal';
 import LockScreen from './components/LockScreen';
@@ -125,6 +126,7 @@ export default function App() {
 
   // Forgotten PIN: wipe this device. With a cloud backup the records come back after signing in again.
   const handleLockReset = async () => {
+    await disablePush().catch(() => {});
     cloud.leave();
     try {
       await signOut();

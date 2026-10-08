@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Languages, X } from 'lucide-react';
 import { LANGUAGES, CURRENCIES, getLang, getCurrency, saveLocale, t } from '../i18n';
+import { updatePushLocale } from '../services/push';
 
 // Language and currency for this phone. Saving reloads the app so every screen picks it up.
 // Drawn on <body>: the header's backdrop blur would otherwise trap this fixed overlay inside it.
@@ -9,9 +10,11 @@ export default function LocaleModal({ onClose }) {
   const [lang, setLang] = useState(getLang());
   const [currency, setCurrency] = useState(getCurrency());
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (lang === getLang() && currency === getCurrency()) return onClose();
     saveLocale({ lang, currency });
+    // Notifications are written on the server in the phone's language; give it a moment, never block on it
+    await Promise.race([updatePushLocale(lang, currency).catch(() => {}), new Promise((r) => setTimeout(r, 1500))]);
     window.location.reload();
   };
 
