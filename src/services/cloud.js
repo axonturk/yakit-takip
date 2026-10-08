@@ -238,3 +238,29 @@ export async function downloadPhoto(workspaceId, photoId) {
   }
   return data;
 }
+
+// Deletes this person's cloud account (Google Play requires it in the app). Ledgers they own go with it,
+// receipt photos first since the database cannot remove stored files itself; in other ledgers
+// their records stay with the business, without their e-mail.
+export async function deleteAccount() {
+  const supabase = await getClient();
+  const { data: s } = await supabase.auth.getSession();
+  const uid = s.session?.user?.id;
+  if (!uid) throw new Error(t('Önce giriş yapmalısın.'));
+  const { data: owned, error } = await supabase.from('workspace_members').select('workspace_id').eq('user_id', uid).eq('role', 'owner');
+  fail(error);
+  for (const { workspace_id: ws } of owned || []) {
+    for (;;) {
+      const { data: files, error: listError } = await supabase.storage.from(BUCKET).list(ws, { limit: 100 });
+      if (listError || !files?.length) break;
+      const { error: removeError } = await supabase.storage.from(BUCKET).remove(files.map((f) => `${ws}/${f.name}`));
+      if (removeError) break;
+    }
+  }
+  const { error: rpcError } = await supabase.rpc('delete_my_account');
+  if (rpcError && /function|does not exist|schema cache/i.test(rpcError.message)) {
+    throw new Error(t('Hesap silme için Supabase kurulumu güncel değil. Bize destek@hisapo.com adresinden yaz, hesabını biz silelim.'));
+  }
+  fail(rpcError);
+  await supabase.auth.signOut().catch(() => {});
+}

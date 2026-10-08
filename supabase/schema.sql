@@ -328,3 +328,37 @@ end $$;
 drop trigger if exists records_notify on public.records;
 create trigger records_notify after insert on public.records
 for each row execute function public.notify_record();
+
+-- Account deletion from the app (Google Play rule). Ledgers the person owns are deleted for everyone,
+-- with all their records; the app removes their receipt photos first. In other ledgers the records stay
+-- with the business, without the person's e-mail.
+create or replace function public.is_owner_folder(object_name text) returns boolean
+language plpgsql security definer stable set search_path = public as $$
+begin
+  return public.member_role(split_part(object_name, '/', 1)::uuid) = 'owner';
+exception when invalid_text_representation then
+  return false;
+end $$;
+
+drop policy if exists "owner deletes receipts" on storage.objects;
+create policy "owner deletes receipts" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'receipts' and public.is_owner_folder(name));
+
+create or replace function public.delete_my_account() returns void
+language plpgsql security definer set search_path = public as $$
+declare me uuid := auth.uid();
+begin
+  if me is null then raise exception 'not signed in'; end if;
+  delete from workspaces w using workspace_members m
+   where m.workspace_id = w.id and m.user_id = me and m.role = 'owner';
+  update records set data = data - 'enteredBy'
+   where data ? 'enteredBy' and (created_by = me or data ->> 'enteredById' = me::text);
+  update record_log
+     set changed_by_email = null, data = data - 'enteredBy', previous = previous - 'enteredBy'
+   where changed_by = me or data ->> 'enteredById' = me::text;
+  delete from auth.users where id = me;
+end $$;
+
+revoke all on function public.delete_my_account() from public, anon;
+grant execute on function public.delete_my_account() to authenticated;
