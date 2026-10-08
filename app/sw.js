@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'hisapo-app-v26';
+﻿const CACHE_NAME = 'hisapo-app-v27';
 
 const PRECACHE_ASSETS = [
   './',
