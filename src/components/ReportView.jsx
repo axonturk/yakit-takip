@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Printer, Download } from 'lucide-react';
 import { monthRange, formatDay, formatTL, nowLocalISO, buildCSV } from '../services/storage';
 import WhatsAppShare from './WhatsAppShare';
+import { formatKm, formatL100 } from '../services/consumption';
 import { buildFleetReport, reportCSV, reportText, REPORT_GROUPS } from '../services/report';
 
 const inputClass =
@@ -114,6 +115,16 @@ export default function ReportView({ transactions, hasTeam }) {
                 </span>
                 <span className="shrink-0">%{String(r.share).replace('.', ',')}</span>
               </div>
+              {(r.km || r.high > 0) && (
+                <div className="flex flex-wrap gap-x-2 text-[10px]">
+                  {r.km && (
+                    <span className="text-slate-300">
+                      {formatKm(r.km)} · <b>{formatL100(r.l100)}</b>
+                    </span>
+                  )}
+                  {r.high > 0 && <span className="text-amber-300 font-semibold">⚠ {r.high} yüksek tüketimli alış</span>}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -137,7 +148,7 @@ function PrintableReport({ report, by, from, to }) {
       <table style={{ borderCollapse: 'collapse', width: '100%' }}>
         <thead>
           <tr>
-            {[g.label, 'İşlem', 'Litre', 'Ort. TL/L', 'Pay', 'İstasyonlar', 'Tutar'].map((h) => (
+            {[g.label, 'İşlem', 'Litre', 'Ort. TL/L', 'Pay', 'İstasyonlar', ...(by === 'plate' ? ['Km', 'L/100 km'] : []), 'Tutar'].map((h) => (
               <th key={h} style={{ ...cell, background: '#eee' }}>{h}</th>
             ))}
           </tr>
@@ -151,6 +162,8 @@ function PrintableReport({ report, by, from, to }) {
               <td style={num}>{r.avgPrice ? formatTL(r.avgPrice) : ''}</td>
               <td style={num}>%{String(r.share).replace('.', ',')}</td>
               <td style={cell}>{r.stations.join(', ')}</td>
+              {by === 'plate' && <td style={num}>{r.km ? formatKm(r.km) : ''}</td>}
+              {by === 'plate' && <td style={num}>{r.l100 ? `${String(r.l100).replace('.', ',')}${r.high ? ' ⚠' : ''}` : ''}</td>}
               <td style={num}>{formatTL(r.amount)}</td>
             </tr>
           ))}
@@ -161,6 +174,8 @@ function PrintableReport({ report, by, from, to }) {
             <td style={cell} />
             <td style={num}>%100</td>
             <td style={cell} />
+            {by === 'plate' && <td style={cell} />}
+            {by === 'plate' && <td style={cell} />}
             <td style={{ ...num, fontWeight: 700 }}>{formatTL(report.total)}</td>
           </tr>
         </tbody>

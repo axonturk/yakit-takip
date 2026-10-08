@@ -3,6 +3,8 @@ import PhotoPicker from './PhotoPicker';
 import { Edit3, X, AlertCircle, MinusCircle, Clock } from 'lucide-react';
 import StationLogo from './StationLogo';
 import { FUEL_TYPES, lastExpenseAt, findDuplicate, formatTL, formatTRDate } from '../services/storage';
+import { checkFill, lastOdometer } from '../services/consumption';
+import KmField, { FillNotice } from './KmField';
 
 
 export default function ManualExpenseModal({
@@ -22,6 +24,7 @@ export default function ManualExpenseModal({
   const [datetime, setDatetime] = useState('');
   const [note, setNote] = useState('');
   const [plate, setPlate] = useState('');
+  const [odometer, setOdometer] = useState('');
   const [fuelType, setFuelType] = useState('');
   const [receiptNo, setReceiptNo] = useState('');
   const [photo, setPhoto] = useState(null);
@@ -43,6 +46,7 @@ export default function ManualExpenseModal({
       setAmount('');
       setLiters('');
       setReceiptNo('');
+      setOdometer('');
       setPhoto(null);
     }
   }, [isOpen, defaultStationId, stations]);
@@ -94,6 +98,15 @@ export default function ManualExpenseModal({
     // Amount and price given but no liters: derive liters
     const lv = liters ? parseFloat(liters) : pv > 0 ? Math.round((parsedAmount / pv) * 100) / 100 : null;
 
+    const km = odometer ? parseInt(odometer, 10) : null;
+    const fill = checkFill(transactions, { plate: plate.trim().toUpperCase(), odometer: km, liters: lv, date: datetime });
+    if (
+      fill?.lower &&
+      !window.confirm(`Girilen km (${km}) bu aracın son kaydından (${fill.prevKm}) düşük.\n\nYine de kaydedilsin mi?`)
+    ) {
+      return;
+    }
+
     const candidate = {
       type: 'expense',
       stationId,
@@ -103,6 +116,7 @@ export default function ManualExpenseModal({
       fuelType: fuelType || null,
       receiptNo: receiptNo.trim() || null,
       plate: plate.trim().toUpperCase() || null,
+      odometer: km,
       date: datetime,
       note: note || 'Yakıt Alımı'
     };
@@ -125,6 +139,7 @@ export default function ManualExpenseModal({
     setLiters('');
     setNote('');
     setReceiptNo('');
+    setOdometer('');
     setPhoto(null);
     onClose();
   };
@@ -279,24 +294,40 @@ export default function ManualExpenseModal({
 
           <PhotoPicker value={photo} onChange={setPhoto} />
 
-          <div>
-            <label className="block text-[11px] text-slate-400 mb-1">
-              Plaka / Araç <span className="text-[10px] text-slate-500">(Opsiyonel)</span>
-            </label>
-            <input
-              type="text"
-              list="expense-plates"
-              value={plate}
-              onChange={(e) => setPlate(e.target.value)}
-              placeholder="Örn: 34 ABC 123"
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 uppercase focus:outline-none focus:border-slate-500"
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">
+                Plaka / Araç <span className="text-[10px] text-slate-500">(Opsiyonel)</span>
+              </label>
+              <input
+                type="text"
+                list="expense-plates"
+                value={plate}
+                onChange={(e) => setPlate(e.target.value)}
+                placeholder="Örn: 34 ABC 123"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200 uppercase focus:outline-none focus:border-slate-500"
+              />
+              <datalist id="expense-plates">
+                {plates.map((p) => (
+                  <option key={p} value={p} />
+                ))}
+              </datalist>
+            </div>
+            <KmField
+              value={odometer}
+              onChange={setOdometer}
+              lastKm={lastOdometer(transactions, plate.trim().toUpperCase())}
+              disabled={!plate.trim()}
             />
-            <datalist id="expense-plates">
-              {plates.map((p) => (
-                <option key={p} value={p} />
-              ))}
-            </datalist>
           </div>
+          <FillNotice
+            check={checkFill(transactions, {
+              plate: plate.trim().toUpperCase(),
+              odometer,
+              liters: liters || (parseFloat(unitPrice) > 0 && parseFloat(amount) > 0 ? parseFloat(amount) / parseFloat(unitPrice) : null),
+              date: datetime
+            })}
+          />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>

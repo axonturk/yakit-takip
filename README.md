@@ -25,7 +25,8 @@ Canlı: https://hisapo.com (tanıtım sayfası, `landing/`) · uygulama: https:/
 15. **Fiş fotoğrafları bulutta:** Ortak defterde fotoğraflar eşitlemede Supabase Storage'daki özel `receipts` kovasına yüklenir (her eşitlemede en fazla 5). Başka telefonun çektiği fotoğraf, kayda dokununca indirilir ve cihazda saklanır. Kovayı yalnızca o defterin üyeleri görür.
 16. **Aylık yakıt raporu:** Geçmiş → Rapor. Seçilen ayın harcamaları araç (plaka), kişi ya da istasyon bazında; tutar, litre, ortalama TL/L, pay. WhatsApp, PDF ve muhasebe için Excel (özet ve tüm satırlar, "Giren" sütunuyla).
 17. **WhatsApp ile gönderim:** Rapor ve ekstrede WhatsApp'a basınca kayıtlı kişiler (muhasebeci, ortak) çıkar; tek dokunuşla rapor o kişinin sohbetine gider. Gruplar için WhatsApp'ın kişi/grup seçicisi açılır. Destekleyen telefonlarda Excel dosyası da doğrudan paylaşılır. Kayıtlı kişiler yalnızca o telefonda saklanır.
-18. **Çevrimdışı PWA:** Telefona uygulama gibi kurulur, veriler cihazda (`localStorage`) tutulur.
+18. **Km ve tüketim takibi:** Harcamaya isteğe bağlı km sayacı girilir. Aynı plakanın önceki alışına göre gidilen yol ve 100 km'de litre hesaplanır; bu aracın olağan tüketiminden (diğer alışlarının medyanı) %30 fazla olan alış formda uyarı verir, geçmişte ⚠ ile işaretlenir. Km önceki kayıttan düşükse onay sorulur. Aylık raporda araç başına km, L/100 km ve yüksek alış sayısı; Excel'de Km sütunu.
+19. **Çevrimdışı PWA:** Telefona uygulama gibi kurulur, veriler cihazda (`localStorage`) tutulur.
 
 ## 📲 Telefona Nasıl Yüklenir?
 

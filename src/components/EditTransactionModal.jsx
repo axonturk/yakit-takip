@@ -3,11 +3,13 @@ import { Pencil, X, AlertCircle } from 'lucide-react';
 import PhotoPicker from './PhotoPicker';
 import ChangeLog, { ChangeLogTitle } from './ChangeLog';
 import { formatTL, transactionLabel, FUEL_TYPES, PAYMENT_METHODS } from '../services/storage';
+import { checkFill, lastOdometer } from '../services/consumption';
+import KmField, { FillNotice } from './KmField';
 
 const inputClass =
   'w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-400';
 
-export default function EditTransactionModal({ transaction, stations, plates = [], onClose, onSave, workspaceId }) {
+export default function EditTransactionModal({ transaction, stations, plates = [], transactions = [], onClose, onSave, workspaceId }) {
   if (!transaction) return null;
   // Keyed by id so the form resets for each transaction opened
   return (
@@ -16,6 +18,7 @@ export default function EditTransactionModal({ transaction, stations, plates = [
       tx={transaction}
       stations={stations}
       plates={plates}
+      transactions={transactions}
       onClose={onClose}
       onSave={onSave}
       workspaceId={workspaceId}
@@ -23,13 +26,14 @@ export default function EditTransactionModal({ transaction, stations, plates = [
   );
 }
 
-function EditForm({ tx, stations, plates, onClose, onSave, workspaceId }) {
+function EditForm({ tx, stations, plates, transactions, onClose, onSave, workspaceId }) {
   const isExpense = tx.type === 'expense';
   const [stationId, setStationId] = useState(tx.stationId);
   const [amount, setAmount] = useState(String(tx.amount ?? ''));
   const [liters, setLiters] = useState(tx.liters != null ? String(tx.liters) : '');
   const [unitPrice, setUnitPrice] = useState(tx.unitPrice != null ? String(tx.unitPrice) : '');
   const [plate, setPlate] = useState(tx.plate || '');
+  const [odometer, setOdometer] = useState(tx.odometer ? String(tx.odometer) : '');
   const [datetime, setDatetime] = useState(tx.date || '');
   const [note, setNote] = useState(tx.note || '');
   const [receiptNo, setReceiptNo] = useState(tx.receiptNo || '');
@@ -69,6 +73,7 @@ function EditForm({ tx, stations, plates, onClose, onSave, workspaceId }) {
       next.liters = liters ? parseFloat(liters) : null;
       next.unitPrice = unitPrice ? parseFloat(unitPrice) : null;
       next.plate = plate.trim().toUpperCase() || null;
+      next.odometer = odometer ? parseInt(odometer, 10) : null;
       next.fuelType = fuelType || null;
     } else {
       next.paymentMethod = paymentMethod || null;
@@ -170,22 +175,39 @@ function EditForm({ tx, stations, plates, onClose, onSave, workspaceId }) {
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-[11px] text-slate-400 mb-1">Plaka (opsiyonel)</label>
-                <input
-                  type="text"
-                  list="edit-plates"
-                  value={plate}
-                  onChange={(e) => setPlate(e.target.value)}
-                  placeholder="Örn: 34 ABC 123"
-                  className={`${inputClass} uppercase`}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] text-slate-400 mb-1">Plaka (opsiyonel)</label>
+                  <input
+                    type="text"
+                    list="edit-plates"
+                    value={plate}
+                    onChange={(e) => setPlate(e.target.value)}
+                    placeholder="Örn: 34 ABC 123"
+                    className={`${inputClass} uppercase`}
+                  />
+                  <datalist id="edit-plates">
+                    {plates.map((p) => (
+                      <option key={p} value={p} />
+                    ))}
+                  </datalist>
+                </div>
+                <KmField
+                  value={odometer}
+                  onChange={setOdometer}
+                  lastKm={lastOdometer(transactions, plate.trim().toUpperCase(), datetime, tx.id)}
+                  disabled={!plate.trim()}
                 />
-                <datalist id="edit-plates">
-                  {plates.map((p) => (
-                    <option key={p} value={p} />
-                  ))}
-                </datalist>
               </div>
+              <FillNotice
+                check={checkFill(transactions, {
+                  id: tx.id,
+                  plate: plate.trim().toUpperCase(),
+                  odometer,
+                  liters,
+                  date: datetime
+                })}
+              />
             </>
           )}
 

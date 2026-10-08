@@ -8,6 +8,7 @@ const TX_FIELDS = [
   ['unitPrice', 'Birim fiyat', (v) => formatTL(Number(v))],
   ['date', 'Tarih', (v) => String(v).replace('T', ' ')],
   ['plate', 'Plaka', String],
+  ['odometer', 'Km', (v) => `${new Intl.NumberFormat('tr-TR').format(Number(v))} km`],
   ['fuelType', 'Yakıt', String],
   ['paymentMethod', 'Ödeme', String],
   ['receiptNo', 'Fiş no', String],

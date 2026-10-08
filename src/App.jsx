@@ -277,6 +277,7 @@ export default function App() {
       liters: newExpense.liters,
       unitPrice: newExpense.unitPrice,
       plate: newExpense.plate || null,
+      odometer: newExpense.odometer || null,
       fuelType: newExpense.fuelType || null,
       receiptNo: newExpense.receiptNo || null,
       photoId: storePhoto(newExpense.photo),
@@ -978,6 +979,7 @@ export default function App() {
         transaction={editingTx}
         stations={activeStations}
         plates={plates}
+        transactions={data.transactions}
         onClose={() => setEditingTx(null)}
         onSave={handleEditTransaction}
         workspaceId={data.isSample ? null : cloud.workspaceId}
