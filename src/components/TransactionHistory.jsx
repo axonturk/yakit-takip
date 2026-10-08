@@ -11,7 +11,7 @@ import {
 } from '../services/storage';
 import { Trash2, Download, Pencil, Search, Camera } from 'lucide-react';
 import StationLogo from './StationLogo';
-import { t } from '../i18n';
+import { t, volUnit } from '../i18n';
 import { highFills, formatKm, formatL100 } from '../services/consumption';
 
 export default function TransactionHistory({
@@ -239,8 +239,8 @@ export default function TransactionHistory({
                     <div className="text-[11px] text-slate-400 mt-0.5 flex flex-wrap gap-x-2">
                       {isExpense && tx.liters && (
                         <span>
-                          ⛽ <strong className="text-slate-200">{tx.liters} L</strong>
-                          {tx.unitPrice ? ` @ ${t('{cur}{n}/L', { n: tx.unitPrice })}` : ''}
+                          ⛽ <strong className="text-slate-200">{tx.liters} {volUnit()}</strong>
+                          {tx.unitPrice ? ` @ ${t('{cur}{n}/{vol}', { n: tx.unitPrice })}` : ''}
                         </span>
                       )}
                       {tx.fuelType && <span>{t(tx.fuelType)}</span>}

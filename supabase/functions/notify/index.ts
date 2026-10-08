@@ -98,11 +98,11 @@ export function eventsFor(tx, { txs, station, driver, now = new Date() }) {
 }
 
 // One notification per event, in the phone's language and currency
-export function render(event, lang = 'tr', currency = 'TRY') {
+export function render(event, lang = 'tr', currency = 'TRY', units = 'metric') {
   const L = TEXT[lang] || TEXT.tr;
   const m = (v) => money(v, lang, currency);
   const who = event.who || L.someone;
-  const liters = event.liters ? `${lang === 'tr' ? String(event.liters).replace('.', ',') : event.liters} L` : '';
+  const liters = event.liters ? `${lang === 'tr' ? String(event.liters).replace('.', ',') : event.liters} ${units === 'us' ? 'gal' : 'L'}` : '';
   const details = [liters, event.by].filter(Boolean).map((s) => ` · ${s}`).join('');
   switch (event.type) {
     case 'purchase':
@@ -158,7 +158,7 @@ async function handle(req) {
   const [{ data: rows }, { data: members }, { data: subs }] = await Promise.all([
     db.from('records').select('kind, data').eq('workspace_id', ws).eq('deleted', false),
     db.from('workspace_members').select('user_id, role, monthly_limit').eq('workspace_id', ws),
-    db.from('push_subscriptions').select('endpoint, user_id, p256dh, auth, lang, currency').eq('workspace_id', ws)
+    db.from('push_subscriptions').select('endpoint, user_id, p256dh, auth, lang, currency, units').eq('workspace_id', ws)
   ]);
   const txs = (rows || []).filter((r) => r.kind === 'tx' && r.data).map((r) => r.data);
   const station = (rows || []).find((r) => r.kind === 'station' && r.data?.id === tx.stationId)?.data || null;
@@ -176,7 +176,7 @@ async function handle(req) {
   await Promise.all(
     targets.flatMap((s) =>
       events.map(async (event) => {
-        const msg = render(event, s.lang, s.currency);
+        const msg = render(event, s.lang, s.currency, s.units);
         const payload = JSON.stringify({ ...msg, tag: `${event.type}-${id}`, url: '/app/' });
         try {
           await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 86400 });

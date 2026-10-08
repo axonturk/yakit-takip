@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom';
 import { Printer, Download } from 'lucide-react';
 import { monthRange, formatDay, formatTL, nowLocalISO, buildCSV } from '../services/storage';
 import WhatsAppShare from './WhatsAppShare';
-import { t, decimal } from '../i18n';
-import { formatKm, formatL100 } from '../services/consumption';
+import { t, decimal, volUnit, volLabel, distLabel } from '../i18n';
+import { formatKm, formatL100, consumptionUnit } from '../services/consumption';
 import { buildFleetReport, reportCSV, reportText, REPORT_GROUPS } from '../services/report';
 
 const inputClass =
@@ -60,7 +60,7 @@ export default function ReportView({ transactions, hasTeam }) {
           </div>
           <div className="text-lg font-extrabold text-red-400">{formatTL(report.total)}</div>
         </div>
-        {report.liters > 0 && <div className="text-xs text-slate-300">{decimal(report.liters)} L</div>}
+        {report.liters > 0 && <div className="text-xs text-slate-300">{decimal(report.liters)} {volUnit()}</div>}
       </div>
 
       <div className="grid grid-cols-3 gap-2">
@@ -110,8 +110,8 @@ export default function ReportView({ transactions, hasTeam }) {
               <div className="flex justify-between gap-2 text-[10px] text-slate-400">
                 <span className="truncate">
                   {t('{n} işlem', { n: r.count })}
-                  {r.liters ? ` · ${decimal(r.liters)} L` : ''}
-                  {r.avgPrice ? ` · ${t('ort. {v}/L', { v: formatTL(r.avgPrice) })}` : ''}
+                  {r.liters ? ` · ${decimal(r.liters)} ${volUnit()}` : ''}
+                  {r.avgPrice ? ` · ${t('ort. {v}/{vol}', { v: formatTL(r.avgPrice) })}` : ''}
                   {by !== 'station' && r.stations.length ? ` · ${r.stations.join(', ')}` : ''}
                 </span>
                 <span className="shrink-0">{t('%{n}', { n: decimal(r.share) })}</span>
@@ -149,7 +149,7 @@ function PrintableReport({ report, by, from, to }) {
       <table style={{ borderCollapse: 'collapse', width: '100%' }}>
         <thead>
           <tr>
-            {[g.label, t('İşlem'), t('Litre'), t('Ort. {cur}/L'), t('Pay'), t('İstasyonlar'), ...(by === 'plate' ? [t('Km'), t('L/100 km')] : []), t('Tutar')].map((h) => (
+            {[g.label, t('İşlem'), volLabel(), t('Ort. {cur}/{vol}'), t('Pay'), t('İstasyonlar'), ...(by === 'plate' ? [distLabel(), consumptionUnit()] : []), t('Tutar')].map((h) => (
               <th key={h} style={{ ...cell, background: '#eee' }}>{h}</th>
             ))}
           </tr>

@@ -6,7 +6,7 @@ import { FUEL_TYPES, lastExpenseAt, findDuplicate, formatTL, formatTRDate } from
 import { checkFill, lastOdometer } from '../services/consumption';
 import KmField, { FillNotice } from './KmField';
 import ReceiptScan from './ReceiptScan';
-import { t } from '../i18n';
+import { t, volLabel } from '../i18n';
 
 
 export default function ManualExpenseModal({
@@ -255,7 +255,7 @@ export default function ManualExpenseModal({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block text-[11px] text-slate-400 mb-1">
-                {t('Litre')} <span className="text-[10px] text-slate-500">{t('(Opsiyonel)')}</span>
+                {volLabel()} <span className="text-[10px] text-slate-500">{t('(Opsiyonel)')}</span>
               </label>
               <input
                 type="number"
@@ -269,7 +269,7 @@ export default function ManualExpenseModal({
             </div>
             <div>
               <label className="block text-[11px] text-slate-400 mb-1">
-                {t('Birim Fiyat ({cur}/L)')} <span className="text-[10px] text-slate-500">{t('(Opsiyonel)')}</span>
+                {t('Birim Fiyat ({cur}/{vol})')} <span className="text-[10px] text-slate-500">{t('(Opsiyonel)')}</span>
               </label>
               <input
                 type="number"

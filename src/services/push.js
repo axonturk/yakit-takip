@@ -1,5 +1,5 @@
 import { getClient } from './cloud';
-import { getLang, getCurrency } from '../i18n';
+import { getLang, getCurrency, getUnits } from '../i18n';
 
 // Phone notifications for managers of a shared ledger. The phone subscribes with the browser's
 // push service; the "notify" function on Supabase sends the messages (supabase/functions/notify).
@@ -68,7 +68,8 @@ export async function enablePush(workspaceId) {
     p256dh: json.keys.p256dh,
     auth: json.keys.auth,
     lang: getLang(),
-    currency: getCurrency()
+    currency: getCurrency(),
+    units: getUnits()
   });
   if (saveError) throw new PushSetupError('server');
 }
@@ -82,10 +83,10 @@ export async function disablePush() {
 }
 
 // After the language or currency changes, later notifications follow it
-export async function updatePushLocale(lang, currency) {
+export async function updatePushLocale(lang, currency, units) {
   if (!pushSupported() || Notification.permission !== 'granted') return;
   const sub = await currentSubscription();
   if (!sub) return;
   const supabase = await getClient();
-  await supabase.from('push_subscriptions').update({ lang, currency }).eq('endpoint', sub.endpoint);
+  await supabase.from('push_subscriptions').update({ lang, currency, units }).eq('endpoint', sub.endpoint);
 }

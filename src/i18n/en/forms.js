@@ -35,7 +35,7 @@ export default {
   'Fiş {no}': 'Receipt {no}',
   'Slip {no}': 'Slip {no}',
   Litre: 'Litres (L)',
-  'Birim Fiyat ({cur}/L)': 'Unit price ({cur}/L)',
+  'Birim Fiyat ({cur}/{vol})': 'Unit price ({cur}/{vol})',
   'Son: {v}': 'Last: {v}',
   Not: 'Note',
   İstasyon: 'Station',
@@ -46,7 +46,7 @@ export default {
   'Girilen km ({km}) bu aracın son kaydından ({prev}) düşük.\n\nYine de kaydedilsin mi?':
     'The odometer reading ({km}) is lower than this vehicle\'s last entry ({prev}).\n\nSave anyway?',
   'Yakıt Harcaması Gir': 'Add fuel purchase',
-  'Litre × Fiyat girilirse tutar otomatik hesaplanır': 'Enter litres × price and the amount is calculated',
+  'Litre × Fiyat girilirse tutar otomatik hesaplanır': 'Enter quantity × price and the amount is calculated',
   'Toplam Tutar ({cur})': 'Total amount ({cur})',
   'Plaka / Araç': 'Vehicle no.',
   'Açıklama / Not': 'Description / note',
@@ -120,14 +120,14 @@ export default {
     'When the balance falls below this amount, the station turns yellow and a warning shows on the home screen.',
 
   // KmField / FillNotice
-  'Km sayacı': 'Odometer (km)',
+  'Sayaç ({dist})': 'Odometer ({dist})',
   'Önce plaka': 'Vehicle no. first',
   'Son kayıt: {v}': 'Last entry: {v}',
   'Km, bu aracın son kaydından ({v}) düşük. Sayaç doğru mu?': 'Km is lower than this vehicle\'s last entry ({v}). Is the odometer right?',
   'Son alıştan beri {v} yol.': '{v} driven since the last purchase.',
   'Bu alış normalden': 'This purchase is',
   '%{n} fazla': '{n}% above normal',
-  '{v} (bu aracın ortalaması {avg}). Litre ve km\'yi kontrol et.': '{v} (this vehicle\'s average is {avg}). Check the litres and km.',
+  '{v} (bu aracın ortalaması {avg}). Litre ve km\'yi kontrol et.': '{v} (this vehicle\'s average is {avg}). Check the quantity and odometer.',
   '{v} yol': '{v} driven',
   '(ortalama {v})': '(average {v})',
 

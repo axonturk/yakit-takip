@@ -8,7 +8,7 @@ export default function KmField({ value, onChange, lastKm, disabled }) {
   return (
     <div>
       <label className="block text-[11px] text-slate-400 mb-1">
-        {t('Km sayacı')} <span className="text-[10px] text-slate-500">{t('(Opsiyonel)')}</span>
+        {t('Sayaç ({dist})')} <span className="text-[10px] text-slate-500">{t('(Opsiyonel)')}</span>
       </label>
       <input
         type="number"

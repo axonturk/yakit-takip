@@ -1,4 +1,4 @@
-import { intlLocale, decimal } from '../i18n';
+import { intlLocale, decimal, distUnit, getUnits } from '../i18n';
 // Fuel consumption per vehicle from the odometer (km) entered with each purchase.
 // Litres bought at a fill are counted against the km driven since the previous fill of the same plate.
 
@@ -106,9 +106,18 @@ export function periodConsumption(transactions, from, to) {
 }
 
 export function formatKm(km) {
-  return `${new Intl.NumberFormat(intlLocale()).format(km)} km`;
+  return `${new Intl.NumberFormat(intlLocale()).format(km)} ${distUnit()}`;
+}
+
+// Inside, consumption is always volume per 100 distance (L/100 km, or gal/100 mi with US units).
+// US units show it the usual way round: miles per gallon.
+export const consumptionUnit = () => (getUnits() === 'us' ? 'mpg' : 'L/100 km');
+
+export function consumptionValue(v) {
+  if (!v) return v;
+  return getUnits() === 'us' ? Math.round((100 / v) * 10) / 10 : v;
 }
 
 export function formatL100(v) {
-  return `${decimal(v)} L/100 km`;
+  return `${decimal(consumptionValue(v))} ${consumptionUnit()}`;
 }

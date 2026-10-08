@@ -1,4 +1,4 @@
-import { intlLocale, decimal, t } from '../i18n';
+import { intlLocale, decimal, t, volUnit, distUnit, volLabel, distLabel } from '../i18n';
 import { formatTL, transactionLabel } from './storage';
 
 // Turns one row of the cloud change log into words: what happened and which fields changed.
@@ -6,11 +6,11 @@ import { formatTL, transactionLabel } from './storage';
 
 const TX_FIELDS = [
   ['amount', 'Tutar', (v) => formatTL(Number(v))],
-  ['liters', 'Litre', (v) => `${decimal(v)} L`],
+  ['liters', 'Litre', (v) => `${decimal(v)} ${volUnit()}`],
   ['unitPrice', 'Birim fiyat', (v) => formatTL(Number(v))],
   ['date', 'Tarih', (v) => String(v).replace('T', ' ')],
   ['plate', 'Plaka', String],
-  ['odometer', 'Km', (v) => `${new Intl.NumberFormat(intlLocale()).format(Number(v))} km`],
+  ['odometer', 'Km', (v) => `${new Intl.NumberFormat(intlLocale()).format(Number(v))} ${distUnit()}`],
   ['fuelType', 'Yakıt', String],
   ['paymentMethod', 'Ödeme', String],
   ['receiptNo', 'Fiş no', String],
@@ -32,7 +32,7 @@ function fieldChanges(fields, before, after) {
     const a = before?.[key];
     const b = after?.[key];
     if ((empty(a) && empty(b)) || a === b) return;
-    out.push(`${t(label)}: ${empty(a) ? '—' : fmt(a)} → ${empty(b) ? '—' : fmt(b)}`);
+    out.push(`${label === 'Litre' ? volLabel() : label === 'Km' ? distLabel() : t(label)}: ${empty(a) ? '—' : fmt(a)} → ${empty(b) ? '—' : fmt(b)}`);
   });
   if (fields === TX_FIELDS && before?.stationId !== after?.stationId && before && after) {
     out.push(t('İstasyon: {from} → {to}', { from: before.stationName || '—', to: after.stationName || '—' }));
