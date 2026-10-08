@@ -285,6 +285,7 @@ create table if not exists public.push_subscriptions (
   currency text not null default 'TRY',
   created_at timestamptz not null default now()
 );
+alter table public.push_subscriptions add column if not exists units text not null default 'metric';
 create index if not exists push_subscriptions_workspace on public.push_subscriptions (workspace_id);
 
 alter table public.push_subscriptions enable row level security;

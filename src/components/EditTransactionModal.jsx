@@ -5,7 +5,7 @@ import ChangeLog, { ChangeLogTitle } from './ChangeLog';
 import { formatTL, transactionLabel, FUEL_TYPES, PAYMENT_METHODS } from '../services/storage';
 import { checkFill, lastOdometer } from '../services/consumption';
 import KmField, { FillNotice } from './KmField';
-import { t } from '../i18n';
+import { t, volLabel } from '../i18n';
 
 const inputClass =
   'w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-400';
@@ -148,7 +148,7 @@ function EditForm({ tx, stations, plates, transactions, onClose, onSave, workspa
             <>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">{t('Litre')}</label>
+                  <label className="block text-[11px] text-slate-400 mb-1">{volLabel()}</label>
                   <input
                     type="number"
                     inputMode="decimal"
@@ -162,7 +162,7 @@ function EditForm({ tx, stations, plates, transactions, onClose, onSave, workspa
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">{t('Birim Fiyat ({cur}/L)')}</label>
+                  <label className="block text-[11px] text-slate-400 mb-1">{t('Birim Fiyat ({cur}/{vol})')}</label>
                   <input
                     type="number"
                     inputMode="decimal"

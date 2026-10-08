@@ -109,7 +109,7 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
                     {theme === 'light' ? t('Koyu temaya geç') : t('Açık temaya geç')}
                   </MenuItem>
                   <MenuItem icon={Languages} onClick={() => { setMenuOpen(false); setLocaleOpen(true); }}>
-                    {t('Dil ve para birimi')}
+                    {t('Dil ve birimler')}
                   </MenuItem>
                 </div>
               </>

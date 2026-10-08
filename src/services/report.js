@@ -1,6 +1,6 @@
 import { roundMoney, formatTL, formatDay } from './storage';
-import { t, decimal, csvSeparator, getLang } from '../i18n';
-import { periodConsumption, highFills, formatKm, formatL100 } from './consumption';
+import { t, decimal, csvSeparator, getLang, volUnit, volLabel, distLabel } from '../i18n';
+import { periodConsumption, highFills, formatKm, formatL100, consumptionUnit, consumptionValue } from './consumption';
 
 // Monthly fuel report for the fleet: purchases grouped by vehicle (plate) or by the person who entered them.
 
@@ -72,11 +72,11 @@ export function reportCSV(report, by, from, to) {
   const lines = [
     [cell(t('Hisapo yakıt raporu {from} – {to}', { from, to }))],
     [],
-    [g.label, t('İşlem'), t('Tutar ({cur})'), t('Litre'), t('Ort. {cur}/L'), t('Pay %'), t('İstasyonlar'), ...(veh ? [t('Km'), t('L/100 km'), t('Yüksek alış')] : [])].map(cell),
+    [g.label, t('İşlem'), t('Tutar ({cur})'), volLabel(), t('Ort. {cur}/{vol}'), t('Pay %'), t('İstasyonlar'), ...(veh ? [distLabel(), consumptionUnit(), t('Yüksek alış')] : [])].map(cell),
     ...report.rows.map((r) =>
       [
         r.fullLabel, r.count, num(r.amount), num(r.liters || ''), num(r.avgPrice ?? ''), num(r.share), r.stations.join(', '),
-        ...(veh ? [r.km ?? '', num(r.l100 ?? ''), r.high || ''] : [])
+        ...(veh ? [r.km ?? '', num(consumptionValue(r.l100) ?? ''), r.high || ''] : [])
       ].map(cell)
     ),
     [t('Toplam'), report.count, num(report.total), num(report.liters || ''), '', '100', ''].map(cell)
@@ -91,7 +91,7 @@ export function reportText(report, by, from, to) {
     .slice(0, 30)
     .map(
       (r) =>
-        `• ${r.fullLabel}: ${formatTL(r.amount)}${r.liters ? ` · ${num(r.liters)} L` : ''} (${t('{n} işlem', { n: r.count })})` +
+        `• ${r.fullLabel}: ${formatTL(r.amount)}${r.liters ? ` · ${num(r.liters)} ${volUnit()}` : ''} (${t('{n} işlem', { n: r.count })})` +
         (r.km ? `\n   ${formatKm(r.km)} · ${formatL100(r.l100)}` : '') +
         (r.high ? `\n   ⚠ ${t('{n} yüksek tüketimli alış', { n: r.high })}` : '')
     )

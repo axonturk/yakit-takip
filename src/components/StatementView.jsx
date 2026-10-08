@@ -12,7 +12,7 @@ import {
   buildCSV,
   nowLocalISO
 } from '../services/storage';
-import { t, decimal } from '../i18n';
+import { t, decimal, volUnit, volLabel } from '../i18n';
 
 const inputClass =
   'w-full bg-slate-800/80 border border-slate-700/60 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400';
@@ -118,7 +118,7 @@ export default function StatementView({ stations, transactions, defaultStationId
         {s.liters > 0 && (
           <div className="flex justify-between text-[11px] pt-1 border-t border-slate-800">
             <span className="text-slate-500">{t('Toplam yakıt')}</span>
-            <span className="text-slate-300">{decimal(s.liters)} L</span>
+            <span className="text-slate-300">{decimal(s.liters)} {volUnit()}</span>
           </div>
         )}
       </div>
@@ -160,7 +160,7 @@ export default function StatementView({ stations, transactions, defaultStationId
                     {formatDay(tx.date)} {tx.date.slice(11, 16)} · {transactionLabel(tx)}
                   </div>
                   <div className="text-[10px] text-slate-400 truncate">
-                    {[tx.plate, tx.liters && `${decimal(tx.liters)} L`, tx.receiptNo && t('Fiş {n}', { n: tx.receiptNo }), tx.note]
+                    {[tx.plate, tx.liters && `${decimal(tx.liters)} ${volUnit()}`, tx.receiptNo && t('Fiş {n}', { n: tx.receiptNo }), tx.note]
                       .filter(Boolean)
                       .join(' · ')}
                   </div>
@@ -197,14 +197,14 @@ function PrintableStatement({ stationName, from, to, s }) {
         <tbody>
           <tr><td style={cell}>{t('Devir')}</td><td style={num}>{formatTL(s.opening)}</td></tr>
           <tr><td style={cell}>+ {t('Yüklenen ({n} işlem)', { n: s.topupCount })}</td><td style={num}>{formatTL(s.topups)}</td></tr>
-          <tr><td style={cell}>− {s.liters ? t('Tüketim ({n} işlem, {l} L)', { n: s.expenseCount, l: decimal(s.liters) }) : t('Tüketim ({n} işlem)', { n: s.expenseCount })}</td><td style={num}>{formatTL(s.expenses)}</td></tr>
+          <tr><td style={cell}>− {s.liters ? t('Tüketim ({n} işlem, {l} {vol})', { n: s.expenseCount, l: decimal(s.liters) }) : t('Tüketim ({n} işlem)', { n: s.expenseCount })}</td><td style={num}>{formatTL(s.expenses)}</td></tr>
           <tr><td style={{ ...cell, fontWeight: 700 }}>= {t('Kapanış')}</td><td style={{ ...num, fontWeight: 700 }}>{formatTL(s.closing)}</td></tr>
         </tbody>
       </table>
       <table style={{ borderCollapse: 'collapse', width: '100%' }}>
         <thead>
           <tr>
-            {[t('Tarih'), t('İşlem'), t('Plaka'), t('Litre'), t('Fiş No'), t('Not'), t('Tutar'), t('Bakiye')].map((h) => (
+            {[t('Tarih'), t('İşlem'), t('Plaka'), volLabel(), t('Fiş No'), t('Not'), t('Tutar'), t('Bakiye')].map((h) => (
               <th key={h} style={{ ...cell, background: '#eee' }}>{h}</th>
             ))}
           </tr>

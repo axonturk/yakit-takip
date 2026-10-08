@@ -15,6 +15,7 @@ describe('push notification events', () => {
     expect(ev.map((e) => e.type)).toEqual(['purchase']);
     expect(render(ev[0], 'tr', 'TRY')).toEqual({ title: '⛽ 34 ABC 12: ₺1.200', body: 'Opet Maslak · 26,5 L · ali' });
     expect(render(ev[0], 'en', 'INR').body).toBe('Opet Maslak · 26.5 L · ali');
+    expect(render(ev[0], 'en', 'USD', 'us').body).toBe('Opet Maslak · 26.5 gal · ali');
   });
 
   it('warns once when the balance drops below the warning level', () => {

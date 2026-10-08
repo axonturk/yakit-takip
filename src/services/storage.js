@@ -1,4 +1,4 @@
-import { intlLocale, getCurrency, t, decimal, csvSeparator, getLang } from '../i18n';
+import { intlLocale, getCurrency, t, decimal, csvSeparator, getLang, volLabel, distLabel } from '../i18n';
 // LocalStorage key
 const STORAGE_KEY = 'yakit_takip_data_v1';
 
@@ -265,7 +265,7 @@ export function buildCSV(transactions) {
   const known = (v) => (v && (FUEL_TYPES.includes(v) || PAYMENT_METHODS.includes(v)) ? t(v) : v || '');
   const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const header = [
-    t('Tarih'), t('Tür'), t('İstasyon'), t('Plaka'), t('Km'), t('Tutar'), t('Litre'), t('Birim Fiyat'),
+    t('Tarih'), t('Tür'), t('İstasyon'), t('Plaka'), distLabel(), t('Tutar'), volLabel(), t('Birim Fiyat'),
     t('Yakıt'), t('Ödeme'), t('Fiş No'), t('Not'), t('Giren'), t('Kayıt No')
   ];
   const rows = transactions.map((x) =>
@@ -443,7 +443,7 @@ export function statementText(stationName, from, to, s, maxRows = 40) {
     `+ ${t('Yüklenen: {v} ({n} işlem)', { v: formatTL(s.topups), n: s.topupCount })}`,
     `− ${
       s.liters
-        ? t('Tüketim: {v} ({n} işlem, {l} L)', { v: formatTL(s.expenses), n: s.expenseCount, l: decimal(s.liters) })
+        ? t('Tüketim: {v} ({n} işlem, {l} {vol})', { v: formatTL(s.expenses), n: s.expenseCount, l: decimal(s.liters) })
         : t('Tüketim: {v} ({n} işlem)', { v: formatTL(s.expenses), n: s.expenseCount })
     }`,
     `*= ${t('Kapanış: {v}', { v: formatTL(s.closing) })}*`
