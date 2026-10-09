@@ -1,5 +1,8 @@
 // App shell: App.jsx, Header, BalanceCard, StationList, StationLogo, InstallAppModal
 export default {
+  // UpdateBanner
+  'Yeni sürüm hazır.': 'A new version is ready.',
+  'Yenile': 'Reload',
   // App.jsx: alerts, confirms and stored notes
   'Fotoğraf kaydedilemedi; kayıt fotoğrafsız saklandı.': 'Could not save the photo; the record was saved without it.',
   'Bilinmeyen İstasyon': 'Unknown station',

@@ -28,6 +28,7 @@ import AdjustBalanceModal from './components/AdjustBalanceModal';
 import InstallAppModal from './components/InstallAppModal';
 import EditTransactionModal from './components/EditTransactionModal';
 import EditStationModal from './components/EditStationModal';
+import UpdateBanner from './components/UpdateBanner';
 import StatementView from './components/StatementView';
 import ReportView from './components/ReportView';
 import { disablePush } from './services/push';
@@ -1005,6 +1006,8 @@ export default function App() {
         onClose={() => setEditingStation(null)}
         onSave={handleEditStation}
       />
+
+      <UpdateBanner />
 
       {savedToast && !undoState && (
         <div className="fixed inset-x-3 bottom-24 z-50 max-w-md mx-auto">

@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'hisapo-app-v27';
+﻿const CACHE_NAME = 'hisapo-app-v28';
 
 const PRECACHE_ASSETS = [
   './',
@@ -39,13 +39,15 @@ self.addEventListener('activate', (event) => {
 // Fetch: Network-First for HTML navigation to prevent stale index.html pointing to obsolete chunks!
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  // Version checks (UpdateBanner) must reach the server, not a cached copy
+  if (event.request.cache === 'no-store') return;
 
   const url = new URL(event.request.url);
 
   // For HTML navigation: Network First, fallback to cache
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, { cache: 'no-cache' })
         .then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             const clone = networkResponse.clone();
