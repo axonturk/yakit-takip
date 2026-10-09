@@ -52,6 +52,11 @@
           navigator.serviceWorker.register('./sw.js').then((reg) => {
             console.log('SW kayıt başarılı:', reg.scope);
             reg.update();
+            // An installed app is often resumed rather than reloaded: look for a new version
+            // every time it comes to the front, so the new worker takes over and the page reloads.
+            document.addEventListener('visibilitychange', () => {
+              if (!document.hidden) reg.update().catch(() => {});
+            });
           }).catch((err) => {
             console.warn('SW kayıt hatası:', err);
           });
