@@ -70,4 +70,55 @@ Plaka 06XYZ99`;
   it('returns nothing it cannot read', () => {
     expect(parseReceipt('bulanık bir fotoğraf')).toEqual({});
   });
+
+  // Real OPET autogas receipts (Kırıkhan, 9 Oct 2026) as the phone read them, misreads included
+  it('reads real receipts despite misread characters', () => {
+    const misreadTotal = `09-10-2026 28:30
+FİŞ NO: 0063
+S1ASS626
+15,79 LT X 37,990
+AUTO GAS X20 *600, 00
+KDV *100,00
+TOPLAM 1600, 00
+NAKİT: *600, 00`;
+    expect(parseReceipt(misreadTotal)).toMatchObject({ amount: 600, liters: 15.79, unitPrice: 37.99, receiptNo: '63', fuelType: 'LPG' });
+
+    const quotedTotal = `09-10-2026 08:25 |,
+FİŞ NO:0062 |
+31SH965ö0
+13,16 LT X 37,990
+AUTO GAS x20 *b00, 00
+KDV *83,33
+TOPLAM “500,00 |
+NAKİT: *500,00 |`;
+    expect(parseReceipt(quotedTotal)).toEqual({
+      amount: 500,
+      liters: 13.16,
+      unitPrice: 37.99,
+      date: '2026-10-09T08:25',
+      receiptNo: '62',
+      fuelType: 'LPG'
+    });
+
+    const noTotalLine = `09-10-2026 08:25
+| FİŞ NO:0061
+| BGEA5423
+10,53 LT X 37,990
+AUTO GAS X20 *400,00
+KDV *66,61
+NAKİT: *400,00`;
+    expect(parseReceipt(noTotalLine)).toMatchObject({ amount: 400, liters: 10.53, unitPrice: 37.99 });
+  });
+
+  it('does not take the VAT line for litres, and works out the price from total and litres', () => {
+    const text = `FİŞ NO:0063
+15,79 LÜX GTA
+AUTO GAS X20 *600,00
+KOV *100,00
+TOPLAM *600, 00`;
+    expect(parseReceipt(text)).toMatchObject({ amount: 600, liters: 15.79, unitPrice: 38 });
+    // "37,990" cut short to "31," by the reader
+    expect(parseReceipt('10,53 LT X 31,\nAUTO GAS X20 *400,00\nNAKİT: *400,00')).toMatchObject({ amount: 400, liters: 10.53, unitPrice: 37.99 });
+    expect(parseReceipt('10,53 LT\nAUTO GAS %20 *400,00\nTOPLAM *400,00')).toMatchObject({ amount: 400, liters: 10.53, unitPrice: 37.99 });
+  });
 });
