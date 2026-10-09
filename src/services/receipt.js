@@ -30,7 +30,9 @@ function normalise(text) {
     .replace(/ı/g, 'i')
     .toUpperCase()
     .replace(/[ÇĞÖŞÜ]/g, (c) => ({ Ç: 'C', Ğ: 'G', Ö: 'O', Ş: 'S', Ü: 'U' })[c])
-    .replace(/[ \t]+/g, ' ');
+    .replace(/[ \t]+/g, ' ')
+    // "*600, 00": OCR often puts a space after the decimal comma
+    .replace(/(\d)([.,]) (\d{2})\b/g, '$1$2$3');
 }
 
 const close = (a, b, tolerance = 0.02) => a > 0 && b > 0 && Math.abs(a - b) / b <= tolerance;
@@ -38,27 +40,35 @@ const close = (a, b, tolerance = 0.02) => a > 0 && b > 0 && Math.abs(a - b) / b 
 function findTotal(lines) {
   const candidates = [];
   lines.forEach((line, i) => {
-    if (!/TOPLAM|TUTAR|TOTAL|GENEL/.test(line)) return;
+    // Payment lines (cash, card) repeat the total and help when the TOPLAM line is misread
+    const payment = /NAKIT|KREDI|KART/.test(line);
+    if (!payment && !/TOPLAM|TUTAR|TOTAL|GENEL/.test(line)) return;
     if (/KDV|ARA ?TOPLAM|INDIRIM|PARA USTU/.test(line)) return;
     // The amount is usually on the same line, otherwise on the next one
     const same = [...line.matchAll(new RegExp(NUM, 'g'))].map((m) => parseTRNumber(m[1]));
     const next = lines[i + 1] && !/KDV/.test(lines[i + 1]) ? [...lines[i + 1].matchAll(new RegExp(NUM, 'g'))].map((m) => parseTRNumber(m[1])) : [];
     const nums = (same.length ? same : next).filter((n) => n > 0);
-    if (nums.length) candidates.push({ value: nums[nums.length - 1], strong: /TOPLAM/.test(line) });
+    if (nums.length) candidates.push({ value: nums[nums.length - 1], strong: !payment && /TOPLAM/.test(line) });
   });
   if (!candidates.length) return null;
   const strong = candidates.filter((c) => c.strong);
   return Math.max(...(strong.length ? strong : candidates).map((c) => c.value));
 }
 
+function allNumbers(lines) {
+  return lines.flatMap((line) => [...line.matchAll(new RegExp(NUM, 'g'))].map((m) => parseTRNumber(m[1]))).filter((n) => n > 0);
+}
+
 function findLitresAndPrice(text, lines) {
   // "24,214 LT X 44,73" or "24,214 X 44,73 TL" (quantity × unit price on one line)
-  const pair = new RegExp(`${NUM}\\s*(?:LT|LITRE|L)?\\s*[X×*]\\s*${NUM}`);
+  // Not "%20 *600,00" (VAT rate and amount, "%" often read as "X"): no number glued to a letter or "%",
+  // and "*" only counts as "×" right after a litre unit.
+  const pair = new RegExp(`(?<![%A-Z\\d.,])${NUM}\\s*(LT|LITRE|L)?\\s*([X×*])\\s*${NUM}`);
   for (const line of lines) {
     const m = line.match(pair);
-    if (m) {
+    if (m && (m[3] !== '*' || m[2])) {
       const a = parseTRNumber(m[1]);
-      const b = parseTRNumber(m[2]);
+      const b = parseTRNumber(m[4]);
       if (a > 0 && b > 0) return /LT|LITRE| L /.test(line.slice(0, m.index + m[0].length)) || b < 200 ? { liters: a, unitPrice: b } : { liters: b, unitPrice: a };
     }
   }
@@ -68,6 +78,11 @@ function findLitresAndPrice(text, lines) {
     if (liters === null && /MIKTAR|LITRE|\bLT\b/.test(line) && !/FIYAT/.test(line)) {
       const m = line.match(new RegExp(`${NUM}\\s*(?:LT|LITRE|L\\b)`)) || line.match(new RegExp(`(?:MIKTAR|LITRE)[^\\d]*${NUM}`));
       if (m) liters = parseTRNumber(m[1]);
+    }
+    // "15,79 LÜX GTA": the line starts with the litres even when the rest is unreadable
+    if (liters === null) {
+      const m = line.match(new RegExp(`^${NUM}\\s*L`));
+      if (m && /[.,]\d{2}/.test(m[1])) liters = parseTRNumber(m[1]);
     }
     if (unitPrice === null && /FIYAT|TL\/L|TL \/ L/.test(line)) {
       const m = line.match(new RegExp(`(?:FIYAT)[^\\d]*${NUM}`)) || line.match(new RegExp(`${NUM}\\s*TL\\s*/\\s*L`));
@@ -103,7 +118,7 @@ function findReceiptNo(lines) {
 }
 
 function findFuel(text) {
-  if (/LPG|OTOGAZ|AUTOGAS/.test(text)) return 'LPG';
+  if (/LPG|OTOGAZ|AUTO ?GAS/.test(text)) return 'LPG';
   if (/MOTORIN|DIZEL|DIESEL|EURODIESEL|ULTRAFORCE D|V\/MAX D/.test(text)) return 'Motorin';
   if (/BENZIN|KURSUNSUZ|95 OKTAN|97 OKTAN|V\/MAX 95/.test(text)) return 'Benzin';
   return null;
@@ -120,7 +135,13 @@ export function parseReceipt(rawText) {
   // Fuel prices are tens of lira per litre; anything else is a misread
   if (unitPrice !== null && !(unitPrice >= 5 && unitPrice <= 500)) unitPrice = null;
   if (liters !== null && !(liters > 0 && liters <= 2000)) liters = null;
+  const priceRead = unitPrice;
 
+  if (liters && unitPrice && amount && !close(liters * unitPrice, amount)) {
+    // The total may be misread ("*600,00" read as "1600,00"); another line often repeats it correctly
+    const repeat = allNumbers(lines).find((n) => close(liters * unitPrice, n, 0.005));
+    if (repeat) amount = repeat;
+  }
   if (liters && unitPrice && amount && !close(liters * unitPrice, amount)) {
     // Keep the pair that agrees; the total line is the most reliable on fiscal receipts
     if (close(amount / unitPrice, liters, 0.05)) liters = Math.round((amount / unitPrice) * 100) / 100;
@@ -128,6 +149,11 @@ export function parseReceipt(rawText) {
   }
   if (!amount && liters && unitPrice) amount = Math.round(liters * unitPrice * 100) / 100;
   if (amount && unitPrice && !liters) liters = Math.round((amount / unitPrice) * 100) / 100;
+  if (amount && liters && !unitPrice) {
+    // Work the price out, unless a clearly different price was printed (then litres or total is wrong)
+    const price = Math.round((amount / liters) * 100) / 100;
+    if (price >= 5 && price <= 500 && (!priceRead || close(priceRead, price, 0.3))) unitPrice = price;
+  }
 
   if (amount) out.amount = amount;
   if (liters) out.liters = liters;
