@@ -143,8 +143,8 @@ export default {
   'İlk okuma için internet gerekiyor.': 'The first scan needs an internet connection.',
   'Fiş okunuyor…': 'Reading receipt…',
   'Fişi okut (fotoğraftan doldur)': 'Scan receipt (fill from photo)',
-  'İlk seferde okuma aracı indirilir (yaklaşık 4 MB), sonra internetsiz de çalışır.':
-    'The reader is downloaded the first time (about 4 MB), then works offline.',
+  'İlk seferde okuma aracı indirilir (birkaç MB), sonra internetsiz de çalışır.':
+    'The reader is downloaded the first time (a few MB), then works offline.',
   'Okunan: {list}. Lütfen kontrol et.': 'Read: {list}. Please check.',
   'Fişte okunabilen bilgi bulunamadı. Fişi düz ve aydınlık çekip tekrar dene.':
     'Nothing readable found. Take the photo flat and in good light, then try again.',

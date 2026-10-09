@@ -27,6 +27,20 @@ export const UNITS = [
 
 const EURO = ['AT', 'BE', 'HR', 'CY', 'EE', 'FI', 'FR', 'DE', 'GR', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PT', 'SK', 'SI', 'ES'];
 
+const EURO_ZONES = {
+  'Europe/Paris': 'FR',
+  'Europe/Madrid': 'ES',
+  'Atlantic/Canary': 'ES',
+  'Europe/Berlin': 'DE',
+  'Europe/Vienna': 'AT',
+  'Europe/Brussels': 'BE',
+  'Europe/Amsterdam': 'NL',
+  'Europe/Rome': 'IT',
+  'Europe/Lisbon': 'PT',
+  'Europe/Dublin': 'IE',
+  'Europe/Luxembourg': 'LU'
+};
+
 // Country of the phone: its time zone first (a Turkish phone set to English is still in Turkey),
 // then the region in the language setting (en-IN → IN).
 export function detectCountry(timeZone, languages) {
@@ -35,6 +49,7 @@ export function detectCountry(timeZone, languages) {
   if (tz === 'Asia/Kolkata' || tz === 'Asia/Calcutta') return 'IN';
   if (tz === 'Asia/Dubai') return 'AE';
   if (tz === 'Europe/London') return 'GB';
+  if (EURO_ZONES[tz]) return EURO_ZONES[tz];
   if (/^(America\/(New_York|Chicago|Denver|Los_Angeles|Phoenix|Anchorage|Detroit|Boise|Indiana\/.+|Kentucky\/.+|North_Dakota\/.+)|Pacific\/Honolulu)$/.test(tz)) return 'US';
   for (const l of languages || []) {
     const m = /^[a-z]{2,3}[-_]([A-Z]{2})\b/i.exec(l || '');
@@ -103,6 +118,32 @@ export function saveLocale(next) {
   } catch {
     // keeps working for this session
   }
+}
+
+// Receipts the reader should expect: their country (number style, price range, date order)
+// and the OCR languages to load. Comes from the currency and units the person uses,
+// and for the euro from the phone's country, since French, Spanish and German receipts differ.
+const OCR_LANGS = { TR: ['tur'], FR: ['fra', 'eng'], BE: ['fra', 'eng'], LU: ['fra', 'eng'], ES: ['spa', 'eng'], DE: ['deu', 'eng'], AT: ['deu', 'eng'] };
+
+export function receiptLanguage(locale = current, deviceCountry = null) {
+  let country;
+  if (locale.currency === 'TRY') country = 'TR';
+  else if (locale.currency === 'INR') country = 'IN';
+  else if (locale.currency === 'USD' || locale.units === 'us') country = 'US';
+  else if (locale.currency === 'GBP') country = 'GB';
+  else if (locale.currency === 'AED') country = 'AE';
+  else {
+    let device = deviceCountry;
+    if (device === null) {
+      try {
+        device = detectCountry(Intl.DateTimeFormat().resolvedOptions().timeZone, navigator.languages || [navigator.language]);
+      } catch {
+        device = null;
+      }
+    }
+    country = EURO.includes(device) ? device : 'EU';
+  }
+  return { country, langs: OCR_LANGS[country] || ['eng'] };
 }
 
 // For tests

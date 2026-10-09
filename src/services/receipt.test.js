@@ -122,3 +122,97 @@ TOPLAM *600, 00`;
     expect(parseReceipt('10,53 LT\nAUTO GAS %20 *400,00\nTOPLAM *400,00')).toMatchObject({ amount: 400, liters: 10.53, unitPrice: 37.99 });
   });
 });
+
+// Receipts from other countries, as the phone's reader read them (misreads included).
+// Sources: public receipt datasets (France, Malaysia, Australia) and made-up US, Indian and Dutch slips.
+describe('parseReceipt abroad', () => {
+  it('reads a French self-service ticket', () => {
+    const text = `LE 17-07-25 A 19-59-18
+STATION AVIA DA
+MONTANT REEL
+65.63 EUR
+Ticket No :
+No pompe = 5
+Carburant = SP98
+Quantite = 32 67 L
+Prix unit. = 2,009 EUR
+TVA 20,00% = 10,94 EUR`;
+    expect(parseReceipt(text, { country: 'FR' })).toMatchObject({ amount: 65.63, liters: 32.67, unitPrice: 2.009, date: '2025-07-17T12:00', fuelType: 'Benzin' });
+  });
+
+  it('adds net and VAT when the total line is unreadable', () => {
+    const text = `Date 26-02-2025 17:21:59
+Pompe 3 SP98
+Volume 20.29% Te
+Prix € 2.129/?
+Tor TIC
+TVA 20.00 % €7.19
+Net € 35.94`;
+    expect(parseReceipt(text, { country: 'FR' })).toMatchObject({ amount: 43.13, liters: 20.26, unitPrice: 2.129 });
+  });
+
+  it('reads Spanish columns and works out the misread price', () => {
+    const text = `Fecha: 13-09-2026 Hora: 14:35:40
+PRODU TO VL LITROS rosie
+efitec 98 4,095 28,44 9,67
+Total tarjeta; — j - 59,67.`;
+    expect(parseReceipt(text, { country: 'ES' })).toMatchObject({ amount: 59.67, liters: 28.44, unitPrice: 2.098, fuelType: 'Benzin' });
+  });
+
+  it('reads a Dutch receipt with quantity × price', () => {
+    const text = `Datum: 19-07-2026 Tijd: 14:32
+EURO 95
+25.00 L x EUR 2.420
+Brandstof EUR 60.50
+Subtotaal excl. BTW EUR 50.00
+BTW 21% EUR 10.50
+TOTAAL EUR 60.50`;
+    expect(parseReceipt(text, { country: 'NL' })).toEqual({ amount: 60.5, liters: 25, unitPrice: 2.42, date: '2026-07-19T14:32', fuelType: 'Benzin' });
+  });
+
+  it('reads a Malaysian receipt and takes the product, not the footer, as the fuel', () => {
+    const text = `39.42 litre Punp # 09
+FuelSave 95 RM 85.54 C
+2.170 RM / litre
+Total RM 85.54
+Total Gross C RM 85. 54
+26/02/18 08.28 10886 09
+~ Diesel & Petrol RON9S`;
+    expect(parseReceipt(text, { country: 'MY' })).toMatchObject({ amount: 85.54, liters: 39.42, unitPrice: 2.17, date: '2018-02-26T08:28', fuelType: 'Benzin' });
+  });
+
+  it('reads an Australian receipt with spaces inside numbers', () => {
+    const text = `>OPREMIUM 98 $57 .80
+30.630L @ $1 .887/L
+rOTAL (incl GST) $57.80
+Date 15-SEP-2025`;
+    expect(parseReceipt(text, { country: 'AU' })).toMatchObject({ amount: 57.8, liters: 30.63, unitPrice: 1.887, date: '2025-09-15T12:00' });
+  });
+
+  it('reads US gallons, dollars and month-first dates', () => {
+    const text = `DATE 06/04/2026 TIME 08:14
+PREMIUM
+GALLONS ~~ 14.002
+PRICE/GAL ~~ $4.199
+FUEL SALE $58.79
+TOTAL ~~ $58.79`;
+    expect(parseReceipt(text, { country: 'US' })).toMatchObject({ amount: 58.79, liters: 14.002, unitPrice: 4.199, date: '2026-06-04T08:14', fuelType: 'Benzin' });
+    // "121.330" for "21.330": the gallons are a digit off what total ÷ price gives
+    expect(parseReceipt('121.330 6 @ $2.989/ G\nTOTAL $63.76', { country: 'US' })).toMatchObject({ amount: 63.76, liters: 21.33, unitPrice: 2.989 });
+  });
+
+  it('reads an Indian pump slip in rupees', () => {
+    const text = `RECEIPT NO : 004511
+PRODUCT : PETROL
+RATE (Rs/L) : 94.72
+VOLUME (L) =: 10.56 :
+AMOUNT (Rs) : 1000.24
+DATE: 15/01/2026 TIME: 10:41`;
+    expect(parseReceipt(text, { country: 'IN' })).toEqual({ amount: 1000.24, liters: 10.56, unitPrice: 94.72, date: '2026-01-15T10:41', receiptNo: '4511', fuelType: 'Benzin' });
+  });
+
+  it('keeps Turkish rules at home: "1.083" is a thousand and Petrol Ofisi is not a fuel', () => {
+    expect(parseReceipt('PETROL OFISI\nTOPLAM 1.083', { country: 'TR' })).toEqual({ amount: 1083 });
+    expect(parseReceipt('PRIX 1.649 EUR/L\nTOTAL 49,47', { country: 'FR' })).toMatchObject({ unitPrice: 1.649, liters: 30 });
+  });
+});

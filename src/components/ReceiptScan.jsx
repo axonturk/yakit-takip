@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { ScanLine, Loader2 } from 'lucide-react';
 import { compressImage } from '../services/photos';
-import { t, getLang } from '../i18n';
+import { t, receiptLanguage } from '../i18n';
 
 const LABELS = {
   amount: () => t('tutar'),
@@ -14,7 +14,7 @@ const LABELS = {
 };
 
 // "Fişi okut": photograph the receipt, read it on the phone and fill the form.
-// The reader only understands Turkish receipts, so it is hidden in other languages.
+// It reads Turkish, US, Indian and European receipts; which ones to expect comes from the currency.
 export default function ReceiptScan({ onRead }) {
   const inputRef = useRef(null);
   const [state, setState] = useState(null); // null | 'busy' | { found: [] } | { error }
@@ -26,9 +26,9 @@ export default function ReceiptScan({ onRead }) {
     setState('busy');
     try {
       // A larger copy reads better; the smaller one is what gets saved as the receipt photo
-      const [forOcr, photo] = await Promise.all([compressImage(file, 2000, 0.9), compressImage(file)]);
+      const [forOcr, photo] = await Promise.all([compressImage(file, 3000, 0.9), compressImage(file)]);
       const { readReceipt } = await import('../services/ocr');
-      const { fields } = await readReceipt(forOcr);
+      const { fields } = await readReceipt(forOcr, receiptLanguage());
       onRead(fields, photo);
       setState({ found: Object.keys(fields).filter((k) => LABELS[k]) });
     } catch (err) {
@@ -36,8 +36,6 @@ export default function ReceiptScan({ onRead }) {
       console.warn('Receipt OCR failed', err);
     }
   };
-
-  if (getLang() !== 'tr') return null;
 
   return (
     <div>
@@ -52,7 +50,7 @@ export default function ReceiptScan({ onRead }) {
         {state === 'busy' ? t('Fiş okunuyor…') : t('Fişi okut (fotoğraftan doldur)')}
       </button>
       {state === 'busy' && (
-        <p className="text-[10px] text-slate-400 mt-1">{t('İlk seferde okuma aracı indirilir (yaklaşık 4 MB), sonra internetsiz de çalışır.')}</p>
+        <p className="text-[10px] text-slate-400 mt-1">{t('İlk seferde okuma aracı indirilir (birkaç MB), sonra internetsiz de çalışır.')}</p>
       )}
       {state?.found && (
         <p className={`text-[11px] mt-1 ${state.found.length ? 'text-emerald-300' : 'text-amber-300'}`}>

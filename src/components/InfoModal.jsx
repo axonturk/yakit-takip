@@ -123,7 +123,7 @@ function Help() {
           {open === i && (
             <ul className="px-3 pb-3 space-y-1.5 text-[11px] text-slate-300 list-disc pl-7">
               {/* Receipt reading is Turkish only, so its tips are too */}
-              {item.a.filter((line) => getLang() === 'tr' || !line.includes('Fişi okut')).map((line) => (
+              {item.a.map((line) => (
                 <li key={line}>{t(line)}</li>
               ))}
             </ul>
