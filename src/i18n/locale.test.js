@@ -33,3 +33,15 @@ describe('first-launch defaults from the phone', () => {
     expect(formatL100(7.5)).toBe('7,5 L/100 km');
   });
 });
+
+describe('receiptLanguage', () => {
+  it('reads receipts of the country the money is in', async () => {
+    const { receiptLanguage } = await import('./index');
+    expect(receiptLanguage({ currency: 'TRY', units: 'metric' })).toEqual({ country: 'TR', langs: ['tur'] });
+    expect(receiptLanguage({ currency: 'INR', units: 'metric' })).toEqual({ country: 'IN', langs: ['eng'] });
+    expect(receiptLanguage({ currency: 'USD', units: 'us' })).toEqual({ country: 'US', langs: ['eng'] });
+    expect(receiptLanguage({ currency: 'EUR', units: 'metric' }, 'FR')).toEqual({ country: 'FR', langs: ['fra', 'eng'] });
+    expect(receiptLanguage({ currency: 'EUR', units: 'metric' }, 'DE')).toEqual({ country: 'DE', langs: ['deu', 'eng'] });
+    expect(receiptLanguage({ currency: 'EUR', units: 'metric' }, 'IT')).toEqual({ country: 'IT', langs: ['eng'] });
+  });
+});
