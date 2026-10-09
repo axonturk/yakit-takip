@@ -13,7 +13,8 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>
     // Home-screen icons added before the app moved to /app/ open here; send them straight to the app.
-    if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
+    // Icons from the old axonturk.github.io address open /index.html in a normal browser tab.
+    if (location.pathname === '/index.html' || window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
       location.replace('/app/');
     }
   </script>
