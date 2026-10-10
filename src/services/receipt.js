@@ -27,20 +27,24 @@ const NUM = '(\\d{1,3}(?:[.\\s]\\d{3})*[.,]\\d{1,3}|\\d+[.,]\\d{1,3}|\\d+)';
 const CUR = '(?:EUR|€|\\$|USD|RM|RS\\.?|INR|₹|TL|AED|£|GBP|AUD|MYR)';
 
 // Words that mark each field, in Turkish, English, French, Spanish, German and Dutch
-const TOTAL_WORDS = /TOPLAM|TUTAR|TOTAL|GENEL|TOT\.? ?TTC|MONTANT|IMPORTE|SUMME|BETRAG|GESAMT|TOTAAL|AMOUNT|\bSALE\b|BRANDSTOF/;
-const STRONG_TOTAL = /TOPLAM|TOTAL|TOT\.? ?TTC|SUMME|TOTAAL|AMOUNT|\bSALE\b|MONTANT.?.?REEL/;
-const NOT_TOTAL = /KDV|ARA ?TOPLAM|INDIRIM|PARA USTU|TVA|MWST|MW?ST|\bIVA\b|BTW|GST|\bTAX\b|SUB ?TOTA|\bNET\b|NETTO|EXCL|PREPAY|ROUNDING|CHANGE|RELIEF|BASE|POINTS|VAT/;
+const TOTAL_WORDS = /TOPLAM|TUTAR|TOTAL|GENEL|TOT\.? ?TTC|MONTANT|IMPORTE|SUMME|BETRAG|GESAMT|TOTAAL|AMOUNT|\bMONT ?\(RS|\bSALE\b|BRANDSTOF/;
+const STRONG_TOTAL = /TOPLAM|TOTAL|TOT\.? ?TTC|SUMME|TOTAAL|AMOUNT|\bMONT ?\(RS|\bSALE\b|MONTANT.?.?REEL/;
+const NOT_TOTAL = /KDV|ARA ?TOPLAM|INDIRIM|PARA USTU|TVA|MWST|MW?ST|\bIVA\b|BTW|GST|\bTAX\b|SUB ?TOTA|\bNET\b|NETTO|EXCL|PREPAY|ROUNDING|CHANGE|RELIEF|BASE|POINTS|VAT|\b[AV] ?TOT\b|TOTALI[SZ]ER|PRESET TYPE/;
 const PAYMENT = /NAKIT|KREDI|KART|CASH|VISA|DEBIT|CARTE|CARD|TARJETA|MASTERCARD|\bPIN\b|BANCAIRE|EFECTIVO|BAR\b|UPI/;
-const VOLUME_WORDS = /MIKTAR|LITRE|\bLT\b|VOLUME|QUANTIT|\bQTY\b|LITROS|MENGE|GALLONS|LITER/;
+// Also as OCR often reads them on Indian slips: "_OLUME", "IJUANTITY", and the misprint "QUANITY"
+const VOLUME_WORDS = /MIKTAR|LITRE|\bLT\b|VOLUME|OLUME\b|QUANTIT|UANTIT|QUANITY|\bQTY\b|LITROS|MENGE|GALLONS|LITER/;
 const PRICE_WORDS = /FIYAT|PRIX|PRICE|RATE|PREIS|PRECIO|\bP\.? ?U\b|EUR ?\/ ?L|€ ?\/ ?L|\/ ?L\b|\/ ?LT|\/ ?G\b|\/ ?GAL|\/ ?LITRE/;
-const VOLUME_UNIT = '(?:LTRS?|LT|LITRES?|LITERS?|LITROS?|LIT|GALLONS?|GAL|L|G|ℓ)';
+const VOLUME_UNIT = '(?:LTRS?|LTS|LT|LITRES?|LITERS?|LITROS?|LIT|GALLONS?|GAL|L|G|ℓ)';
 
 function profile(country = 'TR') {
   const c = String(country || 'TR').toUpperCase();
   if (c === 'TR') return { dotThousands: true, price: [5, 500], monthFirst: false };
-  if (c === 'IN') return { dotThousands: false, price: [50, 200], monthFirst: false };
+  // Indian pumps print whole litres when a round quantity was preset ("Quantity: 31 Ltr")
+  if (c === 'IN') return { dotThousands: false, price: [50, 200], monthFirst: false, wholeLitres: true };
   if (c === 'US') return { dotThousands: false, price: [1, 8], monthFirst: true };
-  // Euro, pound, dirham, ringgit…: a litre costs between half a unit and a few units
+  // British pumps often print the price in pence per litre ("26.38 litre @ 151.9 PPL")
+  if (c === 'GB') return { dotThousands: false, price: [0.5, 5], monthFirst: false, pence: true };
+  // Euro, dirham, ringgit…: a litre costs between half a unit and a few units
   return { dotThousands: false, price: [0.5, 5], monthFirst: false };
 }
 
@@ -56,11 +60,16 @@ function normalise(text) {
     .replace(/(\d)([.,]) (\d{2})\b/g, '$1$2$3')
     // "$57 .80": and a space before it
     .replace(/(\d) ([.,]\d)/g, '$1$2')
+    // "R5.300.00": the rupee sign "Rs." read with a five
+    .replace(/\bR[S5]\.(?=\d)/g, 'RS. ')
     // "32 67 L": the decimal mark lost before a volume unit
     .replace(/\b(\d{1,3}) (\d{2}) ?(L|LT|LTR)\b/g, '$1.$2 $3')
     // "2.200 RM [LITRE": a slash read as a bracket or bar
     .replace(/(\d\s*(?:[A-Z€$]{1,3}\.?)?\s*)[[|](\s*(?:LITRE|LITER|LTR|LT|L|G|GAL)\b)/g, '$1/$2');
 }
+
+// A price in pence ("151.9") as pounds; other numbers as they are
+const pounds = (n, p) => (p.pence && n > p.price[1] && n / 100 >= p.price[0] && n / 100 <= p.price[1] ? Math.round(n * 10) / 1000 : n);
 
 const close = (a, b, tolerance = 0.02) => a > 0 && b > 0 && Math.abs(a - b) / b <= tolerance;
 
@@ -91,7 +100,11 @@ function findTotal(lines, p) {
     const nums = same.length ? same : next;
     if (nums.length) candidates.push({ value: nums[nums.length - 1], strong: !payment && STRONG_TOTAL.test(line) });
   });
-  if (!candidates.length) return null;
+  if (!candidates.length) {
+    // Indian pumps print the amount asked for before the sale ("Preset :Rs.1000"); the sale line is often faded
+    const preset = lines.map((l) => l.match(/PRESET\s*:?\s*RS\.?\s*(\d+(?:[.,]\d{2})?)\b/)).find(Boolean);
+    return preset ? parseTRNumber(preset[1], p) : null;
+  }
   const strong = candidates.filter((c) => c.strong);
   return Math.max(...(strong.length ? strong : candidates).map((c) => c.value));
 }
@@ -104,16 +117,17 @@ function findLitresAndPrice(lines, p) {
   // "24,214 LT X 44,73", "13.77 ℓ * € 1.579", "12.457 G @ $3.299" (quantity × unit price on one line)
   // Not "%20 *600,00" (VAT rate and amount, "%" often read as "X"): no number glued to a letter or "%",
   // and "*" only counts as "×" right after a volume unit.
-  // A lone digit before "@" is a misread unit ("21.330 6 @ $2.989" for "21.330 G @"), and a short
+  // A lone digit before "@" or "X" is a misread unit ("21.330 6 @ $2.989" for "21.330 G @",
+  // "6.16 0 x € 1.419" for "6.16 ℓ * € 1.419"), and a short
   // unreadable word before "X" usually is too ("15,19 İLİ X 37,990").
-  const pair = new RegExp(`(?<![%A-Z\\d.,])${NUM}\\s*(${VOLUME_UNIT}\\b|\\d(?= ?@))?\\s*(?:[A-Z]{1,3}\\s+)?([X×*@])\\s*${CUR}?\\s*${NUM}`);
+  const pair = new RegExp(`(?<![%A-Z\\d.,])${NUM}\\s*(${VOLUME_UNIT}\\b|\\d(?= ?[@X×]))?\\s*(?:[A-Z]{1,3}\\s+|LTR[A-Z]?\\s*)?([X×*@])\\s*${CUR}?\\s*${NUM}`);
   for (const line of lines) {
     const m = line.match(pair);
     // Abroad both numbers carry decimals ("25.00 L x EUR 2.420"); "3 X 14" is something else
     const decimals = p.dotThousands || (/[.,]\d/.test(m?.[1]) && /[.,]\d/.test(m?.[4]));
     if (m && (m[3] !== '*' || m[2]) && decimals) {
       const a = parseTRNumber(m[1], p);
-      const b = parseTRNumber(m[4], p);
+      const b = pounds(parseTRNumber(m[4], p), p);
       if (a > 0 && b > 0) {
         const unitFirst = Boolean(m[2]) || /LT|LITRE| L /.test(line.slice(0, m.index + m[0].length));
         return unitFirst || (b >= p.price[0] && b <= p.price[1]) ? { liters: a, unitPrice: b } : { liters: b, unitPrice: a };
@@ -122,34 +136,45 @@ function findLitresAndPrice(lines, p) {
   }
   let liters = null;
   let unitPrice = null;
-  for (const line of lines) {
-    if (liters === null && VOLUME_WORDS.test(line) && !PRICE_WORDS.test(line)) {
+  lines.forEach((line, i) => {
+    if (liters === null && VOLUME_WORDS.test(line)) {
+      // Card slips put both on one line ("Unit Price: 106.4 Quantity: 31 Ltr"): read after the volume word
+      const vol = line.search(VOLUME_WORDS);
+      const price = line.search(PRICE_WORDS);
+      const part = price < 0 ? line : price < vol ? line.slice(vol) : null;
       const m =
-        line.match(new RegExp(`${NUM}\\s*${VOLUME_UNIT}\\b`)) ||
-        line.match(new RegExp(`(?:MIKTAR|LITRE|VOLUME|QUANTITE|QUANTITY|QTY|LITROS|MENGE|GALLONS|LITER)[^\\d]*${NUM}`));
+        part &&
+        (part.match(new RegExp(`${NUM}\\s*${VOLUME_UNIT}\\b`)) ||
+          part.match(new RegExp(`(?:MIKTAR|LITRE|V?OLUME|Q?UANTITE|Q?UANTITY|QUANITY|QTY|LITROS|MENGE|GALLONS|LITER)[^\\d]*${NUM}`)));
       // Abroad volumes have decimals: "#4 LITROS" in a column header is not 4 litres
-      if (m && (p.dotThousands || /[.,]\d/.test(m[1]))) liters = parseTRNumber(m[1], p);
+      const whole = p.wholeLitres && m && new RegExp(`^${NUM}\\s*(?:LTRS?|LTS|LITRES?)\\b`).test(m[0]);
+      if (m && (p.dotThousands || whole || /[.,]\d/.test(m[1]))) liters = parseTRNumber(m[1], p);
     }
     // "15,79 LÜX GTA": the line starts with the litres even when the rest is unreadable
     if (liters === null) {
       const m = line.match(new RegExp(`^${NUM}\\s*L`));
       if (m && /[.,]\d{2}/.test(m[1])) liters = parseTRNumber(m[1], p);
     }
+    // "Regular 8.575G": a quantity with its unit and no label (not "2.379/GAL", which is a price)
+    if (liters === null) {
+      const m = line.match(new RegExp(`(?<![\\d.,/$€£])(\\d{1,3}[.,]\\d{2,3})\\s*(?:GALLONS?|GAL|G|LTRS?|LITRES?|LITERS?)\\b(?!\\s*\\/)`));
+      if (m) liters = parseTRNumber(m[1], p);
+    }
     if (unitPrice === null && PRICE_WORDS.test(line)) {
       const label = line.match(/FIYAT|PRIX(?: UNIT\.?)?|PRICE(?: ?\/ ?GAL)?|RATE(?: ?\(RS ?\/ ?L\))?|PREIS|PRECIO/);
       const perUnit = line.match(new RegExp(`${NUM}\\s*(?:(?:${CUR}|[A-Z]{1,3}\\.?)\\s*)?\\/\\s*1?(?:L|LT|LIT|G|GAL|LITRE|LITER)\\b`));
       // After the label, the first number that can be a fuel price ("RATE (RS/L) 3 94.72": not the 3)
-      const afterLabel = label
-        ? [...line.slice(label.index + label[0].length).matchAll(new RegExp(NUM, 'g'))]
-            .filter((m) => p.dotThousands || /[.,]\d/.test(m[1]))
-            .map((m) => parseTRNumber(m[1], p))
-        : [];
+      const priceIn = (text) =>
+        [...text.matchAll(new RegExp(NUM, 'g'))].filter((m) => p.dotThousands || /[.,]\d/.test(m[1])).map((m) => pounds(parseTRNumber(m[1], p), p));
+      let afterLabel = label ? priceIn(line.slice(label.index + label[0].length)) : [];
+      // "Rate ." with the value on the next line
+      if (label && !afterLabel.length && !perUnit && lines[i + 1] && !VOLUME_WORDS.test(lines[i + 1])) afterLabel = priceIn(lines[i + 1]);
       const fits = afterLabel.find((n) => n >= p.price[0] && n <= p.price[1]);
       if (fits) unitPrice = fits;
-      else if (perUnit) unitPrice = parseTRNumber(perUnit[1], p);
+      else if (perUnit) unitPrice = pounds(parseTRNumber(perUnit[1], p), p);
       else if (afterLabel.length) unitPrice = afterLabel[0];
     }
-  }
+  });
   // Column layout: "PRODUCTO €/L LITROS IMPORTE" with the values on the next line
   if (liters === null) {
     lines.forEach((line, i) => {
@@ -313,6 +338,11 @@ export function parseReceipt(rawText, { country = 'TR' } = {}) {
     const triple = findTriple(lines, p, { amount });
     if (triple) ({ amount, liters, unitPrice } = triple);
   }
+  // A price a digit off what total ÷ litres gives was misread ("$2.399" for "$2.999")
+  if (liters && unitPrice && amount && !close(liters * unitPrice, amount) && !oneDigitOff(liters, amount / unitPrice)) {
+    const price = amount / liters;
+    if (inRange(price) && oneDigitOff(unitPrice * 10, price * 10)) unitPrice = round(price, 3);
+  }
   if (liters && unitPrice && amount && !close(liters * unitPrice, amount)) {
     // Keep the pair that agrees; the total line is the most reliable on fiscal receipts.
     // Litres one digit off what total ÷ price gives were misread ("121.330" for "21.330").
@@ -328,7 +358,7 @@ export function parseReceipt(rawText, { country = 'TR' } = {}) {
   if (amount && unitPrice && !liters) liters = round(amount / unitPrice, 2);
   if (amount && liters && !unitPrice) {
     // Work the price out, unless a clearly different price was printed (then litres or total is wrong)
-    const price = round(amount / liters, p.price[0] < 1 ? 3 : 2);
+    const price = round(amount / liters, p.price[1] <= 10 ? 3 : 2);
     if (inRange(price) && (!priceRead || close(priceRead, price, 0.3))) unitPrice = price;
   }
 

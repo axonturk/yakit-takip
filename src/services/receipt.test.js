@@ -211,6 +211,46 @@ DATE: 15/01/2026 TIME: 10:41`;
     expect(parseReceipt(text, { country: 'IN' })).toEqual({ amount: 1000.24, liters: 10.56, unitPrice: 94.72, date: '2026-01-15T10:41', receiptNo: '4511', fuelType: 'Benzin' });
   });
 
+  it('reads real Indian slips: preset amount, totalisers, card slips and leading zeros', () => {
+    // IndianOil, Delhi: the sale line is unreadable, "Volume" lost its V; the preset amount is the sale
+    const preset = `Fuel : PETROL
+Preset :Rs. 1000
+Rate Rs.71.94
+"pis 'Rs. 1000.00
+_olume :13.90Lts.`;
+    expect(parseReceipt(preset, { country: 'IN' })).toMatchObject({ amount: 1000, liters: 13.9, unitPrice: 71.94 });
+    // IndianOil FCC slip: "Atot"/"Vtot" are the pump's running totals, not this sale
+    const fcc = `Preset Type: Amount Cesk
+Rate (Rs/7LD> : 096.72 REAesc
+Volume CL) : 00045.92 a
+Amounté€éRs> : D4ag47 ¥38 Sar
+Atot: 00164873326. 48 Eons
+Vtot: 0001830843. 920 SH`;
+    expect(parseReceipt(fcc, { country: 'IN' })).toMatchObject({ amount: 4441.38, liters: 45.92, unitPrice: 96.72 });
+    // Card slip with price and quantity on one line, the price's decimal mark lost and the slip's own typo
+    const card = `Product : Petrol
+Unit Price : 106 4 Quanity: 31 Ltr
+Total Sale 3298.40
+Net Amount 33298 40`;
+    expect(parseReceipt(card, { country: 'IN' })).toMatchObject({ amount: 3298.4, liters: 31, unitPrice: 106.4 });
+    // Bharat Petroleum cash memo: "AMOUNT(Rs.)" read without its first letters
+    expect(parseReceipt('RATE/LTR. 63.97\nMONT(Rs.): ~~ 300.00\nVOLUME (Ltr.): N', { country: 'IN' })).toMatchObject({ amount: 300, liters: 4.69, unitPrice: 63.97 });
+  });
+
+  it('reads British prices in pence per litre', () => {
+    const text = `PUMP $16 DIESEL
+26.38 litre @ 151.9 PL £40.0
+TOTAL £ 40.07`;
+    expect(parseReceipt(text, { country: 'GB' })).toMatchObject({ amount: 40.07, liters: 26.38, unitPrice: 1.519 });
+  });
+
+  it('reads US gallons without a label and a price a digit off', () => {
+    const text = `Regular 8.575G
+FRICE/GAL $2.399
+FUEL TOTAL § 25.72`;
+    expect(parseReceipt(text, { country: 'US' })).toMatchObject({ amount: 25.72, liters: 8.575, unitPrice: 2.999 });
+  });
+
   it('keeps Turkish rules at home: "1.083" is a thousand and Petrol Ofisi is not a fuel', () => {
     expect(parseReceipt('PETROL OFISI\nTOPLAM 1.083', { country: 'TR' })).toEqual({ amount: 1083 });
     expect(parseReceipt('PRIX 1.649 EUR/L\nTOTAL 49,47', { country: 'FR' })).toMatchObject({ unitPrice: 1.649, liters: 30 });
