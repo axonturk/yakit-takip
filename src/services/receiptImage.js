@@ -35,6 +35,150 @@ export function whitenBackground(data, threshold = 60) {
   return data;
 }
 
+// The receipt paper in a photo of it lying on something darker (a table, a car seat, a folder):
+// the largest bright area, with its outline filled row by row so the print inside counts as paper.
+// grey: one value per pixel (before any whitening). Returns { box, left, right } with the paper's
+// left and right edge on each row (left > right where a row has no paper), or null when the paper
+// fills the photo or no paper stands out from the background.
+export function findPaper(grey, w, h) {
+  // Otsu's threshold between background and paper
+  const hist = new Float64Array(256);
+  for (let i = 0; i < grey.length; i++) hist[grey[i]]++;
+  const total = grey.length;
+  let sumAll = 0;
+  for (let i = 0; i < 256; i++) sumAll += i * hist[i];
+  let wB = 0;
+  let sumB = 0;
+  let best = 0;
+  let cut = 128;
+  for (let t = 0; t < 256; t++) {
+    wB += hist[t];
+    if (!wB || wB === total) continue;
+    sumB += t * hist[t];
+    const mB = sumB / wB;
+    const mF = (sumAll - sumB) / (total - wB);
+    const between = wB * (total - wB) * (mB - mF) ** 2;
+    if (between > best) {
+      best = between;
+      cut = t;
+    }
+  }
+  const bright = new Uint8Array(w * h);
+  let nBright = 0;
+  for (let i = 0; i < grey.length; i++) {
+    if (grey[i] > cut) {
+      bright[i] = 1;
+      nBright++;
+    }
+  }
+  // Paper filling nearly all of the photo, or background hardly darker than paper: nothing to cut
+  if (nBright > 0.85 * total) return null;
+  let darkSum = 0;
+  let lightSum = 0;
+  for (let i = 0; i < grey.length; i++) {
+    if (bright[i]) lightSum += grey[i];
+    else darkSum += grey[i];
+  }
+  if (lightSum / nBright - darkSum / (total - nBright) < 50) return null;
+
+  // Largest connected bright area
+  const label = new Int32Array(w * h);
+  const stack = new Int32Array(w * h);
+  let bestLabel = 0;
+  let bestSize = 0;
+  let next = 0;
+  for (let s = 0; s < w * h; s++) {
+    if (!bright[s] || label[s]) continue;
+    next++;
+    let size = 0;
+    let top = 0;
+    stack[top++] = s;
+    label[s] = next;
+    while (top) {
+      const i = stack[--top];
+      size++;
+      const x = i % w;
+      const nb = [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i - w, i + w];
+      for (const j of nb) {
+        if (j >= 0 && j < w * h && bright[j] && !label[j]) {
+          label[j] = next;
+          stack[top++] = j;
+        }
+      }
+    }
+    if (size > bestSize) {
+      bestSize = size;
+      bestLabel = next;
+    }
+  }
+  if (bestSize < 0.05 * total) return null;
+
+  const left = new Int32Array(h).fill(w);
+  const right = new Int32Array(h).fill(-1);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (label[y * w + x] === bestLabel) {
+        if (x < left[y]) left[y] = x;
+        right[y] = x;
+      }
+    }
+  }
+  let x0 = w;
+  let x1 = -1;
+  let y0 = -1;
+  let y1 = -1;
+  for (let y = 0; y < h; y++) {
+    if (right[y] < left[y]) continue;
+    if (y0 < 0) y0 = y;
+    y1 = y;
+    x0 = Math.min(x0, left[y]);
+    x1 = Math.max(x1, right[y]);
+  }
+  const box = { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+  if (box.w * box.h > 0.9 * total) return null;
+  return { box, left, right };
+}
+
+// Evens out light and fades: each pixel is divided by the brightness of the paper around it, so a
+// shadow or a corner in dim light turns white again and pale thermal print turns dark.
+// grey: one value per pixel, changed in place. r: how far around to look for the paper.
+// lo: how pale (as a share of the paper's brightness) still counts as print; higher darkens faint print more.
+export function flattenLight(grey, w, h, r, { lo = 0.2, gamma = 1 } = {}) {
+  // The paper's brightness near each pixel: the bright end of a box around it, from a small grid
+  const step = Math.max(4, Math.round(r / 2));
+  const gw = Math.ceil(w / step);
+  const gh = Math.ceil(h / step);
+  const cell = new Float32Array(gw * gh);
+  for (let gy = 0; gy < gh; gy++) {
+    for (let gx = 0; gx < gw; gx++) {
+      const vals = [];
+      for (let y = Math.max(0, gy * step - r); y < Math.min(h, gy * step + r); y += 2) {
+        for (let x = Math.max(0, gx * step - r); x < Math.min(w, gx * step + r); x += 2) vals.push(grey[y * w + x]);
+      }
+      vals.sort((a, b) => a - b);
+      cell[gy * gw + gx] = vals.length ? vals[Math.floor(vals.length * 0.9)] : 255;
+    }
+  }
+  for (let y = 0; y < h; y++) {
+    const fy = Math.min(gh - 1, y / step);
+    const y0 = Math.floor(fy);
+    const y1 = Math.min(gh - 1, y0 + 1);
+    const ty = fy - y0;
+    for (let x = 0; x < w; x++) {
+      const fx = Math.min(gw - 1, x / step);
+      const x0 = Math.floor(fx);
+      const x1 = Math.min(gw - 1, x0 + 1);
+      const tx = fx - x0;
+      const bg =
+        (cell[y0 * gw + x0] * (1 - tx) + cell[y0 * gw + x1] * tx) * (1 - ty) + (cell[y1 * gw + x0] * (1 - tx) + cell[y1 * gw + x1] * tx) * ty;
+      const v = grey[y * w + x] / Math.max(40, bg);
+      // Paper white, print black, and pale print pulled towards black
+      grey[y * w + x] = Math.round(255 * Math.min(1, Math.max(0, (v - lo) / (0.98 - lo))) ** gamma);
+    }
+  }
+  return grey;
+}
+
 // The printed part of a photo taken from further away: the box around the print, so it can be cut out
 // and enlarged. Print is dark with paper around it; big dark areas (a table edge, a shadow) are not print.
 // grey: one value per pixel. Returns { x, y, w, h } or null when the print already fills the photo.
