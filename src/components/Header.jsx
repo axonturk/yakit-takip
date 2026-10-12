@@ -1,7 +1,8 @@
 import React from 'react';
-import { PlusCircle, Download, Upload, Smartphone, Sun, Moon, Cloud, CloudOff, Lock, MoreVertical, Languages, HelpCircle, Info } from 'lucide-react';
+import { PlusCircle, Download, Upload, Smartphone, Sun, Moon, Cloud, CloudOff, Lock, MoreVertical, Languages, HelpCircle, Info, MessageSquareWarning } from 'lucide-react';
 import LocaleModal from './LocaleModal';
 import InfoModal from './InfoModal';
+import FeedbackModal from './FeedbackModal';
 import { t } from '../i18n';
 import logo from '../assets/logo.png';
 
@@ -10,6 +11,7 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [localeOpen, setLocaleOpen] = React.useState(false);
   const [info, setInfo] = React.useState(null);
+  const [feedbackOpen, setFeedbackOpen] = React.useState(false);
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -28,6 +30,14 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
           <div className="min-w-0">
             <h1 className="text-sm font-bold text-white tracking-tight flex items-center gap-1.5">
               Hisapo
+              <button
+                type="button"
+                onClick={() => setFeedbackOpen(true)}
+                title={t('Hata bildir / öneri gönder')}
+                className="text-[9px] font-bold uppercase tracking-wide text-amber-300 bg-amber-500/15 border border-amber-500/40 rounded-full px-1.5 py-px"
+              >
+                {t('Pilot')}
+              </button>
             </h1>
             <p className="text-[11px] text-slate-400 whitespace-nowrap truncate">{t('Yakıt avans defteri')}</p>
           </div>
@@ -117,6 +127,9 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
                   <MenuItem icon={HelpCircle} onClick={() => { setMenuOpen(false); setInfo('help'); }}>
                     {t('Yardım')}
                   </MenuItem>
+                  <MenuItem icon={MessageSquareWarning} onClick={() => { setMenuOpen(false); setFeedbackOpen(true); }}>
+                    {t('Hata bildir / öneri gönder')}
+                  </MenuItem>
                   <MenuItem icon={Info} onClick={() => { setMenuOpen(false); setInfo('about'); }}>
                     {t('Hakkında')}
                   </MenuItem>
@@ -128,6 +141,7 @@ export default function Header({ onOpenAddStation, onExport, onImport, onOpenIns
       </div>
       {localeOpen && <LocaleModal onClose={() => setLocaleOpen(false)} />}
       <InfoModal mode={info} onClose={() => setInfo(null)} />
+      <FeedbackModal isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </header>
   );
 }

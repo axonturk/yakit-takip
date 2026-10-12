@@ -9,7 +9,7 @@ const OPEN_KEY = 'hisapo_last_open_v1';
 const MAX_ERRORS = 5;
 const sentErrors = new Set();
 
-function deviceId() {
+export function deviceId() {
   try {
     let id = localStorage.getItem(DEVICE_KEY);
     if (!id) {
