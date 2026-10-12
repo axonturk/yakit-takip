@@ -41,7 +41,7 @@ function profile(country = 'TR') {
   if (c === 'TR') return { dotThousands: true, price: [5, 500], monthFirst: false };
   // Indian pumps print whole litres when a round quantity was preset ("Quantity: 31 Ltr")
   if (c === 'IN') return { dotThousands: false, price: [50, 200], monthFirst: false, wholeLitres: true };
-  if (c === 'US') return { dotThousands: false, price: [1, 8], monthFirst: true };
+  if (c === 'US') return { dotThousands: false, price: [1, 10], monthFirst: true };
   // British pumps often print the price in pence per litre ("26.38 litre @ 151.9 PPL")
   if (c === 'GB') return { dotThousands: false, price: [0.5, 5], monthFirst: false, pence: true };
   // Euro, dirham, ringgit…: a litre costs between half a unit and a few units
@@ -157,7 +157,7 @@ function findLitresAndPrice(lines, p) {
     }
     // "Regular 8.575G": a quantity with its unit and no label (not "2.379/GAL", which is a price)
     if (liters === null) {
-      const m = line.match(new RegExp(`(?<![\\d.,/$€£])(\\d{1,3}[.,]\\d{2,3})\\s*(?:GALLONS?|GAL|G|LTRS?|LITRES?|LITERS?)\\b(?!\\s*\\/)`));
+      const m = line.match(new RegExp(`(?<![\\d.,/$€£])(\\d{1,3}[.,]\\d{2,3})\\s*(?:GALLONS?|GAL|G|LTRS?|LITRES?|LITERS?|L)\\b(?!\\s*\\/)`));
       if (m) liters = parseTRNumber(m[1], p);
     }
     if (unitPrice === null && PRICE_WORDS.test(line)) {

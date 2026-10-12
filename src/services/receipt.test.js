@@ -251,6 +251,20 @@ FUEL TOTAL § 25.72`;
     expect(parseReceipt(text, { country: 'US' })).toMatchObject({ amount: 25.72, liters: 8.575, unitPrice: 2.999 });
   });
 
+  it('reads Californian prices over $8 a gallon', () => {
+    const text = `UNLEAD REG 1.309G
+PRICE/GAL $8.099
+FUEL TOTAL § 10.60`;
+    expect(parseReceipt(text, { country: 'US' })).toMatchObject({ amount: 10.6, liters: 1.309, unitPrice: 8.099 });
+  });
+
+  it('reads litres written as a bare "L" next to the pump number', () => {
+    const text = `} 69.13 L Bomba 01
+GASOLEO SIMPLES
+Total EUR 101.21`;
+    expect(parseReceipt(text, { country: 'PT' })).toMatchObject({ amount: 101.21, liters: 69.13 });
+  });
+
   it('keeps Turkish rules at home: "1.083" is a thousand and Petrol Ofisi is not a fuel', () => {
     expect(parseReceipt('PETROL OFISI\nTOPLAM 1.083', { country: 'TR' })).toEqual({ amount: 1083 });
     expect(parseReceipt('PRIX 1.649 EUR/L\nTOTAL 49,47', { country: 'FR' })).toMatchObject({ unitPrice: 1.649, liters: 30 });
