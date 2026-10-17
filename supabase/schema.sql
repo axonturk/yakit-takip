@@ -362,3 +362,33 @@ end $$;
 
 revoke all on function public.delete_my_account() from public, anon;
 grant execute on function public.delete_my_account() to authenticated;
+
+-- Pilot feedback: bug reports from "Hata bildir" and receipts people chose to send to improve "Fişi okut".
+-- Anyone can add a row or a photo; nobody can read them back through the app, only the project owner
+-- (Table Editor → feedback, Storage → feedback).
+create table if not exists public.feedback (
+  feedback_id bigint generated always as identity primary key,
+  at timestamptz not null default now(),
+  device text not null check (char_length(device) <= 64),
+  version text check (char_length(version) <= 32),
+  kind text not null check (kind in ('bug', 'receipt')),
+  message text check (char_length(message) <= 2000),
+  contact text check (char_length(contact) <= 200),
+  photo text check (char_length(photo) <= 200),
+  info jsonb check (pg_column_size(info) <= 8000)
+);
+create index if not exists feedback_at on public.feedback (at desc);
+
+alter table public.feedback enable row level security;
+drop policy if exists "anyone sends feedback" on public.feedback;
+create policy "anyone sends feedback" on public.feedback
+  for insert to anon, authenticated with check (true);
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('feedback', 'feedback', false, 4194304, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do nothing;
+
+drop policy if exists "anyone sends feedback photos" on storage.objects;
+create policy "anyone sends feedback photos" on storage.objects
+  for insert to anon, authenticated
+  with check (bucket_id = 'feedback' and (storage.foldername(name))[1] in ('bug', 'receipt'));

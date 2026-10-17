@@ -24,16 +24,20 @@ export default function ReceiptScan({ onRead }) {
     e.target.value = '';
     if (!file) return;
     setState('busy');
+    let forOcr = null;
+    let photo = null;
     try {
       // A larger copy reads better; the smaller one is what gets saved as the receipt photo
-      const [forOcr, photo] = await Promise.all([compressImage(file, 3000, 0.9), compressImage(file)]);
+      [forOcr, photo] = await Promise.all([compressImage(file, 3000, 0.9), compressImage(file)]);
       const { readReceipt } = await import('../services/ocr');
       const { fields } = await readReceipt(forOcr, receiptLanguage());
-      onRead(fields, photo);
+      onRead(fields, photo, forOcr);
       setState({ found: Object.keys(fields).filter((k) => LABELS[k]) });
     } catch (err) {
       setState({ error: navigator.onLine ? t('Fiş okunamadı. Bilgileri elle gir.') : t('İlk okuma için internet gerekiyor.') });
       console.warn('Receipt OCR failed', err);
+      // A receipt that could not be read at all is the most useful one to share
+      if (forOcr && navigator.onLine) onRead({}, photo, forOcr);
     }
   };
 

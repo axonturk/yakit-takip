@@ -7,6 +7,16 @@ import { checkFill, lastOdometer } from '../services/consumption';
 import KmField, { FillNotice } from './KmField';
 import ReceiptScan from './ReceiptScan';
 import { t, volLabel } from '../i18n';
+import { sendFeedback } from '../services/feedback';
+
+const SHARE_KEY = 'hisapo_share_receipts_v1';
+const shareDefault = () => {
+  try {
+    return localStorage.getItem(SHARE_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
 
 
 export default function ManualExpenseModal({
@@ -31,6 +41,9 @@ export default function ManualExpenseModal({
   const [receiptNo, setReceiptNo] = useState('');
   const [photo, setPhoto] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
+  // A scanned receipt and whether the person agreed to send it to us to improve receipt reading
+  const [scan, setScan] = useState(null);
+  const [shareScan, setShareScan] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -50,6 +63,7 @@ export default function ManualExpenseModal({
       setReceiptNo('');
       setOdometer('');
       setPhoto(null);
+      setScan(null);
     }
   }, [isOpen, defaultStationId, stations]);
 
@@ -139,6 +153,12 @@ export default function ManualExpenseModal({
 
     onSaveExpense({ ...candidate, photo });
 
+    if (scan && shareScan) {
+      const { plate: _plate, ...read } = scan.read;
+      const saved = { amount: parsedAmount, liters: lv, unitPrice: pv, date: datetime, fuelType: fuelType || null, receiptNo: candidate.receiptNo };
+      sendFeedback({ kind: 'receipt', photo: scan.photo, info: { read, saved } }).catch((err) => console.warn('Receipt not shared', err));
+    }
+
     setAmount('');
     setLiters('');
     setNote('');
@@ -182,7 +202,9 @@ export default function ManualExpenseModal({
 
         <form onSubmit={handleSubmit} className="mt-3 space-y-3">
           <ReceiptScan
-            onRead={(f, receiptPhoto) => {
+            onRead={(f, receiptPhoto, original) => {
+              setScan({ read: f, photo: original });
+              setShareScan(shareDefault());
               if (f.amount) setAmount(String(f.amount));
               if (f.liters) setLiters(String(f.liters));
               if (f.unitPrice) setUnitPrice(String(f.unitPrice));
@@ -194,6 +216,27 @@ export default function ManualExpenseModal({
               setErrorMsg(null);
             }}
           />
+          {scan && (
+            <label className="flex items-start gap-2 p-2.5 bg-sky-500/10 border border-sky-500/30 rounded-xl text-[11px] text-sky-100 leading-snug">
+              <input
+                type="checkbox"
+                checked={shareScan}
+                onChange={(e) => {
+                  setShareScan(e.target.checked);
+                  try {
+                    localStorage.setItem(SHARE_KEY, e.target.checked ? '1' : '0');
+                  } catch {
+                    // remembering the choice is only a convenience
+                  }
+                }}
+                className="mt-0.5 accent-sky-400"
+              />
+              <span>
+                {t('Fiş okumayı geliştirmemize yardım et: kaydederken bu fişin fotoğrafını ve doğru rakamları Hisapo\'ya gönder.')}
+                <span className="block text-[10px] text-slate-400 mt-0.5">{t('Sadece fiş okumayı iyileştirmek için kullanılır, kimseyle paylaşılmaz.')}</span>
+              </span>
+            </label>
+          )}
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-[11px] text-slate-400 font-medium">{t('Hangi İstasyon?')}</label>
